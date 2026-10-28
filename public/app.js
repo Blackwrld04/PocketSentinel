@@ -4633,9 +4633,41 @@ function renderCustomEnvelopes() {
     grid.appendChild(card);
   });
 
+  // Dynamically update zero-based allocation pool displays
+  const baseAllocated = 4850.00;
+  const customAllocated = envelopes.reduce((acc, env) => acc + (Number(env.budget) || 0), 0);
+  const totalAllocated = baseAllocated + customAllocated;
+  const inflow = 4850.00 + customAllocated;
+
+  const allocEl = document.getElementById('planAllocatedPoolDisplay');
+  const inflowEl = document.getElementById('planInflowPoolDisplay');
+  if (allocEl) allocEl.textContent = `$${totalAllocated.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (inflowEl) inflowEl.textContent = `$${inflow.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   if (window.lucide) window.lucide.createIcons();
 }
 window.renderCustomEnvelopes = renderCustomEnvelopes;
+
+// Close modals when clicking outside modal-card on the backdrop or pressing Escape
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        backdrop.style.display = 'none';
+      }
+    });
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-backdrop').forEach(modal => {
+      if (modal.style.display === 'flex' || modal.style.display === 'block') {
+        modal.style.display = 'none';
+      }
+    });
+  }
+});
 
 function syncCategoryDropdowns() {
   const customEnvs = getCustomEnvelopes();
