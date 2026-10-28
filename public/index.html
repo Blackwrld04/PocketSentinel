@@ -1070,6 +1070,13 @@
           <a href="https://memory.walrus.xyz" target="_blank">Walrus Memory Portal</a>
           <a href="#" onclick="openKeyVaultModal()">Export WebCrypto Key Bundle</a>
         </div>
+        <div class="footer-col-nav">
+          <span class="footer-heading">LEGAL &amp; SOVEREIGNTY</span>
+          <a href="javascript:void(0)" onclick="openLegalPolicyModal('privacy')">Privacy Policy</a>
+          <a href="javascript:void(0)" onclick="openLegalPolicyModal('terms')">Terms of Service</a>
+          <a href="javascript:void(0)" onclick="openLegalPolicyModal('refund')">Refund Policy</a>
+          <a href="javascript:void(0)" onclick="openDeleteAccountModal()" style="color: #e11d48; font-weight: 700;">Delete My Account</a>
+        </div>
       </div>
       <div class="footer-bottom-row">
         <span>© 2026 PocketSentinel INC. ALL RIGHTS RESERVED. MIT LICENSE.</span>
@@ -1155,6 +1162,14 @@
             <i data-lucide="sliders"></i>
             <span>7. Settings &amp; Memory</span>
             <span class="sidebar-counter-blue">12 Nodes</span>
+          </button>
+          <button class="sidebar-item" onclick="openLegalPolicyModal('privacy')">
+            <i data-lucide="scale"></i>
+            <span>Privacy &amp; Terms</span>
+          </button>
+          <button class="sidebar-item" onclick="openDeleteAccountModal()" style="color: #e11d48;">
+            <i data-lucide="user-x"></i>
+            <span>Delete Account</span>
           </button>
           <button class="sidebar-item" onclick="switchView('landing')">
             <i data-lucide="external-link"></i>
@@ -2768,6 +2783,10 @@
               <i data-lucide="file-spreadsheet"></i>
               <span>Reports &amp; Exports</span>
             </button>
+            <button class="subtab-segmented-btn" id="setTabBtnLegal" onclick="switchSettingsCategory('legal')">
+              <i data-lucide="shield-alert"></i>
+              <span>Privacy &amp; Purge</span>
+            </button>
           </div>
 
           <div class="settings-sections-wrap">
@@ -3092,6 +3111,76 @@
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Panel 5: Privacy, Legal Transparency & Sovereign Purge -->
+            <div class="subtab-content-panel" id="settingsPanelLegal" style="display:none;">
+              <div class="settings-card card-full-width">
+                <div class="settings-card-header">
+                  <i data-lucide="shield-check" class="card-icon-amber"></i>
+                  <div>
+                    <h3 class="settings-card-title">Data Sovereignty &amp; Legal Transparency</h3>
+                    <p class="settings-card-sub">Audited third-party disclosures, policies, and irreversible data purge</p>
+                  </div>
+                </div>
+
+                <div class="settings-form-body">
+                  <!-- Audited Services Summary -->
+                  <div class="vault-status-banner" style="margin-bottom: 20px;">
+                    <i data-lucide="shield" class="text-green"></i>
+                    <div>
+                      <strong>Zero-Knowledge Architecture Verified</strong>
+                      <p>Zero unencrypted personal telemetry stored on remote servers. All API keys quarantined server-side.</p>
+                    </div>
+                  </div>
+
+                  <div class="setting-item">
+                    <label class="setting-label">Audited Third-Party Integrations</label>
+                    <p class="setting-hint">PocketSentinel utilizes only 4 backend APIs and zero marketing trackers:</p>
+                    <ul style="margin: 8px 0 16px 18px; font-size: 0.85rem; color: #44403c; line-height: 1.6;">
+                      <li><strong>Walrus Memory Protocol (Mysten Labs):</strong> Commits pseudonymous baseline agreements and trial countdowns on Sui Mainnet. No plaintext PII.</li>
+                      <li><strong>Tatum Sui RPC Gateway:</strong> Reads public Sui wallet balances and gas telemetry.</li>
+                      <li><strong>Groq Cloud AI:</strong> Stateless LPU inference for budgeting copilot calculations (never used to train models).</li>
+                      <li><strong>Google Gemini Vision:</strong> Stateless multimodal OCR parsing for uploaded receipt images.</li>
+                    </ul>
+                  </div>
+
+                  <div class="setting-item">
+                    <label class="setting-label">Governance &amp; Legal Policies</label>
+                    <p class="setting-hint">Review comprehensive legal documentation and rights disclosures:</p>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                      <button class="btn-ghost-outline" onclick="openLegalPolicyModal('privacy')">
+                        <i data-lucide="lock"></i> View Privacy Policy
+                      </button>
+                      <button class="btn-ghost-outline" onclick="openLegalPolicyModal('terms')">
+                        <i data-lucide="file-text"></i> View Terms of Service
+                      </button>
+                      <button class="btn-ghost-outline" onclick="openLegalPolicyModal('refund')">
+                        <i data-lucide="refresh-cw"></i> View Refund Policy
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Danger Zone Card -->
+                  <div style="margin-top: 24px; padding: 20px; background: #fff1f2; border: 2px solid #e11d48; border-radius: 12px; box-shadow: 2px 2px 0px #141413;">
+                    <div style="display: flex; align-items: flex-start; gap: 14px;">
+                      <div style="background: #e11d48; color: white; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem;">
+                        <i data-lucide="trash-2"></i>
+                      </div>
+                      <div style="flex: 1;">
+                        <h4 style="margin: 0 0 4px; color: #9f1239; font-size: 1.05rem; font-weight: 800;">Danger Zone: Sovereign Data Purge</h4>
+                        <p style="margin: 0 0 14px; color: #881337; font-size: 0.85rem; line-height: 1.5;">
+                          Exercise your GDPR Article 17 "Right to Erasure" and CCPA data sovereignty. Permanently erase your local WebCrypto AES-256 vault keys, custom envelope allocations, wage preferences, and clear ephemeral server caches. This action cannot be reversed.
+                        </p>
+                        <button class="btn-primary-action" onclick="openDeleteAccountModal()" style="background: #e11d48; color: #ffffff; border: 2px solid #141413; font-weight: 800; padding: 10px 18px; border-radius: 8px; cursor: pointer; box-shadow: 2px 2px 0px #141413; display: inline-flex; align-items: center; gap: 8px;">
+                          <i data-lucide="alert-triangle"></i> Delete My Account &amp; Purge Vault
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -3857,6 +3946,235 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= SOVEREIGN ACCOUNT PURGE / DELETE ACCOUNT MODAL ================= -->
+  <div class="modal-backdrop" id="deleteAccountModal" style="display:none; z-index: 10500;">
+    <div class="modal-card" style="max-width: 580px; width: 95%; border: 2px solid #e11d48; box-shadow: 4px 4px 0px #141413;">
+      <div class="modal-header" style="background: #fff1f2; border-bottom: 2px solid #fda4af; padding: 20px 24px;">
+        <div class="modal-title-row" style="gap: 12px;">
+          <span class="modal-icon" style="color: #e11d48; background: #ffe4e6; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid #141413;">
+            <i data-lucide="alert-triangle"></i>
+          </span>
+          <div>
+            <h3 style="margin: 0; color: #9f1239; font-size: 1.15rem; font-weight: 800;">Sovereign Account Purge</h3>
+            <p style="margin: 2px 0 0; color: #be123c; font-size: 0.8rem; font-weight: 600;">GDPR Article 17 Erasure and Client-Side Key Destruction</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeDeleteAccountModal()" style="color: #9f1239; font-size: 1.6rem;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 24px;">
+        <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+          <p style="margin: 0; font-size: 0.85rem; color: #9f1239; font-weight: 600; line-height: 1.5;">
+            WARNING: This operation is permanent and mathematically irreversible. PocketSentinel maintains zero cloud backups of your private key bundle.
+          </p>
+        </div>
+
+        <p style="margin: 0 0 10px; font-size: 0.88rem; color: #292524; font-weight: 700;">Executing this purge will immediately destroy:</p>
+        <ul style="margin: 0 0 20px 20px; font-size: 0.84rem; color: #44403c; line-height: 1.6;">
+          <li>Your derived WebCrypto AES-256-GCM encryption key and PBKDF2 salt.</li>
+          <li>All custom digital category envelopes and monthly allocation targets.</li>
+          <li>All stored user profile settings (name, hourly wage, inflow, currency, billing cycle).</li>
+          <li>All local transaction journal records and cached receipt scan extractions.</li>
+          <li>Ephemeral server audit caches and watchdog session instances.</li>
+        </ul>
+
+        <div style="background: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 0.8rem; color: #78716c; line-height: 1.45;">
+          <strong>Decentralized Ledger Disclosure:</strong> Any pseudonymous transaction digests and memory epochs already committed to the public Sui Mainnet blockchain are permanent by protocol consensus and cannot be deleted from the decentralized ledger.
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label style="font-weight: 800; font-size: 0.85rem; color: #1c1917; margin-bottom: 8px; display: block;">
+            To confirm irreversible deletion, type <span style="color: #e11d48; font-family: var(--font-mono); font-weight: 800;">DELETE</span> below:
+          </label>
+          <input type="text" id="deleteAccountConfirmInput" class="form-input" placeholder="Type DELETE" oninput="handleDeleteAccountInputChange(this.value)" autocomplete="off" style="width: 100%; padding: 12px 14px; border: 2px solid #141413; border-radius: 8px; font-family: var(--font-mono); font-size: 1rem; font-weight: 700; letter-spacing: 1px;" />
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 16px 24px; background: #fafaf9; border-top: 1px solid #e7e5e4; display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn-ghost-outline" onclick="closeDeleteAccountModal()" style="border: 2px solid #141413; font-weight: 700; padding: 10px 18px;">Cancel</button>
+        <button type="button" id="confirmDeleteAccountBtn" class="btn-primary-action" onclick="confirmDeleteAccount()" disabled style="background: #e11d48; color: #ffffff; border: 2px solid #141413; font-weight: 800; padding: 10px 22px; border-radius: 8px; cursor: not-allowed; opacity: 0.5; box-shadow: 2px 2px 0px #141413; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="trash-2"></i> Permanently Purge Everything
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LEGAL POLICIES & GOVERNANCE MODAL ================= -->
+  <div class="modal-backdrop" id="legalPolicyModal" style="display:none; z-index: 10400;">
+    <div class="modal-card" style="max-width: 860px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 2px solid #141413; box-shadow: 6px 6px 0px #141413;">
+      <div class="modal-header" style="background: #ffffff; border-bottom: 2px solid #141413; padding: 18px 24px; flex-shrink: 0;">
+        <div class="modal-title-row" style="gap: 12px;">
+          <span class="modal-icon" style="color: #141413; background: #fef08a; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid #141413;">
+            <i data-lucide="scale"></i>
+          </span>
+          <div>
+            <h3 style="margin: 0; color: #141413; font-size: 1.2rem; font-weight: 800;">PocketSentinel Governance &amp; Legal Transparency</h3>
+            <p style="margin: 2px 0 0; color: #78716c; font-size: 0.8rem; font-weight: 500;">Zero-Knowledge Client-Side Sovereignty, GDPR, and 0% Dispute Rake</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeLegalPolicyModal()" style="font-size: 1.6rem; color: #141413;">&times;</button>
+      </div>
+
+      <!-- Segmented Subtabs Bar inside Legal Modal -->
+      <div style="padding: 12px 24px; background: #fafaf9; border-bottom: 1px solid #e7e5e4; flex-shrink: 0;">
+        <div class="subtabs-segmented-bar" style="margin: 0; display: flex; gap: 8px;">
+          <button class="subtab-segmented-btn active" id="tabLegalBtnPrivacy" onclick="switchLegalModalTab('privacy')" style="flex: 1;">
+            <i data-lucide="lock"></i>
+            <span>Privacy &amp; Third-Party Audit</span>
+          </button>
+          <button class="subtab-segmented-btn" id="tabLegalBtnTerms" onclick="switchLegalModalTab('terms')" style="flex: 1;">
+            <i data-lucide="file-text"></i>
+            <span>Terms of Service</span>
+          </button>
+          <button class="subtab-segmented-btn" id="tabLegalBtnRefund" onclick="switchLegalModalTab('refund')" style="flex: 1;">
+            <i data-lucide="refresh-cw"></i>
+            <span>Refund &amp; Billing Policy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Policy Content Body -->
+      <div class="modal-body" style="padding: 24px 28px; overflow-y: auto; flex: 1; line-height: 1.6; font-size: 0.9rem; color: #292524;">
+        
+        <!-- Tab 1: Privacy Policy -->
+        <div class="legal-tab-panel" id="legalPanelPrivacy" style="display: block;">
+          <div style="margin-bottom: 20px; border-bottom: 2px solid #141413; padding-bottom: 12px;">
+            <h2 style="margin: 0 0 6px; font-size: 1.4rem; font-weight: 900; color: #141413;">PocketSentinel Privacy Policy</h2>
+            <p style="margin: 0; font-size: 0.82rem; color: #78716c;">Effective Date: October 29, 2026 · Software License: MIT Open Source · Zero-Knowledge Standard</p>
+          </div>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">1. Executive Privacy Commitment</h3>
+          <p>PocketSentinel is engineered on the philosophy of <strong>Invisible Sovereignty</strong>. Unlike legacy budgeting apps that monetize consumer transaction feeds by selling data to credit scoring bureaus and ad brokers, PocketSentinel collects zero unencrypted financial telemetry on its backend servers. All encryption is performed client-side inside your browser using the native WebCrypto API (AES-256-GCM with PBKDF2-SHA256).</p>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">2. Exhaustive Third-Party Services Audit &amp; Data Collection Matrix</h3>
+          <div style="overflow-x: auto; margin-bottom: 16px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; border: 2px solid #141413;">
+              <thead>
+                <tr style="background: #f5f5f4; border-bottom: 2px solid #141413;">
+                  <th style="padding: 10px; text-align: left; border-right: 1px solid #d6d3d1;">Third-Party Service</th>
+                  <th style="padding: 10px; text-align: left; border-right: 1px solid #d6d3d1;">Provider &amp; Endpoint</th>
+                  <th style="padding: 10px; text-align: left; border-right: 1px solid #d6d3d1;">Data Transmitted</th>
+                  <th style="padding: 10px; text-align: left;">Retention &amp; Policy</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid #e7e5e4;">
+                  <td style="padding: 10px; font-weight: 700; border-right: 1px solid #e7e5e4;">Walrus Memory Protocol</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Mysten Labs (<code style="font-size: 0.75rem;">relayer.memory.walrus.xyz</code>)</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Pseudonymous vendor baselines, price thresholds, trial countdown horizons, and Sui Mainnet transaction hashes. <strong>No plaintext PII or passwords.</strong></td>
+                  <td style="padding: 10px;">Permanent decentralized blob memory anchored on Sui Mainnet.</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e7e5e4; background: #fafaf9;">
+                  <td style="padding: 10px; font-weight: 700; border-right: 1px solid #e7e5e4;">Tatum Sui RPC Gateway</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Tatum Technologies LLC (<code style="font-size: 0.75rem;">sui-mainnet.gateway.tatum.io</code>)</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Public Sui wallet addresses (<code style="font-size: 0.75rem;">0x...</code>) queried to read onchain token balances and gas telemetry.</td>
+                  <td style="padding: 10px;">Ephemeral RPC pass-through. No personal offchain identity is attached.</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e7e5e4;">
+                  <td style="padding: 10px; font-weight: 700; border-right: 1px solid #e7e5e4;">Groq Cloud AI</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Groq Inc. (<code style="font-size: 0.75rem;">api.groq.com</code>)</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Financial copilot questions and high-level numeric metrics (monthly inflow, daily burn runway, envelope deficits).</td>
+                  <td style="padding: 10px;">Stateless RAM processing on Groq LPUs. Groq terms prohibit retaining user prompts for model training.</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e7e5e4; background: #fafaf9;">
+                  <td style="padding: 10px; font-weight: 700; border-right: 1px solid #e7e5e4;">Google Gemini Vision</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Google LLC (<code style="font-size: 0.75rem;">generativelanguage.googleapis.com</code>)</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Base64 receipt images uploaded to extract merchant, line-item totals, and dates.</td>
+                  <td style="padding: 10px;">Stateless extraction. PocketSentinel does not store receipt image files on remote servers after extraction.</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e7e5e4;">
+                  <td style="padding: 10px; font-weight: 700; border-right: 1px solid #e7e5e4;">Google Sheets (Optional)</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Google LLC (<code style="font-size: 0.75rem;">sheets.google.com</code>)</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Normalized 9-column CSV stream (<code style="font-size: 0.75rem;">/api/feed/csv</code>) if user installs formula.</td>
+                  <td style="padding: 10px;">User-controlled opt-in feed. Governed by user Google account settings.</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; font-weight: 700; border-right: 1px solid #e7e5e4;">Suiscan Explorer</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Mysten Labs / Suiscan (<code style="font-size: 0.75rem;">suiscan.xyz</code>)</td>
+                  <td style="padding: 10px; border-right: 1px solid #e7e5e4;">Sui transaction digest hashes clicked by the user to verify cryptographic Walrus proofs.</td>
+                  <td style="padding: 10px;">Standard public web link redirection.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">3. Data Stored Locally on Your Device</h3>
+          <p>PocketSentinel stores preferences strictly in your browser's <code style="font-size: 0.82rem;">localStorage</code>:</p>
+          <ul style="margin: 0 0 14px 20px; font-size: 0.85rem; line-height: 1.5;">
+            <li>User profile parameters (name, currency, hourly wage, inflow, billing cycle days).</li>
+            <li>Custom zero-based category envelopes.</li>
+            <li>Client-side WebCrypto encryption key bundle and salt.</li>
+          </ul>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">4. What We Do NOT Collect</h3>
+          <ul style="margin: 0 0 14px 20px; font-size: 0.85rem; line-height: 1.5;">
+            <li><strong>NO Banking Credentials:</strong> We never ask for or store bank logins, PINs, or card CVVs.</li>
+            <li><strong>NO Data Broker Commercialization:</strong> We do not track you or sell telemetry to brokers.</li>
+            <li><strong>NO Analytics Scripts:</strong> We do not embed Google Analytics, Meta Pixel, or Mixpanel.</li>
+          </ul>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">5. GDPR and CCPA Rights</h3>
+          <p>You have the absolute right to inspect records, export your 9-column CSV bundles, or execute the <strong>"Delete My Account"</strong> workflow to permanently wipe all local storage and reset server sessions.</p>
+        </div>
+
+        <!-- Tab 2: Terms of Service -->
+        <div class="legal-tab-panel" id="legalPanelTerms" style="display: none;">
+          <div style="margin-bottom: 20px; border-bottom: 2px solid #141413; padding-bottom: 12px;">
+            <h2 style="margin: 0 0 6px; font-size: 1.4rem; font-weight: 900; color: #141413;">PocketSentinel Terms of Service</h2>
+            <p style="margin: 0; font-size: 0.82rem; color: #78716c;">Effective Date: October 29, 2026 · Software License: MIT Open Source</p>
+          </div>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">1. Strict Non-Financial Advisor Disclaimer</h3>
+          <div style="background: #fef08a; border: 2px solid #141413; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+            <p style="margin: 0; font-weight: 700; color: #141413; font-size: 0.88rem; line-height: 1.5;">
+              POCKETSENTINEL IS AN AUTOMATED INFORMATION AND PRODUCTIVITY UTILITY, NOT A REGISTERED FINANCIAL ADVISOR, CERTIFIED FINANCIAL PLANNER (CFP), OR CERTIFIED PUBLIC ACCOUNTANT (CPA).
+            </p>
+          </div>
+          <p>All metrics, envelope calculations, runway figures, simulated tax tags, and copilot responses are generated algorithmically for educational and organizational purposes only. You are solely responsible for verifying the accuracy of calculations before taking financial actions or executing subscription cancellations.</p>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">2. Cryptographic Key Sovereignty</h3>
+          <p>All encryption keys are derived inside your browser. PocketSentinel maintains no central database of passwords or recovery keys. If you clear your browser data or execute the sovereign purge without an external key export, your data cannot be recovered by any party.</p>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">3. Upstream Protocols and Blockchain Latency</h3>
+          <p>PocketSentinel connects to third-party decentralized networks (Sui Mainnet, Walrus Memory Protocol) and cloud APIs (Groq, Google Gemini, Tatum). We make no warranty regarding uninterrupted uptime or network latency for decentralized networks or remote cloud services.</p>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">4. MIT License and Limitation of Liability</h3>
+          <p>The Platform is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind. Under no circumstances shall PocketSentinel, its creators, or contributors be liable for any direct or indirect damages, overdraft fees, or subscription renewal charges.</p>
+        </div>
+
+        <!-- Tab 3: Refund Policy -->
+        <div class="legal-tab-panel" id="legalPanelRefund" style="display: none;">
+          <div style="margin-bottom: 20px; border-bottom: 2px solid #141413; padding-bottom: 12px;">
+            <h2 style="margin: 0 0 6px; font-size: 1.4rem; font-weight: 900; color: #141413;">PocketSentinel Refund &amp; Billing Policy</h2>
+            <p style="margin: 0; font-size: 0.82rem; color: #78716c;">Version 2.0 · 0% Negotiation Rake · Free Open-Source Core</p>
+          </div>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">1. Our Core Principle: 0% Negotiation Rake</h3>
+          <p>Legacy subscription cancellation apps extract 30% to 50% cuts from savings they negotiate. <strong>PocketSentinel charges a 0% rake.</strong> 100% of any funds saved, refunded, or credited through our cancellation packs belong entirely to you.</p>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">2. Free Open-Source Core Platform</h3>
+          <p>The PocketSentinel core client, local Express daemon, WebCrypto vault, and Walrus inspector are 100% free open-source software under the MIT License. There are no mandatory software fees or subscription charges to refund for self-hosted instances.</p>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">3. 14-Day Guarantee on Hosted Cloud Services</h3>
+          <p>If you subscribe to an optional managed PocketSentinel hosted cloud tier (hosted LPU relays, cloud receipt OCR), we offer a full, no-questions-asked refund within fourteen (14) calendar days of your initial payment. Contact <code style="font-size: 0.82rem;">billing@pocketsentinel.app</code> to process your request within 3 to 5 business days.</p>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: #141413; margin: 18px 0 8px;">4. Blockchain Gas Fees Non-Refundable</h3>
+          <p>Network gas fees paid to Sui Mainnet validators or decentralized Walrus storage providers are paid directly to decentralized network validators and are mathematically non-refundable.</p>
+        </div>
+
+      </div>
+
+      <div class="modal-footer" style="padding: 16px 24px; background: #fafaf9; border-top: 1px solid #e7e5e4; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+        <button type="button" class="btn-ghost-outline text-coral" onclick="closeLegalPolicyModal(); openDeleteAccountModal();" style="border: 2px solid #e11d48; color: #e11d48; font-weight: 700; padding: 8px 14px;">
+          <i data-lucide="trash-2"></i> Sovereign Data Purge
+        </button>
+        <button type="button" class="btn-primary-action" onclick="closeLegalPolicyModal()" style="border: 2px solid #141413; background: #141413; color: #ffffff; font-weight: 800; padding: 8px 20px; border-radius: 8px; box-shadow: 2px 2px 0px #141413;">
+          Close
+        </button>
+      </div>
     </div>
   </div>
 

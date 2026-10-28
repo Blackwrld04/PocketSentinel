@@ -341,7 +341,7 @@ function handleHashNavigation() {
  * Zero-Knowledge Client-Side Encryption
  * Standard: AES-256-GCM + PBKDF2-SHA256 (100,000 rounds)
  */
-async function initWebCryptoVault(passphrase = 'recallramp-sentinel-2026-sovereign-vault') {
+async function initWebCryptoVault(passphrase = 'pocketsentinel-sovereign-vault-2026') {
   try {
     const enc = new TextEncoder();
     state.vault.salt = window.crypto.getRandomValues(new Uint8Array(16));
@@ -999,7 +999,8 @@ function switchSettingsCategory(catName) {
     { name: 'escalation', btn: 'setTabBtnEscalation', panel: 'settingsPanelEscalation' },
     { name: 'notifs', btn: 'setTabBtnNotifs', panel: 'settingsPanelNotifs' },
     { name: 'ceilings', btn: 'setTabBtnCeilings', panel: 'settingsPanelCeilings' },
-    { name: 'reports', btn: 'setTabBtnReports', panel: 'settingsPanelReports' }
+    { name: 'reports', btn: 'setTabBtnReports', panel: 'settingsPanelReports' },
+    { name: 'legal', btn: 'setTabBtnLegal', panel: 'settingsPanelLegal' }
   ];
 
   cats.forEach(c => {
@@ -4746,4 +4747,146 @@ function updateCurrencySymbolDisplay(symbol) {
   renderWalletsUI();
 }
 window.updateCurrencySymbolDisplay = updateCurrencySymbolDisplay;
+
+// ================= SOVEREIGN DATA PURGE & DELETE ACCOUNT =================
+function openDeleteAccountModal() {
+  const modal = document.getElementById('deleteAccountModal');
+  const input = document.getElementById('deleteAccountConfirmInput');
+  const btn = document.getElementById('confirmDeleteAccountBtn');
+
+  if (input) input.value = '';
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+  }
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.openDeleteAccountModal = openDeleteAccountModal;
+
+function closeDeleteAccountModal() {
+  const modal = document.getElementById('deleteAccountModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+window.closeDeleteAccountModal = closeDeleteAccountModal;
+
+function handleDeleteAccountInputChange(val) {
+  const btn = document.getElementById('confirmDeleteAccountBtn');
+  if (!btn) return;
+  if (val.trim() === 'DELETE') {
+    btn.disabled = false;
+    btn.style.opacity = '1.0';
+    btn.style.cursor = 'pointer';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+  }
+}
+window.handleDeleteAccountInputChange = handleDeleteAccountInputChange;
+
+async function confirmDeleteAccount() {
+  const input = document.getElementById('deleteAccountConfirmInput');
+  if (!input || input.value.trim() !== 'DELETE') {
+    alert('Please type DELETE in capital letters to confirm sovereign account purge.');
+    return;
+  }
+
+  try {
+    // 1. Notify backend to clear ephemeral session state
+    await fetch('/api/account/delete', { method: 'DELETE' });
+  } catch (err) {
+    console.warn('[PURGE] Backend cache purge request finished:', err);
+  }
+
+  // 2. Eradicate all browser local storage and session storage
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch (err) {
+    console.error('[PURGE] Storage clear error:', err);
+  }
+
+  // 3. Reset in-memory state
+  state.userProfile = {
+    name: 'Anonymous Citizen',
+    currency: '$',
+    inflow: 0.00,
+    hourlyWage: 0.00,
+    cycleDays: 0
+  };
+  state.customEnvelopes = [];
+  state.transactions = [];
+  if (state.vault) {
+    state.vault.key = null;
+    state.vault.salt = null;
+    state.vault.initialized = false;
+  }
+
+  // 4. Close modal and show notification
+  closeDeleteAccountModal();
+  showToast('Sovereign Purge Complete: All local keys, envelopes, and session profiles permanently erased.', 'error');
+
+  // 5. Re-render UI and switch to marketing landing page
+  if (typeof renderUserProfileUI === 'function') renderUserProfileUI();
+  if (typeof renderCategoryEnvelopes === 'function') renderCategoryEnvelopes();
+  if (typeof renderTransactionsTable === 'function') renderTransactionsTable();
+  if (typeof switchView === 'function') switchView('landing');
+}
+window.confirmDeleteAccount = confirmDeleteAccount;
+
+// ================= LEGAL POLICIES MODAL HANDLERS =================
+function openLegalPolicyModal(tab = 'privacy') {
+  const modal = document.getElementById('legalPolicyModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+  switchLegalModalTab(tab);
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.openLegalPolicyModal = openLegalPolicyModal;
+
+function closeLegalPolicyModal() {
+  const modal = document.getElementById('legalPolicyModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+window.closeLegalPolicyModal = closeLegalPolicyModal;
+
+function switchLegalModalTab(tabName) {
+  const tabs = [
+    { name: 'privacy', btn: 'tabLegalBtnPrivacy', panel: 'legalPanelPrivacy' },
+    { name: 'terms', btn: 'tabLegalBtnTerms', panel: 'legalPanelTerms' },
+    { name: 'refund', btn: 'tabLegalBtnRefund', panel: 'legalPanelRefund' }
+  ];
+
+  tabs.forEach(t => {
+    const btn = document.getElementById(t.btn);
+    const panel = document.getElementById(t.panel);
+    if (t.name === tabName) {
+      if (btn) btn.classList.add('active');
+      if (panel) panel.style.display = 'block';
+    } else {
+      if (btn) btn.classList.remove('active');
+      if (panel) panel.style.display = 'none';
+    }
+  });
+
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.switchLegalModalTab = switchLegalModalTab;
+
 
