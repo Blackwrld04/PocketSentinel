@@ -246,15 +246,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ================= VIEW SWITCHER =================
 function switchView(viewId) {
-  viewId = 'app';
-  state.currentView = 'app';
+  if (viewId !== 'landing') viewId = 'app';
+  state.currentView = viewId;
 
   const appView = document.getElementById('viewApp');
-  if (appView) appView.classList.add('active');
-
+  const landingView = document.getElementById('viewLanding');
+  const marketingHeader = document.getElementById('marketingHeaderBar');
   const appHeader = document.getElementById('appHeaderBar');
-  document.body.classList.add('in-app-view');
-  if (appHeader) appHeader.style.display = 'flex';
+
+  if (viewId === 'landing') {
+    document.body.classList.remove('in-app-view');
+    document.body.classList.add('in-landing-view');
+    if (landingView) {
+      landingView.style.display = 'block';
+      landingView.classList.add('active');
+    }
+    if (appView) {
+      appView.style.display = 'none';
+      appView.classList.remove('active');
+    }
+    if (marketingHeader) marketingHeader.style.display = 'flex';
+    if (appHeader) appHeader.style.display = 'none';
+  } else {
+    document.body.classList.remove('in-landing-view');
+    document.body.classList.add('in-app-view');
+    if (appView) {
+      appView.style.display = 'block';
+      appView.classList.add('active');
+    }
+    if (landingView) {
+      landingView.style.display = 'none';
+      landingView.classList.remove('active');
+    }
+    if (marketingHeader) marketingHeader.style.display = 'none';
+    if (appHeader) appHeader.style.display = 'flex';
+  }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -263,15 +289,41 @@ function switchView(viewId) {
     setTimeout(() => window.lucide.createIcons(), 50);
   }
 
-  // Auto-render core components in app view
-  if (typeof renderUserProfileUI === 'function') renderUserProfileUI();
-  if (typeof renderAuditRecords === 'function') renderAuditRecords(state.auditResults);
-  if (typeof renderSpendCalendar === 'function') renderSpendCalendar();
-  if (typeof renderPlanSubscriptionsLedger === 'function') renderPlanSubscriptionsLedger();
+  if (viewId === 'app') {
+    // Auto-render core components in app view
+    if (typeof renderUserProfileUI === 'function') renderUserProfileUI();
+    if (typeof renderAuditRecords === 'function') renderAuditRecords(state.auditResults);
+    if (typeof renderSpendCalendar === 'function') renderSpendCalendar();
+    if (typeof renderPlanSubscriptionsLedger === 'function') renderPlanSubscriptionsLedger();
+  }
 }
+window.switchView = switchView;
+
+function scrollToSection(id) {
+  if (state.currentView !== 'landing') {
+    switchView('landing');
+  }
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 100);
+}
+window.scrollToSection = scrollToSection;
 
 function handleHashNavigation() {
   const hash = window.location.hash.replace('#', '');
+  if (['landing', 'heroSection', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash)) {
+    switchView('landing');
+    if (hash !== 'landing') {
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    return;
+  }
   switchView('app');
   if (['wallets', 'plan', 'safespend', 'envelopes', 'receipts', 'settings', 'subscriptions', 'alerts', 'trials', 'disputes', 'transactions'].includes(hash)) {
     if (typeof filterAppView === 'function') {

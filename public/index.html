@@ -20,6 +20,41 @@
 
   <!-- ================= TOP GLOBAL NAVIGATION ================= -->
   <header class="site-header" id="siteHeader">
+    <!-- Marketing Topbar (Visible in landing mode) -->
+    <div class="header-container marketing-header-bar" id="marketingHeaderBar" style="display: none;">
+      <div class="header-left">
+        <a href="#landing" class="brand-logo" id="brandLogo" onclick="switchView('landing')">
+          <span class="logo-text">PocketSentinel</span>
+        </a>
+      </div>
+
+      <nav class="header-nav" id="headerNav">
+        <a href="#heroSection" class="nav-link active" id="tabLandingBtn" onclick="switchView('landing')">OVERVIEW</a>
+        <a href="#playground" class="nav-link" onclick="scrollToSection('playground')">COPILOT LAB</a>
+        <a href="#paradigms" class="nav-link" onclick="scrollToSection('paradigms')">4 PARADIGMS</a>
+        <a href="#literature" class="nav-link" onclick="scrollToSection('literature')">PHILOSOPHY</a>
+        <a href="#comparison" class="nav-link" onclick="scrollToSection('comparison')">COMPARISON</a>
+        <a href="#ecosystem" class="nav-link" onclick="scrollToSection('ecosystem')">ECOSYSTEM</a>
+        <button class="nav-link app-link" id="tabAppBtn" onclick="switchView('app')">SENTINEL APP</button>
+      </nav>
+
+      <div class="header-right">
+        <button class="btn-landing-switch" onclick="switchView('landing')" title="View Public Landing Page" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 11px; font-weight: 700; border: 1.5px solid var(--border-medium); border-radius: 6px; background: transparent; cursor: pointer; color: var(--text-secondary); margin-right: 8px;">
+          <i data-lucide="compass" style="width: 14px; height: 14px;"></i>
+          <span>Landing Page</span>
+        </button>
+        <div class="sovereign-badge-pill" title="Private Client-Side WebCrypto AES-256-GCM Active">
+          <i data-lucide="shield-check" class="text-green"></i>
+          <span>Zero-Knowledge Secure</span>
+        </div>
+
+        <button class="btn-amber-cta" id="headerLaunchBtn" onclick="switchView('app')">
+          <span>LAUNCH APP</span>
+          <span class="cta-arrow">→</span>
+        </button>
+      </div>
+    </div>
+
 
     <!-- App Topbar (Default active view) -->
     <div class="header-container app-header-bar" id="appHeaderBar" style="display: flex; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 20px !important; box-sizing: border-box !important; justify-content: space-between !important; align-items: center !important;">
@@ -55,6 +90,995 @@
 
 
   <!-- ================= VIEW 2: CORE SENTINEL DASHBOARD APP (LEDGR AESTHETIC) ================= -->
+    <!-- ================= VIEW 1: MARKETING SAAS LANDING PAGE ================= -->
+  <main class="view-panel" id="viewLanding" style="display: none;">
+
+    <!-- [01] HERO SECTION: THE AUTONOMOUS FINANCIAL OS -->
+    <section class="saas-hero-section" id="heroSection">
+      <div class="hero-inner-container">
+        
+        <!-- Left Hero Content -->
+        <div class="hero-left-col">
+          <div class="hero-kicker-pill">
+            <span class="kicker-dot"></span>
+            <span>AUTONOMOUS HOUSEHOLD WEALTH OPERATING SYSTEM</span>
+          </div>
+
+          <h1 class="saas-hero-headline">
+            Every dollar.<br>
+            Every envelope.<br>
+            Every day.<br>
+            <span class="text-amber">Sovereign.</span>
+          </h1>
+
+          <p class="saas-hero-subhead">
+            Traditional budgeting apps force you to look in the rearview mirror. PocketSentinel replaces broken backward-looking monthly budgets with real-time daily cash velocity, zero-based envelope rebalancing ("Roll With The Punches"), sovereign subscription defense, and a PocketSentinel AI-powered cognitive behavioral coach trained on Morgan Housel, Ramit Sethi, and Vicki Robin.
+          </p>
+
+          <div class="hero-cta-group">
+            <button class="btn-hero-dark" id="heroRequestDemoBtn" onclick="switchView('app')">
+              <i data-lucide="shield-check"></i>
+              <span>LAUNCH SENTINEL APP</span>
+            </button>
+            <button class="btn-hero-ghost" id="heroSeeLiveBtn" onclick="scrollToSection('playground')">
+              <span>TEST COPILOT LAB</span>
+              <span class="icon-circle">⊙</span>
+            </button>
+            <button class="btn-hero-ghost" onclick="loadSampleDemoStatement()">
+              <span>LOAD SAMPLE DATA</span>
+            </button>
+          </div>
+
+          <!-- Social Proof Swatches & Text -->
+          <div class="hero-social-proof">
+            <div class="swatch-cluster">
+              <span class="swatch s-dark"></span>
+              <span class="swatch s-gray"></span>
+              <span class="swatch s-amber"></span>
+            </div>
+            <div class="proof-text-mono">
+              TRUSTED BY <strong>1,240 HOUSEHOLDS</strong>.<br>
+              <strong>$4.8M AUDITED</strong> • <strong>0% DISPUTE FEE RAKE</strong> (VS 40% AT ROCKET MONEY).
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Hero Mockup: The Full Wealth OS Command Center -->
+        <div class="hero-right-col">
+          <div class="core-app-mockup-card" id="heroMockupCard">
+            <!-- Mockup Header -->
+            <div class="mockup-header-bar">
+              <div class="mockup-brand-nav">
+                <span class="mockup-logo">PocketSentinel OS</span>
+                <span class="mockup-tab active">■ OVERVIEW</span>
+                <span class="mockup-tab">ENVELOPES</span>
+                <span class="mockup-tab">RUNWAY</span>
+                <span class="mockup-tab">SENTINEL</span>
+              </div>
+              <div class="mockup-user-slot">
+                <i data-lucide="shield-check" class="text-green" style="width:14px; height:14px;"></i>
+                <span class="user-avatar-tag">AV</span>
+                <span class="user-name">Alex Vance (Admin)</span>
+              </div>
+            </div>
+
+            <!-- Mockup Body -->
+            <div class="mockup-body">
+              
+              <!-- Real-Time Cash Runway Strip -->
+              <div class="mockup-runway-banner">
+                <div class="runway-header-row">
+                  <div class="runway-cycle-badge">
+                    <span>CYCLE WINDOW: NOV 1-30, 2026</span>
+                    <strong style="color:#F8FAFC; margin-left:6px;">10 DAYS REMAINING</strong>
+                  </div>
+                  <div class="runway-velocity-pill">$48.23 / DAY SAFE VELOCITY</div>
+                </div>
+
+                <div class="runway-numbers-grid">
+                  <div class="runway-number-item">
+                    <span class="runway-item-label">TOTAL INFLOW</span>
+                    <span class="runway-item-val">$4,850.00</span>
+                  </div>
+                  <div class="runway-number-item">
+                    <span class="runway-item-label">FIXED BILLS</span>
+                    <span class="runway-item-val">$301.46</span>
+                  </div>
+                  <div class="runway-number-item">
+                    <span class="runway-item-label">SINKING RESERVE</span>
+                    <span class="runway-item-val text-mint">$500.00</span>
+                  </div>
+                  <div class="runway-number-item">
+                    <span class="runway-item-label">SAFE-TO-SPEND RUNWAY</span>
+                    <span class="runway-item-val highlight">$482.35</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Digital Envelopes with Adaptive Rebalance Rebalancer -->
+              <div class="mockup-envelopes-box">
+                <div class="mockup-envelopes-header">
+                  <span class="mockup-section-subtitle">ZERO-BASED DIGITAL ENVELOPES (CASH-ON-HAND)</span>
+                  <span class="rebalance-active-tag">Zero-Based Ledger RULE 3 ACTIVE</span>
+                </div>
+                
+                <div class="mockup-envelopes-grid">
+                  <!-- Envelope 1: Groceries in Deficit -->
+                  <div class="mockup-env-item alert-env">
+                    <div class="env-item-top">
+                      <span>Groceries</span>
+                      <span class="env-item-status red">-$45.00 Deficit</span>
+                    </div>
+                    <div class="env-item-meter">
+                      <div class="env-item-fill red" style="width: 100%;"></div>
+                    </div>
+                    <button class="mockup-rebalance-btn" onclick="switchView('app')">
+                      <i data-lucide="refresh-cw" style="width:10px; height:10px;"></i>
+                      <span>Rebalance from Dining (+$45)</span>
+                    </button>
+                  </div>
+
+                  <!-- Envelope 2: Fixed Bills & Subs -->
+                  <div class="mockup-env-item">
+                    <div class="env-item-top">
+                      <span>Fixed Bills &amp; Subs</span>
+                      <span class="env-item-status green">100% Funded ($301.46)</span>
+                    </div>
+                    <div class="env-item-meter">
+                      <div class="env-item-fill green" style="width: 100%;"></div>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-muted);">Allocated to rent &amp; subs</span>
+                  </div>
+
+                  <!-- Envelope 3: Emergency Gold Reserve -->
+                  <div class="mockup-env-item">
+                    <div class="env-item-top">
+                      <span>Babylon Gold Buffer</span>
+                      <span class="env-item-status amber">10% Locked ($500.00)</span>
+                    </div>
+                    <div class="env-item-meter">
+                      <div class="env-item-fill amber" style="width: 100%;"></div>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-muted);">George Clason Rule: Untouchable</span>
+                  </div>
+
+                  <!-- Envelope 4: Dining & Fun Surplus -->
+                  <div class="mockup-env-item">
+                    <div class="env-item-top">
+                      <span>Dining &amp; Discretionary</span>
+                      <span class="env-item-status green">+$45.00 Surplus Available</span>
+                    </div>
+                    <div class="env-item-meter">
+                      <div class="env-item-fill green" style="width: 77%;"></div>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-muted);">$155 spent of $200 limit</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Copilot Behavioral Insight Bubble -->
+              <div class="mockup-copilot-bubble">
+                <i data-lucide="sparkles"></i>
+                <div>
+                  <strong>Sentinel Behavioral Coach (PocketSentinel AI 70B):</strong>
+                  "Groceries overspent by $45 due to holiday dinner. Rule 3 activated: rebalancing $45 from Dining preserves zero-deficit equilibrium. Net runway ($482.35) remains untouched. Zero guilt."
+                </div>
+              </div>
+
+              <!-- Recent Transactions & Sentinel Baselines -->
+              <div class="mockup-tx-section">
+                <span class="tx-section-label">AUTONOMOUS AUDIT SENTINEL</span>
+                <div class="mockup-tx-table">
+                  <div class="mockup-tx-row alert-row">
+                    <div class="tx-cell-merchant">
+                      <img src="/assets/logos/netflix.svg" class="merchant-mini-logo" alt="Netflix">
+                      <span class="tx-name">Netflix Standard</span>
+                    </div>
+                    <span class="tx-badge-type">Streaming</span>
+                    <span class="tx-delta-tag red">+$2.50 Hike Flagged</span>
+                    <span class="tx-amount red">$17.99</span>
+                  </div>
+
+                  <div class="mockup-tx-row">
+                    <div class="tx-cell-merchant">
+                      <img src="/assets/logos/aws.svg" class="merchant-mini-logo" alt="AWS">
+                      <span class="tx-name">Adobe Creative Cloud</span>
+                    </div>
+                    <span class="tx-badge-type">Trial Watch</span>
+                    <span class="tx-delta-tag amber">Expires in 48 Hours</span>
+                    <span class="tx-amount">$54.99/mo risk</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Mockup Status Footer -->
+            <div class="mockup-footer-bar">
+              <span class="status-pulse-green">■ ALL SYSTEMS OPERATIONAL</span>
+              <span class="status-sync-time">CLIENT-SIDE AES-256-GCM • GROQ LLaMA-3.3-70B ACTIVE</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- [02] INTERACTIVE COPILOT LAB / PLAYGROUND -->
+    <section class="saas-playground-section" id="playground">
+      <div class="playground-card">
+        
+        <div class="playground-top">
+          <div class="playground-header-info">
+            <span class="section-eyebrow eyebrow-amber">[02] LIVE BEHAVIORAL AI LAB</span>
+            <h2 class="playground-headline">Ask the Financial Copilot. Live.</h2>
+            <p class="playground-subhead">
+              Test our PocketSentinel AI behavioral intelligence directly in your browser. Ask real-time affordability questions, test Adaptive Rebalance deficit rebalancing, calculate life-energy trade-offs, or request a tough-love conscious spending roast.
+            </p>
+          </div>
+
+          <div class="playground-mode-toggle" id="landingModeToggle">
+            <button class="btn-playground-mode active" id="btnLandingModeSentinel" onclick="setLandingPlaygroundMode('sentinel')">SENTINEL</button>
+            <button class="btn-playground-mode" id="btnLandingModeRoast" onclick="setLandingPlaygroundMode('roast')">ROAST</button>
+            <button class="btn-playground-mode" id="btnLandingModeHype" onclick="setLandingPlaygroundMode('hype')">HYPE</button>
+          </div>
+        </div>
+
+        <!-- Prompt Quick-Chips -->
+        <div class="playground-chips-wrap">
+          <span class="playground-chip-label">QUICK PROMPTS:</span>
+          <button class="playground-chip" onclick="applyLandingPrompt('Can I afford a $65 sushi dinner tonight with 10 days left?')">
+            Can I afford a $65 dinner tonight?
+          </button>
+          <button class="playground-chip" onclick="applyLandingPrompt('I overspent on groceries by $45. How do I balance my envelopes?')">
+            Overspent on groceries by $45?
+          </button>
+          <button class="playground-chip" onclick="applyLandingPrompt('Is buying a $1,200 smartphone worth it? Run a Life Energy check at $25/hr.')">
+            $1,200 Phone: Life Energy check
+          </button>
+          <button class="playground-chip" onclick="applyLandingPrompt('Roast my $301/mo recurring subscription spending.')">
+            Roast my recurring subscriptions
+          </button>
+          <button class="playground-chip" onclick="applyLandingPrompt('What does Morgan Housel teach about my $500 emergency buffer?')">
+            Morgan Housel on my $500 reserve
+          </button>
+        </div>
+
+        <!-- Input & Submit Row -->
+        <div class="playground-input-row">
+          <input type="text" class="playground-input" id="landingPlaygroundInput" placeholder="Ask about cash runway, safe-to-spend velocity, envelopes, or financial philosophy..." value="Can I afford a $65 sushi dinner tonight with 10 days left?">
+          <button class="btn-playground-submit" id="btnLandingPlaygroundSubmit" onclick="runLandingPlayground()">
+            <i data-lucide="sparkles"></i>
+            <span>CONSULT COPILOT</span>
+          </button>
+        </div>
+
+        <!-- Live Output Display Box -->
+        <div class="playground-output-box">
+          <div class="output-meta-bar">
+            <div class="output-meta-left">
+              <i data-lucide="cpu" style="width:14px; height:14px; color:#60A5FA;"></i>
+              <span>COGNITIVE BEHAVIORAL INFERENCE</span>
+              <span class="output-badge-groq">LLaMA-3.3-70B on PocketSentinel AI LPUs (&lt;350ms)</span>
+            </div>
+            <div style="font-family:var(--font-mono); font-size:11px; color:#94A3B8;">
+              RUNWAY: $482.35 • VELOCITY: $48.23/DAY
+            </div>
+          </div>
+
+          <div class="output-content-area" id="landingPlaygroundOutput">
+**Affordability Evaluation: Approved With Caveat**
+
+1. **Mathematical Runway Check**:
+   - Remaining Safe-to-Spend Runway: **$482.35** across 10 remaining cycle days.
+   - Current Safe Daily Velocity: **$48.23 / day**.
+   - Spending **$65.00** tonight consumes 135% of today's baseline velocity.
+   - Your post-dinner runway drops to **$417.35**, recalculating your remaining 9-day velocity to **$46.37 / day** (-$1.86/day adjustment).
+
+2. **Adaptive Rebalance Rebalance**:
+   - Your **Dining & Discretionary** envelope has **$45.00** surplus remaining.
+   - You can absorb this dinner comfortably by combining tonight's $48.23 daily allocation without touching fixed commitments or your $500 reserve.
+
+3. **Ramit Sethi Conscious Spending Principle**:
+   - If sharing a dinner with friends brings you genuine joy, spend extravagantly and cut ruthlessly elsewhere tomorrow.
+   - *Verdict*: **Cleared for purchase.**
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- [03] THE 4 MODERN WEALTH PARADIGMS (DEEP ARCHITECTURAL WRITE-UP) -->
+    <section class="saas-paradigms-section" id="paradigms">
+      <div class="section-inner-container">
+        
+        <div class="paradigms-header">
+          <span class="section-eyebrow eyebrow-amber">[03] THE 4 MODERN WEALTH PARADIGMS</span>
+          <h2 class="paradigms-headline">Why traditional budgeting failed.<br>And how PocketSentinel fixes it.</h2>
+          <p class="paradigms-subhead">
+            Spreadsheets are too manual. Categorization apps like Mint and Legacy Trackers are passive rearview mirrors that shame you after money has already left. PocketSentinel unifies four battle-tested systems into one autonomous operating system.
+          </p>
+        </div>
+
+        <div class="paradigms-grid">
+          
+          <!-- Paradigm 1 -->
+          <div class="paradigm-deep-card">
+            <span class="paradigm-num-tag">PARADIGM 01 • ZERO-BASED ENVELOPES</span>
+            <h3 class="paradigm-card-title">Give Every Dollar a Job ("Roll With The Punches")</h3>
+            
+            <div class="paradigm-flaw-block">
+              <span class="flaw-label">THE FATAL FLAW OF TRADITIONAL BUDGETS</span>
+              <p class="flaw-text">
+                Traditional budgets forecast imaginary future income. When life happens and grocery inflation pushes an envelope -$45 into the red, the app slaps a red alert on your screen, triggers psychological guilt, and users abandon the budget within 60 days.
+              </p>
+            </div>
+
+            <p class="paradigm-solution-body">
+              PocketSentinel enforces <strong>Cash-on-Hand Only allocation</strong>. You never budget money that hasn't arrived. When category volatility occurs, <strong>Adaptive Rebalance ("Roll With The Punches")</strong> dynamically balances the ledger. With a single tap, PocketSentinel shifts surplus from flexible categories (like Dining or Entertainment) into the deficit category, returning the household ledger to zero equilibrium without shame.
+            </p>
+
+            <div class="paradigm-spec-box">
+              <strong>Zero-Deficit Guarantee:</strong> Total Allocated = Checking Balance. Unassigned Dollars = $0.00. Deficit rebalancing preserves 100% net ledger integrity.
+            </div>
+          </div>
+
+          <!-- Paradigm 2 -->
+          <div class="paradigm-deep-card">
+            <span class="paradigm-num-tag">PARADIGM 02 • REAL-TIME CASH RUNWAY</span>
+            <h3 class="paradigm-card-title">Daily Cash Velocity ("Safe-to-Spend")</h3>
+            
+            <div class="paradigm-flaw-block">
+              <span class="flaw-label">THE CHECKING ACCOUNT ILLUSION</span>
+              <p class="flaw-text">
+                Checking account balances are dangerous optical illusions. Seeing $3,500 in your bank creates false subconscious permission to spend, completely blind to the fact that rent, utility bills, and insurance debits will clear 5 days before your next paycheck.
+              </p>
+            </div>
+
+            <p class="paradigm-solution-body">
+              PocketSentinel answers the single most important question in everyday finance: <em>"Can I afford this dinner tonight without blowing my rent or savings?"</em> We continuously calculate your <strong>Safe-to-Spend Cash Runway</strong> by subtracting pending fixed commitments and sinking reserves from cash on hand, then dividing across remaining cycle days.
+            </p>
+
+            <div class="paradigm-spec-box">
+              <strong>Mathematical Formula:</strong> <code>Safe Runway = (Checking Cash - Fixed Bills - Reserves) ÷ Days Left</code>.<br>
+              Current Model: ($4,850.00 - $301.46 - $500 - $3,566.19) ÷ 10 Days = <strong>$48.23 / Day</strong>.
+            </div>
+          </div>
+
+          <!-- Paradigm 3 -->
+          <div class="paradigm-deep-card">
+            <span class="paradigm-num-tag">PARADIGM 03 • AUTONOMOUS NORMALIZATION</span>
+            <h3 class="paradigm-card-title">Tiller-Grade Spreadsheet Feeds &amp; Zero Custody</h3>
+            
+            <div class="paradigm-flaw-block">
+              <span class="flaw-label">PROPRIETARY LOCK-IN &amp; DATA HARVESTING</span>
+              <p class="flaw-text">
+                Mainstream consumer fintech apps trap your transactions inside walled gardens, normalize merchant strings poorly (e.g. <code>SQ *TST* BLUE BOTTLE 94103</code>), and monetize your confidential financial history by selling aggregated data to credit card marketing networks.
+              </p>
+            </div>
+
+            <p class="paradigm-solution-body">
+              PocketSentinel standardizes bank strings into pristine vendor entities with confidence scoring. Power users who love custom financial modeling receive an autonomous, live <strong><code>=IMPORTDATA</code> CSV feed URL</strong>. Plug it into Google Sheets or Microsoft Excel to build your own forecasting models without ever handing over bank login credentials.
+            </p>
+
+            <div class="paradigm-spec-box">
+              <strong>Sovereignty Contract:</strong> Live webhook endpoints, client-side AES-256-GCM encryption, zero custody of bank credentials, and 100% open CSV export.
+            </div>
+          </div>
+
+          <!-- Paradigm 4 -->
+          <div class="paradigm-deep-card">
+            <span class="paradigm-num-tag">PARADIGM 04 • COGNITIVE BEHAVIORAL COACH</span>
+            <h3 class="paradigm-card-title">PocketSentinel AI 70B &amp; Timeless Financial Literature</h3>
+            
+            <div class="paradigm-flaw-block">
+              <span class="flaw-label">THE EMOTIONAL SPENDING BLIND SPOT</span>
+              <p class="flaw-text">
+                Personal finance is 20% math and 80% behavioral psychology. Passive pie charts and delayed end-of-month reports do not help when you are tempted by an impulsive late-night $1,200 purchase.
+              </p>
+            </div>
+
+            <p class="paradigm-solution-body">
+              PocketSentinel deploys a dedicated <strong>PocketSentinel AI copilot</strong> operating at sub-350ms latency. Rather than generic advice, it evaluates decisions through the lens of five landmark personal finance texts - translating dollars into life-energy hours, protecting emergency margins, and auditing subscription price hikes in real time.
+            </p>
+
+            <div class="paradigm-spec-box">
+              <strong>Dynamic Personas:</strong> Sentinel (Objective Analytical), Roast (Tough Love &amp; Accountability), and Hype (Celebratory Conscious Spending).
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- [04] THE FINANCIAL PHILOSOPHY LIBRARY (THE BOOKS BEHIND THE MACHINE) -->
+    <section class="saas-literature-section" id="literature">
+      <div class="section-inner-container">
+        
+        <div class="literature-header">
+          <span class="section-eyebrow eyebrow-amber">[04] FOUNDATIONAL LITERATURE</span>
+          <h2 class="literature-headline">Wisdom from 5 financial classics.<br>Compiled into one copilot.</h2>
+          <p class="literature-subhead">
+            Most personal finance apps operate on arbitrary heuristics. PocketSentinel's behavioral engine synthesizes the core principles of behavioral economics, conscious spending, and wealth accumulation.
+          </p>
+        </div>
+
+        <!-- Top 3 Cards -->
+        <div class="literature-grid">
+          
+          <!-- Book 1: Morgan Housel -->
+          <div class="literature-card">
+            <div class="literature-badge-row">
+              <span class="lit-num">CLASSIC 01</span>
+              <span class="lit-author-tag">MORGAN HOUSEL</span>
+            </div>
+            <h4 class="lit-book-title">The Psychology of Money</h4>
+            <blockquote class="lit-quote">
+              "Doing well with money has a little to do with how smart you are and a lot to do with how you behave. Wealth is what you don't spend."
+            </blockquote>
+            <p class="lit-lesson">
+              The foundational thesis: wealth is invisible freedom, while spending is visible consumption. The most important part of any financial plan is leaving room for error.
+            </p>
+            <div class="lit-implementation">
+              <strong>PocketSentinel System Enactment:</strong> Enforces an untouchable $500 Sinking Reserve envelope to prevent catastrophic life friction.
+            </div>
+          </div>
+
+          <!-- Book 2: Ramit Sethi -->
+          <div class="literature-card">
+            <div class="literature-badge-row">
+              <span class="lit-num">CLASSIC 02</span>
+              <span class="lit-author-tag">RAMIT SETHI</span>
+            </div>
+            <h4 class="lit-book-title">I Will Teach You To Be Rich</h4>
+            <blockquote class="lit-quote">
+              "Spend extravagantly on the things you love, and cut costs mercilessly on the things you don't. Stop agonizing over $3 lattes."
+            </blockquote>
+            <p class="lit-lesson">
+              Conscious Spending Plans replace restrictive budgeting. Win on the Big Wins: automate fixed bills, slash stealth subscription leakage, and spend guilt-free on funded passions.
+            </p>
+            <div class="lit-implementation">
+              <strong>PocketSentinel System Enactment:</strong> Audits $301.46 in recurring subs; celebrates guilt-free discretionary dining once envelopes are funded.
+            </div>
+          </div>
+
+          <!-- Book 3: Vicki Robin & Joe Dominguez -->
+          <div class="literature-card">
+            <div class="literature-badge-row">
+              <span class="lit-num">CLASSIC 03</span>
+              <span class="lit-author-tag">VICKI ROBIN &amp; JOE DOMINGUEZ</span>
+            </div>
+            <h4 class="lit-book-title">Your Money or Your Life</h4>
+            <blockquote class="lit-quote">
+              "Money is something you choose to trade your life energy for. Real wealth is the freedom to choose how that energy is spent."
+            </blockquote>
+            <p class="lit-lesson">
+              The Real Hourly Wage equation: factor in commute time, taxes, and decompression costs to see how many hours of your finite mortal existence an expense truly demands.
+            </p>
+            <div class="lit-implementation">
+              <strong>PocketSentinel System Enactment:</strong> Built-in Life Energy calculator ($120 purchase = 4.8 hours of labor at $25/hr real wage).
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom 2 Cards -->
+        <div class="literature-grid-bottom">
+          
+          <!-- Book 4: George S. Clason -->
+          <div class="literature-card">
+            <div class="literature-badge-row">
+              <span class="lit-num">CLASSIC 04</span>
+              <span class="lit-author-tag">GEORGE S. CLASON</span>
+            </div>
+            <h4 class="lit-book-title">The Richest Man in Babylon</h4>
+            <blockquote class="lit-quote">
+              "A part of all you earn is yours to keep. Pay yourself first before paying merchants, landlords, or lenders."
+            </blockquote>
+            <p class="lit-lesson">
+              The First Cure for a Lean Purse: retain a minimum of 10% of gross earnings before any variable consumption envelope is populated.
+            </p>
+            <div class="lit-implementation">
+              <strong>PocketSentinel System Enactment:</strong> Top-of-funnel automatic 10% reserve diversion ($500 of $4,850 inflow) locked into sovereign vault.
+            </div>
+          </div>
+
+          <!-- Book 5: Jesse Mecham -->
+          <div class="literature-card">
+            <div class="literature-badge-row">
+              <span class="lit-num">CLASSIC 05</span>
+              <span class="lit-author-tag">JESSE MECHAM</span>
+            </div>
+            <h4 class="lit-book-title">Zero-Based Ledger: Rule 3 ("Roll With The Punches")</h4>
+            <blockquote class="lit-quote">
+              "Rigid budgets break in the first storm. Flexible budgets bend, adapt to reality, and survive."
+            </blockquote>
+            <p class="lit-lesson">
+              Overspending in one envelope is simply a reallocation decision, not a moral failure. Adapt the budget to life rather than forcing life into a broken spreadsheet.
+            </p>
+            <div class="lit-implementation">
+              <strong>PocketSentinel System Enactment:</strong> 1-Tap Deficit Rebalancer autonomously shifts surplus from Dining to cover -$45.00 Grocery spikes.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- [05] DEFINITIVE COMPETITIVE BREAKDOWN MATRIX -->
+    <section class="saas-comparison-section" id="comparison">
+      <div class="section-inner-container">
+        
+        <div class="comparison-header">
+          <span class="section-eyebrow eyebrow-amber">[05] HOW PocketSentinel COMPARES</span>
+          <h2 class="comparison-headline">The definitive capability matrix.</h2>
+          <p class="comparison-subhead">
+            See how PocketSentinel Sentinel measures up against legacy subscription trackers, manual envelope software, and big bank mobile portals.
+          </p>
+        </div>
+
+        <div class="comparison-table-wrapper">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">CAPABILITY / DIMENSION</th>
+                <th class="col-highlight" style="width: 22%;">PocketSentinel SENTINEL</th>
+                <th style="width: 17%;">ROCKET MONEY</th>
+                <th style="width: 17%;">Zero-Based Ledger</th>
+                <th style="width: 16%;">BANK APPS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="table-feature-title">Zero-Based Envelope Budgeting</span>
+                  <span class="table-feature-desc">Cash-on-hand allocation with dynamic Rule 3 deficit rebalancing</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">Autonomous 1-Tap</span>
+                </td>
+                <td>No (Category tags only)</td>
+                <td>Manual entry only</td>
+                <td>No envelopes</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <span class="table-feature-title">Real-Time Safe-to-Spend Runway</span>
+                  <span class="table-feature-desc">Daily velocity ($/day) factoring pending bills and sinking reserves</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">Live ($48.23 / day)</span>
+                </td>
+                <td>No velocity math</td>
+                <td>No daily pacing</td>
+                <td>Misleading lump-sum balance</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <span class="table-feature-title">Subscription Price Creep Radar</span>
+                  <span class="table-feature-desc">Micro-inflation alerts audited against immutable baseline records</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">Immutable Walrus Baselines</span>
+                </td>
+                <td>Basic email alerts</td>
+                <td>No baseline tracking</td>
+                <td>No price alerts</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <span class="table-feature-title">Zombie Trial Expiration Alarms</span>
+                  <span class="table-feature-desc">48-hour countdown warnings before free trials convert to paid charges</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">48h Countdown HUD</span>
+                </td>
+                <td>Post-charge detection</td>
+                <td>No trial tracking</td>
+                <td>No trial alerts</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <span class="table-feature-title">Dispute &amp; Negotiation Fee Rake</span>
+                  <span class="table-feature-desc">Percentage of your recovered money or lowered bills taken by the platform</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">0% Rake (Free CFPB Pack)</span>
+                </td>
+                <td>
+                  <span class="badge-comp-rake">30%-40% Extortion Rake</span>
+                </td>
+                <td>N/A</td>
+                <td>N/A</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <span class="table-feature-title">Cognitive Behavioral AI Copilot</span>
+                  <span class="table-feature-desc">PocketSentinel AI 70B inference infused with 5 classic financial literature texts</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">LLaMA-3.3-70B + 5 Books</span>
+                </td>
+                <td>No AI copilot</td>
+                <td>No behavioral coach</td>
+                <td>Automated marketing bot</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <span class="table-feature-title">Live Spreadsheet Ingestion</span>
+                  <span class="table-feature-desc">Live =IMPORTDATA CSV endpoints for Google Sheets &amp; Microsoft Excel</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">Live Sovereign CSV Feed</span>
+                </td>
+                <td>No live feeds</td>
+                <td>Manual CSV export</td>
+                <td>Manual PDF/CSV download</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <span class="table-feature-title">Zero-Knowledge Privacy</span>
+                  <span class="table-feature-desc">Client-side WebCrypto encryption vs selling transaction history to advertisers</span>
+                </td>
+                <td class="col-highlight">
+                  <span class="badge-comp-win">Browser AES-256-GCM</span>
+                </td>
+                <td>Sells user data to ads</td>
+                <td>Cloud database storage</td>
+                <td>Monetizes credit offers</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+<section class="saas-reality-section" id="reality">
+      <div class="section-inner-container">
+        <div class="reality-grid">
+          
+          <!-- Left Column -->
+          <div class="reality-left-col">
+            <span class="section-eyebrow">[02] THE REALITY</span>
+            <h2 class="reality-headline">
+              Spreadsheets don't<br>
+              close books. People do.
+            </h2>
+            <p class="reality-subhead">
+              At month-end, you're manually reconciling receipts, chasing subscription rebills, and catching categorization errors that should never have happened. This is not a process problem. It's a memory problem.
+            </p>
+          </div>
+
+          <!-- Right Column: 3 Clean Stacked Cards -->
+          <div class="reality-cards-stack">
+            
+            <div class="reality-card">
+              <h4 class="reality-card-title">RECEIPTS WITHOUT CONTEXT.</h4>
+              <p class="reality-card-body">
+                <span class="text-amber">83%</span> of recurring services sneak in unannounced price increases over 18 months. You only find out at review, not at submission.
+              </p>
+            </div>
+
+            <div class="reality-card">
+              <h4 class="reality-card-title">APPROVAL CHAINS THAT BREAK.</h4>
+              <p class="reality-card-body">
+                A single price creep exception shouldn't require <span class="text-amber">3 emails</span> and an hour on phone support. But it does.
+              </p>
+            </div>
+
+            <div class="reality-card">
+              <h4 class="reality-card-title">MONTH-END THAT TAKES WEEKS.</h4>
+              <p class="reality-card-body">
+                The average prosumer loses <span class="text-amber">$480.00</span> closing personal accounts and auditing travel and expense alone. Every month.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- [03] LIVE VISIBILITY SECTION (MATCHING IMAGE 3: HIGH CONTRAST DARK) -->
+    <section class="saas-dark-section" id="liveVisibility">
+      <div class="dark-section-inner">
+        <div class="dark-content-grid">
+          
+          <!-- Left Column -->
+          <div class="dark-left-col">
+            <span class="section-eyebrow eyebrow-amber">[03] LIVE VISIBILITY</span>
+            <h2 class="dark-headline">
+              Real-time spend.<br>
+              Zero surprises.
+            </h2>
+            <p class="dark-subhead">
+              Every transaction. Every category. Every policy exception. Live, in one view  -  not a report you generate on the 30th. Backed permanently by Walrus Memory.
+            </p>
+            <button class="btn-dark-white" onclick="switchView('app')">
+              <span>SEE FULL DEMO</span>
+              <span class="icon-circle">⊙</span>
+            </button>
+          </div>
+
+          <!-- Right Column: Dark Analytics Card -->
+          <div class="dark-right-col">
+            <div class="dark-kpi-card">
+              
+              <!-- 4 KPI Columns Top -->
+              <div class="dark-kpi-top-row">
+                <div class="kpi-metric-item">
+                  <span class="kpi-metric-label">TOTAL SPEND</span>
+                  <div class="kpi-metric-val">$4,820.00</div>
+                </div>
+                <div class="kpi-metric-item">
+                  <span class="kpi-metric-label">PENDING</span>
+                  <div class="kpi-metric-val">$142.50 <small class="text-muted">(1)</small></div>
+                </div>
+                <div class="kpi-metric-item">
+                  <span class="kpi-metric-label">EXCEPTIONS</span>
+                  <div class="kpi-metric-val text-coral">1</div>
+                </div>
+                <div class="kpi-metric-item">
+                  <span class="kpi-metric-label">MISSING RCPT</span>
+                  <div class="kpi-metric-val text-amber">1</div>
+                </div>
+              </div>
+
+              <!-- Horizontal Spend Bars with Amber Fill -->
+              <div class="dark-bars-container">
+                
+                <div class="dark-bar-row">
+                  <div class="bar-labels">
+                    <span class="bar-name">Streaming & Audio</span>
+                    <span class="bar-val">$82.40</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 82%;"></div>
+                  </div>
+                </div>
+
+                <div class="dark-bar-row">
+                  <div class="bar-labels">
+                    <span class="bar-name">Software & Hosting</span>
+                    <span class="bar-val">$172.50</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 61%;"></div>
+                  </div>
+                </div>
+
+                <div class="dark-bar-row">
+                  <div class="bar-labels">
+                    <span class="bar-name">Health & Wellness</span>
+                    <span class="bar-val">$240.00</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 48%;"></div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- [04] AUTOMATION SECTION (MATCHING IMAGE 4) -->
+    <section class="saas-automation-section" id="automation">
+      <div class="section-inner-container">
+        
+        <div class="automation-header">
+          <span class="section-eyebrow">[04] AUTOMATION</span>
+          <h2 class="automation-headline">
+            Approvals that don't require<br>
+            a meeting.
+          </h2>
+          <p class="automation-subhead">
+            Define your policy once. PocketSentinel enforces it on every debit  -  automatically escalating exceptions, routing by amount threshold, and flagging policy violations before they reach your inbox.
+          </p>
+        </div>
+
+        <!-- 4-Stage Horizontal Pipeline Diagram (Image 4 Style) -->
+        <div class="pipeline-board">
+          <div class="pipeline-track">
+            
+            <!-- Step 1 -->
+            <div class="pipeline-step">
+              <span class="step-num-label">1. SUBMITTED</span>
+              <div class="step-icon-box">
+                <i data-lucide="file-text"></i>
+              </div>
+              <span class="step-detail-text">Aria C. • $840.00</span>
+            </div>
+
+            <div class="pipeline-connector"></div>
+
+            <!-- Step 2 -->
+            <div class="pipeline-step">
+              <span class="step-num-label">2. POLICY ENGINE</span>
+              <div class="step-icon-box">
+                <i data-lucide="shield-check"></i>
+              </div>
+              <span class="step-detail-text">Rule: &lt;$1k Auto-Approve</span>
+            </div>
+
+            <div class="pipeline-connector"></div>
+
+            <!-- Step 3 -->
+            <div class="pipeline-step">
+              <span class="step-num-label">3. APPROVAL</span>
+              <div class="step-icon-box">
+                <i data-lucide="user-check"></i>
+              </div>
+              <span class="step-detail-text text-amber">Bypassed (Auto)</span>
+            </div>
+
+            <div class="pipeline-connector"></div>
+
+            <!-- Step 4 -->
+            <div class="pipeline-step">
+              <span class="step-num-label">4. RECONCILED</span>
+              <div class="step-icon-box">
+                <i data-lucide="database"></i>
+              </div>
+              <span class="step-detail-text">Synced to Walrus</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Bottom Automation Statistics -->
+        <div class="automation-metrics-row">
+          <div class="auto-metric">
+            <div class="auto-metric-val">84%</div>
+            <div class="auto-metric-label">APPROVED AUTOMATICALLY</div>
+          </div>
+          <div class="auto-metric">
+            <div class="auto-metric-val">2.1 hrs</div>
+            <div class="auto-metric-label">AVERAGE TIME TO APPROVAL</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- [05] ECOSYSTEM & EXTERNAL APP LOGOS (MATCHING IMAGE 5) -->
+    <section class="saas-ecosystem-section" id="ecosystem">
+      <div class="section-inner-container">
+        
+        <div class="ecosystem-header">
+          <span class="section-eyebrow">[05] ECOSYSTEM</span>
+          <h2 class="ecosystem-headline">
+            Connects to the stack you already use.
+          </h2>
+          <p class="ecosystem-subhead">
+            PocketSentinel syncs bidirectionally with your banks, card feeds, and decentralized protocols. One integration setup. Zero ongoing maintenance.
+          </p>
+        </div>
+
+        <!-- 8 External App Tiles (2 Rows of 4, Matching Image 5) -->
+        <div class="ecosystem-grid">
+          
+          <!-- Tile 1: NetSuite -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">NS</span>
+            </div>
+            <span class="eco-name">NetSuite</span>
+            <span class="eco-tag">ERP</span>
+          </div>
+
+          <!-- Tile 2: Xero -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">XR</span>
+            </div>
+            <span class="eco-name">Xero</span>
+            <span class="eco-tag">ACCOUNTING</span>
+          </div>
+
+          <!-- Tile 3: Workday -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">WD</span>
+            </div>
+            <span class="eco-name">Workday</span>
+            <span class="eco-tag">HR</span>
+          </div>
+
+          <!-- Tile 4: Ramp -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">RP</span>
+            </div>
+            <span class="eco-name">Ramp</span>
+            <span class="eco-tag">CARDS</span>
+          </div>
+
+          <!-- Tile 5: Brex -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">BX</span>
+            </div>
+            <span class="eco-name">Brex</span>
+            <span class="eco-tag">CARDS</span>
+          </div>
+
+          <!-- Tile 6: Stripe -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">ST</span>
+            </div>
+            <span class="eco-name">Stripe</span>
+            <span class="eco-tag">PAYMENTS</span>
+          </div>
+
+          <!-- Tile 7: Rippling -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">RG</span>
+            </div>
+            <span class="eco-name">Rippling</span>
+            <span class="eco-tag">HR</span>
+          </div>
+
+          <!-- Tile 8: Okta -->
+          <div class="eco-tile">
+            <div class="eco-logo-box">
+              <span class="eco-logo-mark font-heavy">OK</span>
+            </div>
+            <span class="eco-name">Okta</span>
+            <span class="eco-tag">SSO</span>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CLEAN FOOTER -->
+    <footer class="saas-footer">
+      <div class="footer-container">
+        <div class="footer-col-main">
+          <span class="footer-logo">PocketSentinel</span>
+          <p class="footer-tagline">Autonomous Consumer Expense Sentinel & Watchdog powered by Walrus Memory on Sui Mainnet and Tatum RPC.</p>
+        </div>
+        <div class="footer-col-nav">
+          <span class="footer-heading">NAVIGATION</span>
+          <a href="#landing" onclick="switchView('landing')">Product Overview</a>
+          <a href="#reality" onclick="scrollToSection('reality')">The Reality</a>
+          <a href="#ecosystem" onclick="scrollToSection('ecosystem')">Integrations</a>
+          <a href="#app" onclick="switchView('app')">Launch Sentinel App</a>
+        </div>
+        <div class="footer-col-nav">
+          <span class="footer-heading">PROTOCOL & MEMORY</span>
+          <a href="#memory" onclick="switchView('memory')">Walrus Sui Mainnet Ledger</a>
+          <a href="https://tatum.io" target="_blank">Tatum Multi-Chain RPC</a>
+          <a href="https://memory.walrus.xyz" target="_blank">Walrus Memory Portal</a>
+          <a href="#" onclick="openKeyVaultModal()">Export WebCrypto Key Bundle</a>
+        </div>
+      </div>
+      <div class="footer-bottom-row">
+        <span>© 2026 PocketSentinel INC. ALL RIGHTS RESERVED. MIT LICENSE.</span>
+        <span>ZERO UNENCRYPTED CLOUD TELEMETRY · 100% CLIENT-SIDE WEBCRYPTO</span>
+      </div>
+    </footer>
+
+  </main>
+
   <main class="view-panel active" id="viewApp">
     <div class="app-shell-layout">
       
@@ -132,7 +1156,7 @@
             <span>7. Settings &amp; Memory</span>
             <span class="sidebar-counter-blue">12 Nodes</span>
           </button>
-          <button class="sidebar-item" onclick="switchView('landing')" style="display:none;">
+          <button class="sidebar-item" onclick="switchView('landing')">
             <i data-lucide="external-link"></i>
             <span>Marketing Landing Page</span>
           </button>

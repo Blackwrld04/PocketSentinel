@@ -7068,6 +7068,14 @@ body.in-app-view .marketing-header-bar {
   display: none !important;
 }
 
+body.in-landing-view .app-header-bar {
+  display: none !important;
+}
+
+body.in-landing-view .marketing-header-bar {
+  display: flex !important;
+}
+
 body.in-app-view .site-header .header-container,
 body.in-app-view .header-container {
   max-width: 100% !important;
