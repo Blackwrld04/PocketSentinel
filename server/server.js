@@ -326,7 +326,7 @@ app.post('/api/audit', async (req, res) => {
 });
 
 /**
- * Sentinel AI Copilot Chat (Powered by Groq Cloud & LLaMA-3.3-70B)
+ * Sentinel AI Copilot Chat (PocketSentinel Intelligence Engine)
  */
 app.post('/api/copilot/chat', async (req, res) => {
   try {

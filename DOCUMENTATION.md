@@ -14,7 +14,7 @@
 Most Web3 and decentralized applications fail because they expose their internal plumbing to ordinary people. Asking an everyday consumer to manage hex addresses (`0x4f8e...`), pay SUI gas tokens to check their subscription list, copy PBKDF2 salt strings, or write regex rules to categorize a grocery receipt creates immediate friction, stress, and abandonment.
 
 **PocketSentinel solves this through "Invisible Sovereignty":**
-* **Consumer-Grade Simplicity:** The user interface looks and feels like a tier-one personal finance app (YNAB, Cleo, Apple Wallet). Everything is intuitive, clear, and focused on one goal: **protecting household cash runway and stopping predatory subscription leakage**.
+* **Consumer-Grade Simplicity:** The user interface looks and feels like a tier-one personal finance application. Everything is intuitive, clear, and focused on one goal: **protecting household cash runway and stopping predatory subscription leakage**.
 * **Zero-Burden Background Execution:** Every advanced decentralized system—Walrus onchain episodic memory commits, Tatum Sui Mainnet RPC queries, WebCrypto AES-256-GCM encryption, Groq LLaMA-3.3-70B inference, and automated rule engines—operates **100% autonomously in the background**.
 * **No Tech Jargon in the UI:** Users are never prompted for cryptographic passphrases, RPC URLs, gas wallets, or regex patterns. The application simply works.
 
@@ -28,7 +28,7 @@ Most Web3 and decentralized applications fail because they expose their internal
 │                                                                                 │
 │  ┌───────────────────────┐  ┌────────────────────────┐  ┌────────────────────┐ │
 │  │ Safe-to-Spend Runway  │  │ Zero-Based Envelopes   │  │ Groq AI Copilot    │ │
-│  │ ($482.35, $48.23/day) │  │ (YNAB Rule 3 Rebalance)│  │ (3 Personas, Wisdom│ │
+│  │ ($482.35, $48.23/day) │  │ (Adaptive Rebalance)   │  │ (3 Personas, Wisdom│ │
 │  └───────────────────────┘  └────────────────────────┘  └────────────────────┘ │
 │  ┌───────────────────────┐  ┌────────────────────────┐  ┌────────────────────┐ │
 │  │ Subscription Ledger   │  │ Price Creep Alerts     │  │ 1-Tap Dispute Pack │ │
@@ -90,8 +90,8 @@ To eliminate all complexity for everyday users, we conducted a forensic audit of
 
 ### 4.1 Why Walrus Memory is Transformative
 Traditional finance apps are **stateless or centralized**:
-* Centralized apps (Rocket Money, Mint) sell aggregate telemetry to data brokers and retain ownership of user history.
-* Local apps (Copilot, Apple) lose context when switching tools or sessions.
+* Centralized apps sell aggregate telemetry to data brokers and retain ownership of user history.
+* Local apps lose context when switching tools or sessions.
 
 **Walrus gives the AI Sentinel persistent, sovereign memory:**
 1. **Agent ID Registration:** `walrus_agent_recallramp_mainnet_0x7f4b82c` on Sui Mainnet.
@@ -163,8 +163,8 @@ The AI Copilot does not give generic advice. It parses the user's exact live led
  │ 10.3% ($500) saved   │       │ Rebalance -$45 Dining│       │ Dynamic Affordability│
  │ before spending bills│       │ from +$130 Fun budget│       │ Velocity Burn Rate   │
  └──────────────────────┘       └──────────────────────┘       └──────────────────────┘
-     George S. Clason                 YNAB Rule 3                    Recall Engine
-  Richest Man in Babylon           Jesse Mecham                   Decision Protocol
+     George S. Clason              Adaptive Rebalancing              PocketSentinel
+  Richest Man in Babylon             Zero-Based Ledger              Decision Protocol
 ```
 
 1. **Morgan Housel (*The Psychology of Money*):**
@@ -177,7 +177,7 @@ The AI Copilot does not give generic advice. It parses the user's exact live led
    * *Money as Life Energy:* Based on $\$4,850$ monthly take-home over 160 hours, real hourly wage is $\sim \$30.31$/hour. A planned $\$65$ dinner costs $2.1$ hours of life labor.
 4. **George S. Clason (*The Richest Man in Babylon*):**
    * *Pay Yourself First:* At least 10% of earnings belongs to the user to keep. The $\$500$ Walrus savings transfer represents $10.3\%$ preserved before paying any merchant.
-5. **Jesse Mecham (*YNAB Rule 3: Roll With The Punches*):**
+5. **Adaptive Rebalancing (*"Roll With The Punches"*):**
    * *Dynamic Balance:* When Dining Out runs a $-\$45$ deficit, do not feel guilt or give up on budgeting. Rebalance immediately by shifting $\$45$ from the $+\$130$ Fun surplus envelope.
 
 ---
@@ -301,10 +301,10 @@ curl -s -X POST http://localhost:3000/api/copilot/chat \
   -H "Content-Type: application/json" \
   -d '{"query":"What does Morgan Housel teach about my emergency reserve?","mode":"sentinel","envelopesRebalanced":false}'
 
-# 3. Ask YNAB Rule 3 question
+# 3. Ask Adaptive Rebalancing question
 curl -s -X POST http://localhost:3000/api/copilot/chat \
   -H "Content-Type: application/json" \
-  -d '{"query":"Explain YNAB Rule 3 with my current envelopes","mode":"sentinel","envelopesRebalanced":false}'
+  -d '{"query":"Explain adaptive envelope rebalancing with my current envelopes","mode":"sentinel","envelopesRebalanced":false}'
 ```
 
 ---
@@ -322,10 +322,10 @@ By relocating Walrus memory inspection, Groq API configuration, WebCrypto key bu
 ## 11. The Elevated SaaS Landing Page & Interactive Lab
 
 The public-facing landing page (`#viewLanding` at `http://localhost:3000/`) was expanded into an educational masterclass in modern personal finance:
-1. **Command Center Hero Mockup:** Displays real-time Cash Runway ($482.35 / $48.23 daily velocity), YNAB Rule 3 live envelope rebalancing (Groceries -$45.00 deficit offset with 1-tap from Dining), Groq LLaMA copilot cognitive bubbles, and Walrus price creep baselines.
-2. **Interactive Copilot Playground (`#playground`):** Visitors test the Groq AI Copilot live in the browser with 3 personas (Sentinel, Roast, Hype) and quick prompt chips across affordability, envelopes, life energy, and literature.
-3. **The 4 Modern Wealth Paradigms (`#paradigms`):** Deep architectural write-ups breaking down the fatal flaws of traditional budgeting and specifying Recall's mathematical equations for zero-based envelopes, daily cash velocity, autonomous normalization, and cognitive coaching.
+1. **Command Center Hero Mockup:** Displays real-time Cash Runway ($482.35 / $48.23 daily velocity), live zero-based envelope rebalancing (Groceries -$45.00 deficit offset with 1-tap from Dining), AI copilot cognitive bubbles, and Walrus price creep baselines.
+2. **Interactive Copilot Playground (`#playground`):** Visitors test the AI Copilot live in the browser with 3 personas (Sentinel, Roast, Hype) and quick prompt chips across affordability, envelopes, life energy, and literature.
+3. **The 4 Modern Wealth Paradigms (`#paradigms`):** Deep architectural write-ups breaking down the fatal flaws of traditional budgeting and specifying PocketSentinel's mathematical equations for zero-based envelopes, daily cash velocity, autonomous normalization, and cognitive coaching.
 4. **The Financial Philosophy Library (`#literature`):** Analysis cards detailing the 5 core texts integrated into the AI: Morgan Housel, Ramit Sethi, Vicki Robin & Joe Dominguez, George S. Clason, and Jesse Mecham.
-5. **Definitive Competitive Matrix (`#comparison`):** 9-dimension comparative breakdown against Rocket Money, YNAB, and traditional bank apps.
+5. **Definitive Competitive Matrix (`#comparison`):** 9-dimension comparative breakdown against legacy trackers and traditional bank apps.
 6. **Educational FAQ (`#faq`):** 6 thorough explanations answering questions on cash runway, envelope deficits, 0% dispute rake, Google Sheets feeds, and WebCrypto security.
 

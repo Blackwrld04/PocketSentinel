@@ -5126,7 +5126,7 @@ body.dark-theme .cf-metric-card.safespend-card {
   color: var(--text-primary);
 }
 
-/* 3. Digital Envelopes (YNAB Paradigm) */
+/* 3. Digital Envelopes (Zero-Based Paradigm) */
 .envelope-pool-banner {
   background: #FFFFFF;
   border: 1px solid var(--border-hairline);
@@ -5445,7 +5445,7 @@ body.dark-theme .btn-mini-rebalance:hover {
   color: var(--text-secondary);
 }
 
-/* 4. Sentinel AI Copilot (Cleo Paradigm) */
+/* 4. Sentinel AI Copilot Paradigm */
 .copilot-mode-toggles {
   display: flex;
   gap: 8px;
@@ -5792,7 +5792,7 @@ body.dark-theme .chat-formatted-content code {
   margin-top: 4px;
 }
 
-/* 6. Smart Rule Engine & Tiller Webhook (Lunch Money Paradigm) */
+/* 6. Smart Rule Engine & Spreadsheet Webhook */
 .tiller-sync-box {
   background: var(--bg-canvas);
   border: 1px solid var(--border-hairline);

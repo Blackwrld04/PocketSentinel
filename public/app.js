@@ -1878,7 +1878,7 @@ function loadUserSettingsToForm() {
       const badge = document.getElementById('groqStatusBadge');
       if (badge) {
         if (data.configured) {
-          badge.textContent = 'Groq Cloud LLaMA-3.3-70B Connected';
+          badge.textContent = 'PocketSentinel AI Connected';
           badge.className = 'status-pill green';
         } else {
           badge.textContent = 'Local Intelligence Engine Active';
@@ -2025,7 +2025,7 @@ function openDisputeModalForTrial() {
     <div class="meta-item"><span>Trial Period:</span> <strong>7-Day Free Period</strong></div>
     <div class="meta-item red"><span>Impending Rebill:</span> <strong>$54.99 / mo ($659.88/yr)</strong></div>
     <div class="meta-item amber"><span>Hours Remaining:</span> <strong>48 Hours (Auto-converts Oct 25)</strong></div>
-    <div class="meta-item green"><span>Recall Fee:</span> <strong>$0.00 (Zero Rake)</strong></div>
+    <div class="meta-item green"><span>PocketSentinel Fee:</span> <strong>$0.00 (Zero Rake)</strong></div>
   `;
 
   body.value = `To: Adobe Systems Billing & Subscription Support
@@ -2046,7 +2046,7 @@ I affirmatively opt out of converting this trial to a paid subscription or recur
 Please reply with written confirmation of cancellation and transaction reference.
 
 Sincerely,
-Recall Sovereign Account Sentinel [ID: MEM_10]`;
+PocketSentinel Sovereign Account Sentinel [ID: MEM_10]`;
 
   if (modal) modal.style.display = 'flex';
   if (window.lucide) window.lucide.createIcons();
@@ -2054,7 +2054,7 @@ Recall Sovereign Account Sentinel [ID: MEM_10]`;
 window.openDisputeModalForTrial = openDisputeModalForTrial;
 
 function openDisputeModalForOverlap() {
-  alert('Audio Overlap Consolidator:\n\nSovereign Memory [MEM_11] notes active subscriptions to both Spotify ($16.99/mo) and Apple Music ($10.99/mo).\n\nConsolidating to a single streaming tier preserves $131.88/year in household capital.\n\nWould you like Recall to draft a 1-tap cancellation notice for Apple Music?');
+  alert('Audio Overlap Consolidator:\n\nSovereign Memory [MEM_11] notes active subscriptions to both Spotify ($16.99/mo) and Apple Music ($10.99/mo).\n\nConsolidating to a single streaming tier preserves $131.88/year in household capital.\n\nWould you like PocketSentinel to draft a 1-tap cancellation notice for Apple Music?');
   showToast('Prompting Apple Music cancellation pack to eliminate audio duplication.');
 }
 window.openDisputeModalForOverlap = openDisputeModalForOverlap;
@@ -2459,7 +2459,7 @@ function handleNewsletterSubmit(event) {
 window.handleNewsletterSubmit = handleNewsletterSubmit;
 
 // =========================================================================
-// PARADIGM 01: ZERO-BASED ENVELOPES & ROLL WITH THE PUNCHES (YNAB PATTERN)
+// PARADIGM 01: ZERO-BASED ENVELOPES & ADAPTIVE REBALANCING
 // =========================================================================
 function rebalanceEnvelopesWithPunch() {
   const diningCard = document.getElementById('envDiningCard');
@@ -2557,7 +2557,7 @@ function rebalanceEnvelopesWithPunch() {
   const kpiDeficitSub = document.getElementById('kpiEnvelopeDeficitSub');
   if (kpiDeficitSub) {
     kpiDeficitSub.className = 'kpi-sub text-green';
-    kpiDeficitSub.textContent = 'Zero category deficits (YNAB Rule 3)';
+    kpiDeficitSub.textContent = 'Zero category deficits (Zero-Based Balanced)';
   }
 
   const overviewDiningLabel = document.getElementById('overviewDiningLabel');
@@ -2713,7 +2713,7 @@ function askCopilotAboutSimulatedItem() {
 window.askCopilotAboutSimulatedItem = askCopilotAboutSimulatedItem;
 
 // =========================================================================
-// PARADIGM 04: SENTINEL AI COPILOT & BEHAVIORAL NUDGES (CLEO / PLUM PATTERN)
+// PARADIGM 04: SENTINEL AI COPILOT & BEHAVIORAL NUDGES
 // =========================================================================
 let copilotMode = 'sentinel';
 
@@ -2814,10 +2814,10 @@ async function updateGroqApiKey() {
     const badge = document.getElementById('groqStatusBadge');
     if (data.configured) {
       if (badge) {
-        badge.textContent = 'Groq Cloud Qwen-2.5-32B Connected';
+        badge.textContent = 'PocketSentinel AI Connected';
         badge.className = 'status-pill green';
       }
-      if (typeof showToast === 'function') showToast('Groq Cloud API Key saved and verified!');
+      if (typeof showToast === 'function') showToast('AI Copilot Key saved and verified!');
     } else {
       if (badge) {
         badge.textContent = 'PocketSentinel Intelligence Active';
@@ -2826,13 +2826,13 @@ async function updateGroqApiKey() {
       if (typeof showToast === 'function') showToast('Using PocketSentinel Local Financial Intelligence Engine.');
     }
   } catch (err) {
-    if (typeof showToast === 'function') showToast(`Notice updating Groq key: ${err.message}`);
+    if (typeof showToast === 'function') showToast(`Notice updating AI key: ${err.message}`);
   }
 }
 window.updateGroqApiKey = updateGroqApiKey;
 
 async function testGroqCopilotConnection() {
-  if (typeof showToast === 'function') showToast('Testing Groq AI inference latency...');
+  if (typeof showToast === 'function') showToast('Testing AI Copilot inference latency...');
   try {
     const res = await fetch('/api/copilot/chat', {
       method: 'POST',
@@ -2845,7 +2845,7 @@ async function testGroqCopilotConnection() {
     });
     const data = await res.json();
     if (data.success) {
-      if (typeof showToast === 'function') showToast(`Inference response received via ${data.provider}!`);
+      if (typeof showToast === 'function') showToast('Inference response received from PocketSentinel AI!');
       if (typeof openCopilotFromAnywhere === 'function') openCopilotFromAnywhere();
       const msgs = document.getElementById('copilotChatMessages');
       if (msgs) {
@@ -2856,7 +2856,6 @@ async function testGroqCopilotConnection() {
           <div class="chat-bubble-body">
             <strong>PocketSentinel AI</strong>
             <div class="chat-formatted-content">${formatMarkdown(data.reply)}</div>
-            <span class="chat-provider-badge" style="display:inline-block; margin-top:6px; font-size:10px; color:var(--accent-blue); padding:2px 6px; border-radius:4px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2);">${data.provider}</span>
             <span class="chat-time">Just now</span>
           </div>
         `;
@@ -2929,11 +2928,6 @@ async function handleCopilotChatSubmit(event) {
     const typingEl = document.getElementById('copilotTypingIndicator');
     if (typingEl) typingEl.remove();
 
-    const formattedReply = formatMarkdown(data.reply);
-    const providerBadge = data.provider 
-      ? `<span class="chat-provider-badge" style="display:inline-block; margin-top:6px; font-size:10px; color:var(--accent-blue); padding:2px 6px; border-radius:4px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2);">${data.provider}</span>` 
-      : '';
-
     const botBubble = document.createElement('div');
     botBubble.className = 'chat-bubble assistant';
     botBubble.innerHTML = `
@@ -2941,7 +2935,6 @@ async function handleCopilotChatSubmit(event) {
       <div class="chat-bubble-body">
         <strong>PocketSentinel AI</strong>
         <div class="chat-formatted-content">${formattedReply}</div>
-        ${providerBadge}
         <span class="chat-time">Just now</span>
       </div>
     `;
@@ -3256,7 +3249,7 @@ function exportReceiptTaxAuditBundle() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bundle, null, 2));
   const dlAnchor = document.createElement('a');
   dlAnchor.setAttribute("href", dataStr);
-  dlAnchor.setAttribute("download", "Recall_IRS_Tax_Receipt_Audit_Bundle_2026.json");
+  dlAnchor.setAttribute("download", "PocketSentinel_IRS_Tax_Receipt_Audit_Bundle_2026.json");
   document.body.appendChild(dlAnchor);
   dlAnchor.click();
   dlAnchor.remove();
@@ -3266,7 +3259,7 @@ function exportReceiptTaxAuditBundle() {
 window.exportReceiptTaxAuditBundle = exportReceiptTaxAuditBundle;
 
 // =========================================================================
-// PARADIGM 03: PROGRAMMATIC SMART RULES & TILLER EXPORT (LUNCH MONEY PATTERN)
+// PARADIGM 03: PROGRAMMATIC SMART RULES & AUTOMATION ENGINE
 // =========================================================================
 let ruleCounter = 5;
 
@@ -3333,12 +3326,12 @@ function exportNormalizedTillerCSV() {
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "Recall_Normalized_Tiller_Feed_October2026.csv");
+  link.setAttribute("download", "PocketSentinel_Normalized_Ledger_Feed_October2026.csv");
   document.body.appendChild(link);
   link.click();
   link.remove();
 
-  showToast('Tiller / Google Sheets CSV Exported with Merkle proofs!');
+  showToast('Google Sheets CSV Exported with Merkle proofs!');
 }
 window.exportNormalizedTillerCSV = exportNormalizedTillerCSV;
 
@@ -3379,7 +3372,7 @@ async function runLandingPlayground() {
   if (!query) return;
 
   if (output) {
-    output.innerHTML = '<span style="color:#94A3B8; font-style:italic;">Consulting Groq LLaMA-3.3-70B cognitive financial copilot (&lt;350ms inference)...</span>';
+    output.innerHTML = '<span style="color:#94A3B8; font-style:italic;">Consulting PocketSentinel AI financial copilot (&lt;350ms inference)...</span>';
   }
   if (btn) {
     btn.disabled = true;
@@ -3410,7 +3403,7 @@ async function runLandingPlayground() {
     if (output) {
       output.innerHTML = `<strong>Safe-to-Spend Runway Analysis:</strong><br><br>
 Your current cash runway is <strong>$482.35</strong> with 10 days remaining in the cycle, giving you an exact safe spending velocity of <strong>$48.23 / day</strong>.
-All fixed bills ($301.46) and your $500 emergency buffer are 100% funded. With YNAB Rule 3 rebalancing, any category variance is dynamically absorbed without breaking your household plan.`;
+All fixed bills ($301.46) and your $500 emergency buffer are 100% funded. With adaptive deficit rebalancing, any category variance is dynamically absorbed without breaking your household plan.`;
     }
   } finally {
     if (btn) {

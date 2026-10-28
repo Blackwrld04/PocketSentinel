@@ -45,12 +45,12 @@ npm run dev
 ## 1. Executive Summary & Core Philosophy
 
 ### 1.1 The Problem: The Rearview Mirror Trap
-Every traditional budgeting app (Mint, Rocket Money, traditional banking dashboards) forces everyday households to look in the rearview mirror. They show charts of money you have **already lost**, categorize transactions days after you swiped, and shame you with red alerts when unpredictable life events push an arbitrary category over budget.
+Every traditional budgeting app forces everyday households to look in the rearview mirror. They show charts of money you have **already lost**, categorize transactions days after you swiped, and shame you with red alerts when unpredictable life events push an arbitrary category over budget.
 
 Meanwhile:
 1. **Stealth Price Creep:** 83% of recurring subscriptions quietly hike prices by $1.00 to $4.00 over 18 months without transparent notice. Across an average household with 11 subscriptions, this micro-inflation silently bleeds $300 to $600 per year.
 2. **Zombie Free Trials:** Forgotten 7-day trials and duplicate services drain over $180/year in pure wasted capital.
-3. **Extortionate Fee Rakes:** Legacy bill-negotiators like Rocket Money take a punishing **30% to 40% rake** of your savings and monetize your confidential transaction history by selling it to credit card marketers.
+3. **Extortionate Fee Rakes:** Legacy bill-negotiators take a punishing **30% to 40% rake** of your savings and monetize your confidential transaction history by selling it to credit card marketers.
 4. **The Checking Account Illusion:** Seeing $3,500 in checking creates subconscious permission to spend, forgetting that rent, utilities, and debt payments will clear 5 days before your next paycheck.
 
 ### 1.2 The Solution: "Invisible Sovereignty"
@@ -68,7 +68,7 @@ Meanwhile:
 │                                                                                 │
 │  ┌───────────────────────┐  ┌────────────────────────┐  ┌────────────────────┐ │
 │  │ Safe-to-Spend Runway  │  │ Zero-Based Envelopes   │  │ Groq AI Copilot    │ │
-│  │ ($482.35, $48.23/day) │  │ (YNAB Rule 3 Rebalance)│  │ (3 Personas, Wisdom│ │
+│  │ ($482.35, $48.23/day) │  │ (Adaptive Rebalance)   │  │ (3 Personas, Wisdom│ │
 │  └───────────────────────┘  └────────────────────────┘  └────────────────────┘ │
 │  ┌───────────────────────┐  ┌────────────────────────┐  ┌────────────────────┐ │
 │  │ Subscription Ledger   │  │ Price Creep Alerts     │  │ 1-Tap Dispute Pack │ │
@@ -93,7 +93,7 @@ Meanwhile:
 
 ### Pillar 1: Zero-Based Digital Envelopes ("Roll With The Punches")
 * **Cash-on-Hand Only Allocation:** PocketSentinel strictly rejects forward-looking revenue guessing. You only assign dollars currently sitting in your accounts.
-* **YNAB Rule 3 Dynamic Rebalancing:** When unexpected expenses push an envelope into deficit (e.g., Groceries `-$45.00` spike), PocketSentinel does not shame you. A single click shifts surplus from flexible categories (like Dining or Entertainment `+$45.00`), returning the household ledger to net-zero equilibrium without breaking your plan.
+* **Adaptive Dynamic Rebalancing:** When unexpected expenses push an envelope into deficit (e.g., Groceries `-$45.00` spike), PocketSentinel does not shame you. A single click shifts surplus from flexible categories (like Dining or Entertainment `+$45.00`), returning the household ledger to net-zero equilibrium without breaking your plan.
 
 ### Pillar 2: Real-Time Cash Runway & Safe-to-Spend Daily Velocity
 * **The Daily Velocity Question:** Solves: *"Can I afford this dinner tonight without blowing rent or savings?"*
@@ -124,7 +124,7 @@ Meanwhile:
 ### Pillar 5: Sovereign Subscription Defense & Price Creep Sentinel
 * **Immutable Baselines (Walrus):** Audits debits against decentralized baseline memories. Flags micro-inflation (+ $2.50 Netflix hike = $30.00/yr drain).
 * **48-Hour Zombie Trial Countdown:** Actively counts down free trial horizons (e.g., Adobe CC $54.99/mo risk) and issues alerts 48 hours before the first auto-rebill.
-* **1-Tap Formal Dispute Packs:** Generates legally structured objection letters citing Consumer Financial Protection Bureau (CFPB) and Federal Trade Commission (FTC) standards with **0% negotiation fee rake** (saving users the 40% rake taken by Rocket Money).
+* **1-Tap Formal Dispute Packs:** Generates legally structured objection letters citing Consumer Financial Protection Bureau (CFPB) and Federal Trade Commission (FTC) standards with **0% negotiation fee rake** (saving users the 40% fee rake taken by traditional negotiation services).
 
 ### Pillar 6: Zero-Knowledge Client-Side WebCrypto Security (AES-256-GCM)
 * **Client-Side Vault:** Implements browser-native WebCrypto API with PBKDF2-SHA256 (100,000 iterations) and AES-256-GCM.
@@ -142,7 +142,7 @@ PocketSentinel's AI Copilot does not offer generic platitudes. Its prompt archit
 | **Ramit Sethi**<br>*I Will Teach You To Be Rich* | *"Spend extravagantly on the things you love, and cut costs mercilessly on the things you don't. Stop agonizing over $3 lattes."* | Audits fixed subscription leakage ($301.46/mo) while celebrating guilt-free dining and entertainment once envelopes are funded. |
 | **Vicki Robin & Joe Dominguez**<br>*Your Money or Your Life* | *"Money is something we choose to trade our life energy for. Real wealth is the freedom to choose how that energy is spent."* | Built-in **Life Energy Calculator** converting purchase costs into exact hours of mortal existence traded based on real hourly wage. |
 | **George S. Clason**<br>*The Richest Man in Babylon* | *"A part of all you earn is yours to keep. Pay yourself first before paying merchants, landlords, or lenders."* | Top-of-funnel automatic 10% reserve diversion ($500 of $4,850 inflow) locked into the sovereign vault before variable spending opens. |
-| **Jesse Mecham**<br>*YNAB: Rule 3 ("Roll With The Punches")* | *"Rigid budgets break. Flexible budgets bend and survive. Overspending is simply a reallocation decision."* | 1-Tap Deficit Rebalancing matrix that shifts surplus funds between envelopes without shame, guilt, or broken tracking. |
+| **Jesse Mecham**<br>*Adaptive Rebalancing ("Roll With The Punches")* | *"Rigid budgets break. Flexible budgets bend and survive. Overspending is simply a reallocation decision."* | 1-Tap Deficit Rebalancing matrix that shifts surplus funds between envelopes without shame, guilt, or broken tracking. |
 
 ---
 
@@ -150,7 +150,7 @@ PocketSentinel's AI Copilot does not offer generic platitudes. Its prompt archit
 
 The public-facing marketing interface ([public/index.html](file:///home/blackwrld04/RECALL/public/index.html)) provides an educational masterclass in sovereign household wealth:
 
-1. **Command Center Hero Mockup:** Live HUD featuring cash runway velocity ($482.35 / $48.23 daily burn), zero-based envelopes with 1-tap YNAB Rule 3 rebalancing, Copilot insight bubbles, and price creep indicators.
+1. **Command Center Hero Mockup:** Live HUD featuring cash runway velocity ($482.35 / $48.23 daily burn), zero-based envelopes with 1-tap adaptive rebalancing, Copilot insight bubbles, and price creep indicators.
 2. **Interactive Copilot Playground (`#playground`):** Visitors test the Groq AI Copilot live in the browser across 3 personas (Sentinel, Roast, Hype) and 5 prompt chips:
    * *"Can I afford a $65 sushi dinner tonight with 10 days left?"*
    * *"I overspent on groceries by $45. How do I balance my envelopes?"*
@@ -166,7 +166,7 @@ The public-facing marketing interface ([public/index.html](file:///home/blackwrl
 
 ## 5. Definitive Competitive Breakdown Matrix
 
-| Capability / Dimension | PocketSentinel | Rocket Money | YNAB | Copilot Money | Traditional Bank Apps |
+| Capability / Dimension | PocketSentinel | Legacy Subscription Trackers | Manual Budgeting Spreadsheets | Bank Dashboards |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Zero-Based Envelope Budgeting** | **Autonomous 1-Tap Rebalancing** | No (Category tags only) | Manual entry only | No (Monthly limits) | No envelopes |
 | **Real-Time Safe-to-Spend Runway** | **Live ($48.23 / day Safe Velocity)** | No velocity math | No daily pacing | Basic pacing bar | Misleading lump-sum balance |

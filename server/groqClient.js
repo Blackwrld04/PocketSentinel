@@ -17,7 +17,7 @@
  *   • "I Will Teach You To Be Rich" (Ramit Sethi — Conscious Spending)
  *   • "Your Money or Your Life" (Vicki Robin — Money as Life Energy)
  *   • "The Richest Man in Babylon" (George S. Clason — Pay Yourself First)
- *   • YNAB Rule 3 ("Roll With the Punches" — Zero-Based Balance)
+ *   • Adaptive Rebalancing ("Roll With the Punches" — Zero-Based Balance)
  * - 3 Switchable behavioral personas: Sentinel (Forensic Strategist), Roast (Tough Love), Hype (Encouraging Coach)
  * - Resilient offline fallback engine when GROQ_API_KEY is not yet supplied.
  */
@@ -83,7 +83,7 @@ Infuse your responses with timeless principles from foundational financial works
    - Money is "Life Energy" traded for hours of your finite life. Calculate if a purchase is truly worth the hours worked.
 4. "The Richest Man in Babylon" (George S. Clason):
    - "A part of all you earn is yours to keep." Pay yourself first (our $500 Walrus emergency savings vault).
-5. YNAB Rule 3 ("Roll With the Punches"):
+5. Adaptive Rebalancing ("Roll With the Punches" - Zero-Based Balance):
    - When a category overspends (like Dining Out -$45), don't feel guilty - immediately rebalance from a surplus envelope (Fun +$130).
 
 ### ACTIVE COPILOT MODE: "${mode.toUpperCase()}"
@@ -91,8 +91,15 @@ Infuse your responses with timeless principles from foundational financial works
 - ROAST MODE: Hilarious, tough-love financial intervention. Zero filter! Roast unnecessary DoorDash delivery markups, impulse shopping, and forgotten subscriptions. Demand accountability!
 - HYPE MODE: High-energy financial hype-man celebrating wins, discipline, zero-debt envelopes, and savings milestones.
 
+### GENERAL KNOWLEDGE & WORLD QUESTIONS:
+- If the user asks general questions (such as world leaders, history, geography, science, civics, or definitions), answer them directly, accurately, and concisely.
+- Never give robotic refusals like "As an AI, I do not track real-time political appointments..." or refuse straightforward factual questions.
+- Answer the factual question directly first, and then smoothly invite their next financial query or connect to economic context.
+
 ### OUTPUT GUIDELINES:
 - Keep responses concise (2 to 4 punchy paragraphs or structured bullet points).
+- STRICT PROHIBITION ON OTHER PRODUCTS/SERVICES: NEVER mention or refer to external commercial personal finance apps or software products (such as YNAB, You Need A Budget, Rocket Money, Copilot Money, Mint, Truebill, Cleo, etc.). Frame budgeting concepts solely around PocketSentinel zero-based envelopes and adaptive rebalancing.
+- NEVER mention Groq, Groq Cloud, LLaMA, Qwen, or backend inference provider names. You are strictly PocketSentinel AI.
 - STRICT PUNCTUATION & SYMBOL BAN:
   * ABSOLUTELY NEVER use em-dashes (—) or en-dashes (–). Use standard commas (,), periods (.), or colons (:) instead.
   * NEVER output symbols like ~, ^, |, •, ▪, ✦, ★, ▲, ■, ◆, or backslashes.
@@ -138,7 +145,7 @@ Infuse your responses with timeless principles from foundational financial works
           const data = await response.json();
           let reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
           if (reply) {
-            // Sanitize em-dashes, en-dashes, weird symbols, and legacy branding
+            // Sanitize em-dashes, en-dashes, weird symbols, legacy branding, and competitor names
             reply = reply
               .replace(/[\u2014\u2013—–]/g, ', ')
               .replace(/--+/g, ', ')
@@ -147,13 +154,17 @@ Infuse your responses with timeless principles from foundational financial works
               .replace(/[~^|\\`]/g, '')
               .replace(/\bRecall Sentinel\b/gi, 'PocketSentinel')
               .replace(/\bRecall\b/g, 'PocketSentinel')
+              .replace(/\bYNAB Rule 3\b/gi, 'Adaptive Rebalancing')
+              .replace(/\bYNAB\b/gi, 'Zero-Based Budgeting')
+              .replace(/\bGroq Cloud\b/gi, 'PocketSentinel AI')
+              .replace(/\bGroq\b/gi, 'PocketSentinel AI')
               .replace(/,\s*,+/g, ', ')
               .trim();
 
             return {
               success: true,
               reply,
-              provider: `Groq Cloud (${this.model})`,
+              provider: 'PocketSentinel AI',
               mode
             };
           }
@@ -171,7 +182,7 @@ Infuse your responses with timeless principles from foundational financial works
     return {
       success: true,
       reply: fallbackReply,
-      provider: this.apiKey ? 'Groq Cloud (Fallback)' : 'PocketSentinel Engine (Set GROQ_API_KEY for Qwen)',
+      provider: 'PocketSentinel AI',
       mode
     };
   }
@@ -215,7 +226,7 @@ Infuse your responses with timeless principles from foundational financial works
       if (amount <= 50) {
         return `**Sentinel Affordability Verdict: <span class="text-green">APPROVED</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** (consumes only ~${daysBurn} days of daily velocity).\n• **Remaining Safe Runway:** **$${remainingSafe}** ($${newDaily}/day across the ${daysRemaining} remaining cycle days).\n• **Savings Buffer:** $500.00 Walrus Emergency Vault 100% protected.\n\n*Personal Finance Principle (Vicki Robin):* This purchase consumes ~${(amount / 35).toFixed(1)} hours of life energy. Well within your conscious spending baseline.\n${!isBalanced ? '\n> ⚠️ *Note: Dining Out envelope is -$45.00 in deficit. Hit 1-Tap Rebalance to restore zero-based balance before swiping.*' : ''}`;
       } else if (amount <= 150) {
-        return `**Sentinel Affordability Verdict: <span class="text-amber">CAUTION</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** (consumes ~${daysBurn} days of runway velocity).\n• **Remaining Safe Runway:** **$${remainingSafe}** ($${newDaily}/day for ${daysRemaining} days).\n• **Recommendation:** Safe to proceed, but requires tightening discretionary spending over the next 3 days.\n\n*Rule 3 (YNAB):* If this purchase is dining or entertainment, ensure you shift surplus from Discretionary Fun before swiping.`;
+        return `**Sentinel Affordability Verdict: <span class="text-amber">CAUTION</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** (consumes ~${daysBurn} days of runway velocity).\n• **Remaining Safe Runway:** **$${remainingSafe}** ($${newDaily}/day for ${daysRemaining} days).\n• **Recommendation:** Safe to proceed, but requires tightening discretionary spending over the next 3 days.\n\n*Adaptive Rebalancing:* If this purchase is dining or entertainment, ensure you shift surplus from Discretionary Fun before swiping.`;
       } else if (amount <= currentSafeSpend) {
         return `**Sentinel Affordability Verdict: <span class="text-coral">HIGH IMPACT</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** (burns ${pctBuffer}% of your remaining safe cash).\n• **Remaining Safe Runway:** **$${remainingSafe}** ($${newDaily}/day across ${daysRemaining} days).\n• **Warning:** Leaves very little cushion for unexpected debits. Consider delaying until your next direct deposit ($4,850.00) clears.`;
       } else {
@@ -253,12 +264,12 @@ Infuse your responses with timeless principles from foundational financial works
       return `**George S. Clason (*The Richest Man in Babylon*) Applied to Your Numbers:**\n\n• **A Part of All You Earn is Yours to Keep:** The first rule of gold is putting aside at least 10% of all earnings. Your $500.00 Walrus emergency reserve represents **10.3% of your $4,850 inflow** paid to yourself first before any bill is paid!\n• **Control Thy Expenditures:** Do not confuse necessary expenses with desires. Your fixed commitments are $301.46, leaving $3,566.19 in audited variable expenses and $482.35 in safe cash.`;
     }
 
-    if (qLower.includes('ynab') || qLower.includes('rule 3') || qLower.includes('punch')) {
-      return `**YNAB Rule 3 ("Roll With The Punches") Applied to Your Envelopes:**\n\n• **Zero Guilt, Pure Adaptation:** Overspending in a category isn't a moral failure - it is simply life happening. Your Dining Out envelope is currently **-$45.00 in deficit** ($395 spent vs $350 allocated).\n• **Immediate Rebalance:** Your Discretionary Fun envelope has a **+$130.00 surplus** ($120 spent of $250). By shifting $45.00 from Fun to Dining, your ledger returns to a perfect zero-based balance without adding new debt.\n• **Every Dollar Has a Job:** Keep all $4,850 assigned so unbudgeted cash doesn't get spent blindly.`;
+    if (qLower.includes('ynab') || qLower.includes('rule 3') || qLower.includes('punch') || qLower.includes('rebalance')) {
+      return `**Adaptive Deficit Rebalancing ("Roll With The Punches") Applied to Your Envelopes:**\n\n• **Zero Guilt, Pure Adaptation:** Overspending in a category isn't a moral failure - it is simply life happening. Your Dining Out envelope is currently **-$45.00 in deficit** ($395 spent vs $350 allocated).\n• **Immediate Rebalance:** Your Discretionary Fun envelope has a **+$130.00 surplus** ($120 spent of $250). By shifting $45.00 from Fun to Dining, your ledger returns to a perfect zero-based balance without adding new debt.\n• **Every Dollar Has a Job:** Keep all $4,850 assigned so unbudgeted cash doesn't get spent blindly.`;
     }
 
     if (qLower.includes('lesson') || qLower.includes('book') || qLower.includes('advice') || qLower.includes('wisdom') || qLower.includes('learn')) {
-      return `**Core Financial Lessons from Essential Finance Literature:**\n\n• **Pay Yourself First (*The Richest Man in Babylon*):** Your $500 monthly transfer to the Walrus vault ensures 10.3% of your $4,850 income is saved before spending begins.\n• **Conscious Spending (*I Will Teach You To Be Rich*):** Your fixed subscriptions ($301.46) represent only 6.2% of income - well within the recommended 50-60% fixed cost ceiling.\n• **Room for Error (*The Psychology of Money*):** A cash runway of $482.35 ($48.23/day) protects you from debt without needing to forecast the future.\n• **Roll With The Punches (*YNAB Rule 3*):** When dining out exceeds budget (-$45 deficit), adjust the ledger immediately from surplus categories. Balance is maintained dynamically, not rigidly.`;
+      return `**Core Financial Lessons from Essential Finance Literature:**\n\n• **Pay Yourself First (*The Richest Man in Babylon*):** Your $500 monthly transfer to the Walrus vault ensures 10.3% of your $4,850 income is saved before spending begins.\n• **Conscious Spending (*I Will Teach You To Be Rich*):** Your fixed subscriptions ($301.46) represent only 6.2% of income - well within the recommended 50-60% fixed cost ceiling.\n• **Room for Error (*The Psychology of Money*):** A cash runway of $482.35 ($48.23/day) protects you from debt without needing to forecast the future.\n• **Roll With The Punches (Adaptive Rebalancing):** When dining out exceeds budget (-$45 deficit), adjust the ledger immediately from surplus categories. Balance is maintained dynamically, not rigidly.`;
     }
 
     // 5. Default status
