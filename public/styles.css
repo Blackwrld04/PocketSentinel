@@ -3314,6 +3314,11 @@ body.saas-theme {
   resize: vertical;
 }
 
+body.dark-theme .letter-textarea {
+  background: #18181b;
+  color: #f4f4f5;
+}
+
 /* Key Vault */
 .vault-explainer {
   font-size: 13px;

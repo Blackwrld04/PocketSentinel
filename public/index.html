@@ -2433,6 +2433,129 @@
     </div>
   </div>
 
+  <!-- ================= TRIAL EXPIRATION ALERT MODAL ================= -->
+  <div class="modal-backdrop" id="trialExpirationModal" style="display:none;">
+    <div class="modal-card dispute-modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon" style="background: rgba(245, 158, 11, 0.15); color: #d97706;"><i data-lucide="bell"></i></span>
+          <div>
+            <h3 id="trialModalTitle">Trial Expiration Alert: Adobe Creative Cloud</h3>
+            <p id="trialModalSubtitle">Autonomous Sentinel · 48h Advance Cancellation Window</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeTrialExpirationModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="dispute-meta-strip" id="trialMetaStrip">
+          <div class="dispute-meta-item">
+            <small>Merchant</small>
+            <strong id="trialModalMerchant">Adobe Creative Cloud</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Trial Horizon</small>
+            <strong id="trialModalHorizon" style="color: #dc2626;">Converting in 48h</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Impending Debit</small>
+            <strong id="trialModalAmount" style="color: #dc2626;">$54.99 / mo</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Billing Date</small>
+            <strong id="trialModalDate">October 27, 2026</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Payment Rail</small>
+            <strong id="trialModalWallet">Chase Sapphire Checking</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Annual Cost If Unchecked</small>
+            <strong id="trialModalAnnual">$659.88 / yr</strong>
+          </div>
+        </div>
+
+        <div class="letter-preview-box">
+          <div class="letter-header">
+            <span><i data-lucide="shield-alert" style="width:14px; height:14px; display:inline; vertical-align:middle; margin-right:4px; color:#d97706;"></i> <strong>Autonomous Sentinel Recommendation</strong></span>
+            <span class="status-pill red" style="font-size:0.7rem; padding:2px 8px;">Action Required</span>
+          </div>
+          <div style="padding: 16px; font-size: 0.88rem; line-height: 1.6; color: var(--text-primary); background: var(--bg-surface);">
+            PocketSentinel detected this 7-day free trial converting to a paid tier. Would you like to cancel this subscription now to prevent the <strong>$54.99 auto-rebill</strong> from debiting your account?
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeTrialExpirationModal()">Keep Trial Active</button>
+        <button class="btn-amber-cta" id="btnConfirmTrialCancel" onclick="confirmCancelTrialFromModal()" style="background:#dc2626; border-color:#b91c1c; color:#fff;">
+          <i data-lucide="shield-x"></i>
+          <span>Cancel Subscription &amp; Block Rebill</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MEMORY NODE INSPECTOR MODAL ================= -->
+  <div class="modal-backdrop" id="memoryDetailModal" style="display:none;">
+    <div class="modal-card dispute-modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon" style="background: rgba(42, 109, 245, 0.12); color: var(--sui-blue);"><i data-lucide="database"></i></span>
+          <div>
+            <h3 id="memoryModalTitle">Memory Node [MEM_05]</h3>
+            <p id="memoryModalSubtitle">Sovereign Walrus Memory · Cryptographic Sui Mainnet Anchor</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeMemoryDetailModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="dispute-meta-strip" id="memoryMetaStrip">
+          <div class="dispute-meta-item">
+            <small>Memory ID</small>
+            <strong id="memoryModalId">MEM_05</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Category</small>
+            <strong id="memoryModalCategory">Baseline</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Lookup Key</small>
+            <strong id="memoryModalKey">gym_equinox</strong>
+          </div>
+          <div class="dispute-meta-item" style="grid-column: span 3;">
+            <small>Agent Authority</small>
+            <strong id="memoryModalAgent" style="font-size: 11px; word-break: break-all;">walrus_agent_recallramp_mainnet_0x7f4b82c</strong>
+          </div>
+          <div class="dispute-meta-item" style="grid-column: span 2;">
+            <small>Sui Mainnet Transaction Digest</small>
+            <strong id="memoryModalTx" style="font-size: 11px; word-break: break-all;">Deterministic Sui Mainnet Anchor</strong>
+          </div>
+          <div class="dispute-meta-item">
+            <small>Walrus Blob ID</small>
+            <strong id="memoryModalBlob">N/A</strong>
+          </div>
+        </div>
+
+        <div class="letter-preview-box">
+          <div class="letter-header">
+            <span><strong>Encrypted Payload Semantics</strong></span>
+            <button class="btn-copy-letter" onclick="copyMemoryPayloadText()"><i data-lucide="copy"></i> Copy Payload</button>
+          </div>
+          <textarea class="letter-textarea" id="memoryModalPayload" readonly rows="5" style="font-family: var(--font-mono); font-size: 0.82rem;"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeMemoryDetailModal()">Close</button>
+        <button class="btn-amber-cta" onclick="verifyMemoryAnchorProof()">
+          <i data-lucide="shield-check"></i>
+          <span>Verify Sui Anchor Proof</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= ADD SUBSCRIPTION MODAL ================= -->
   <div class="modal-backdrop" id="newSubModal" style="display:none;">
