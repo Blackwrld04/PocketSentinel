@@ -4169,13 +4169,20 @@ input:checked + .slider-switch:before {
 .input-prefix {
   position: absolute;
   left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   font-family: var(--font-mono);
   font-weight: 700;
+  font-size: 14px;
   color: var(--text-muted);
+  pointer-events: none;
+  z-index: 2;
+  line-height: 1;
 }
 
-.input-with-icon .text-input {
-  padding-left: 28px;
+.input-with-icon .text-input,
+.input-with-icon input {
+  padding-left: 32px !important;
   width: 100%;
 }
 
@@ -5124,18 +5131,30 @@ body.dark-theme .cf-metric-card.safespend-card {
   background: #FFFFFF;
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-subtle);
-  padding: 16px 24px;
-  display: flex;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .envelope-pool-banner {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .envelope-pool-banner .pool-divider {
+    display: none;
+  }
 }
 
 .pool-stat {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .pool-stat span {
@@ -5143,12 +5162,14 @@ body.dark-theme .cf-metric-card.safespend-card {
   font-size: 10px;
   letter-spacing: 0.05em;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .pool-stat strong {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .pool-stat.highlight.green strong {
@@ -5156,8 +5177,12 @@ body.dark-theme .cf-metric-card.safespend-card {
 }
 
 .pool-divider {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--text-muted);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .envelopes-cards-grid {
@@ -10383,6 +10408,11 @@ body.dark-theme .alert-radar-info p {
   .settings-select {
     padding: 7px 10px !important;
     font-size: 12px !important;
+  }
+
+  .input-with-icon .text-input,
+  .input-with-icon input {
+    padding-left: 32px !important;
   }
 
   .overrides-table {
