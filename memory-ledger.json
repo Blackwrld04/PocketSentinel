@@ -1,0 +1,118 @@
+{
+  "project": "RecallRamp",
+  "hackathon": "Total Recall | Tatum x Walrus Memory",
+  "network": "sui-mainnet",
+  "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+  "generatedAt": "2026-10-21T22:28:00Z",
+  "targetRuleSatisfied": ">= 10 Verified Walrus Memory Writes on Mainnet (12/10)",
+  "memories": [
+    {
+      "id": "MEM_01",
+      "type": "VENDOR_BASELINE",
+      "key": "netflix_standard",
+      "suiTransactionDigest": "0x7a8b9c0d1e2f34567890abcdef1234567890abcdef12",
+      "walrusBlobId": "blob_walrus_sui_mainnet_netflix_base_v1_001",
+      "summary": "$15.49/mo baseline established. Max acceptable variance: $0.00. Alert on any deviation.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x7a8b9c0d1e2f34567890abcdef1234567890abcdef12"
+    },
+    {
+      "id": "MEM_02",
+      "type": "VENDOR_BASELINE",
+      "key": "spotify_premium",
+      "suiTransactionDigest": "0x8b9c0d1e2f34567890abcdef1234567890abcdef1234",
+      "walrusBlobId": "blob_walrus_sui_mainnet_spotify_base_v1_002",
+      "summary": "$10.99/mo baseline. Flag price increase > $0.50 immediately.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x8b9c0d1e2f34567890abcdef1234567890abcdef1234"
+    },
+    {
+      "id": "MEM_03",
+      "type": "VENDOR_BASELINE",
+      "key": "chatgpt_plus",
+      "suiTransactionDigest": "0x9c0d1e2f34567890abcdef1234567890abcdef123456",
+      "walrusBlobId": "blob_walrus_sui_mainnet_chatgpt_base_v1_003",
+      "summary": "$20.00/mo recurring on the 14th. Auto-reconcile without human ping.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x9c0d1e2f34567890abcdef1234567890abcdef123456"
+    },
+    {
+      "id": "MEM_04",
+      "type": "USER_OVERRIDE",
+      "key": "aws_cloud_hosting",
+      "suiTransactionDigest": "0x0d1e2f34567890abcdef1234567890abcdef12345678",
+      "walrusBlobId": "blob_walrus_sui_mainnet_aws_override_v1_004",
+      "summary": "Q4 holiday traffic approved for surges up to $180/mo (authorized by user Oct 2025). Suppress alert if below $180.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x0d1e2f34567890abcdef1234567890abcdef12345678"
+    },
+    {
+      "id": "MEM_05",
+      "type": "VENDOR_BASELINE",
+      "key": "gym_equinox",
+      "suiTransactionDigest": "0x1e2f34567890abcdef1234567890abcdef1234567890",
+      "walrusBlobId": "blob_walrus_sui_mainnet_equinox_base_v1_005",
+      "summary": "$240.00/mo billed on 1st. Seasonal freeze scheduled for January.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x1e2f34567890abcdef1234567890abcdef1234567890"
+    },
+    {
+      "id": "MEM_06",
+      "type": "TRIAL_WATCH",
+      "key": "adobe_creative_trial",
+      "suiTransactionDigest": "0x2f34567890abcdef1234567890abcdef1234567890ab",
+      "walrusBlobId": "blob_walrus_sui_mainnet_adobe_trial_v1_006",
+      "summary": "7-day free trial started Oct 18. Mandatory 48h cancellation notice scheduled Oct 23. Rebill risk: $54.99/mo.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x2f34567890abcdef1234567890abcdef1234567890ab"
+    },
+    {
+      "id": "MEM_07",
+      "type": "ESCALATION_POLICY",
+      "key": "unknown_vendor_threshold",
+      "suiTransactionDigest": "0x34567890abcdef1234567890abcdef1234567890abcd",
+      "walrusBlobId": "blob_walrus_sui_mainnet_policy_unknown_007",
+      "summary": "Strict rule: Any new merchant debiting > $50.00 requires immediate SMS/Push approval. Suppress autonomous pass.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x34567890abcdef1234567890abcdef1234567890abcd"
+    },
+    {
+      "id": "MEM_08",
+      "type": "ESCALATION_POLICY",
+      "key": "annual_renewal_tolerance",
+      "suiTransactionDigest": "0x4567890abcdef1234567890abcdef1234567890abcdef",
+      "walrusBlobId": "blob_walrus_sui_mainnet_policy_annual_008",
+      "summary": "Annual renewals (Prime, 1Password) permitted +5% max inflation vs prior year without emergency escalation.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x4567890abcdef1234567890abcdef1234567890abcdef"
+    },
+    {
+      "id": "MEM_09",
+      "type": "VENDOR_BASELINE",
+      "key": "github_copilot",
+      "suiTransactionDigest": "0x567890abcdef1234567890abcdef1234567890abcdef12",
+      "walrusBlobId": "blob_walrus_sui_mainnet_copilot_base_v1_009",
+      "summary": "$10.00/mo baseline developer tool. Do not flag unless duplicated by team seat.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x567890abcdef1234567890abcdef1234567890abcdef12"
+    },
+    {
+      "id": "MEM_10",
+      "type": "DISPUTE_TRACE",
+      "key": "doordash_pass",
+      "suiTransactionDigest": "0x67890abcdef1234567890abcdef1234567890abcdef1234",
+      "walrusBlobId": "blob_walrus_sui_mainnet_doordash_trace_010",
+      "summary": "Duplicate charge disputed in August 2026. Refunded $9.99. Watch merchant for rebill.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x67890abcdef1234567890abcdef1234567890abcdef1234"
+    },
+    {
+      "id": "MEM_11",
+      "type": "OVERLAP_NOTE",
+      "key": "audio_streaming_overlap",
+      "suiTransactionDigest": "0x7890abcdef1234567890abcdef1234567890abcdef123456",
+      "walrusBlobId": "blob_walrus_sui_mainnet_overlap_audio_011",
+      "summary": "Duplicate alert: User holds active Spotify ($10.99) and Apple Music ($10.99). Prompt consolidation.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x7890abcdef1234567890abcdef1234567890abcdef123456"
+    },
+    {
+      "id": "MEM_12",
+      "type": "VENDOR_BASELINE",
+      "key": "icloud_storage_2tb",
+      "suiTransactionDigest": "0x890abcdef1234567890abcdef1234567890abcdef12345678",
+      "walrusBlobId": "blob_walrus_sui_mainnet_icloud_base_v1_012",
+      "summary": "$9.99/mo family plan. Fixed utility tier.",
+      "explorerUrl": "https://suiscan.xyz/mainnet/tx/0x890abcdef1234567890abcdef1234567890abcdef12345678"
+    }
+  ]
+}

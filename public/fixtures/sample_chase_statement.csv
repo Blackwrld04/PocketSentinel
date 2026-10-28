@@ -1,0 +1,13 @@
+Transaction Date,Post Date,Description,Category,Type,Amount,Memo
+10/20/2026,10/21/2026,TST* NETFLIX.COM 866-579-7172 CA,Entertainment,Sale,-17.99,Monthly Subscription (Hiked by +$2.50)
+10/19/2026,10/20/2026,AMZN Web Services AWS.amazon.com WA,Bills & Utilities,Sale,-142.50,Q4 Seasonal Surge (Approved < $180 ceiling)
+10/18/2026,10/19/2026,DOORDASH*DASHPASS 855-973-1040 CA,Food & Drink,Sale,-9.99,Prior disputed vendor rebill alert
+10/18/2026,10/18/2026,ADOBE *CREATIVE CLOUD 408-536-6000 CA,Professional,Sale,0.00,7-day trial verification hold (Rebill risk: $54.99)
+10/15/2026,10/16/2026,Spotify USA 646-8375922 NY,Entertainment,Sale,-10.99,Spotify Premium (Overlaps with Apple Music)
+10/15/2026,10/16/2026,APPLE.COM/BILL 866-712-7753 CA,Entertainment,Sale,-10.99,Apple Music (Active duplicate streaming)
+10/14/2026,10/15/2026,OPENAI *CHATGPT PLUS SAN FRANCISCO CA,Professional,Sale,-20.00,ChatGPT Plus monthly baseline match
+10/12/2026,10/13/2026,WHOLEFDS SOMA 10291 SAN FRANCISCO CA,Groceries,Sale,-64.30,Routine grocery transaction
+10/10/2026,10/11/2026,GITHUB *COPILOT 877-448-4820 CA,Professional,Sale,-10.00,Developer tool baseline match
+10/05/2026,10/06/2026,APEX LUXURY APPAREL LLC NEW YORK NY,Shopping,Sale,-89.00,Unknown merchant debit > $50 threshold
+10/01/2026,10/02/2026,EQUINOX FITNESS CLUBS SAN FRANCISCO CA,Health & Wellness,Sale,-240.00,Equinox membership baseline
+09/19/2026,09/20/2026,APPLE.COM/BILL 866-712-7753 CA,Utilities,Sale,-9.99,iCloud+ 2TB family tier baseline

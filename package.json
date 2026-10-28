@@ -1,0 +1,31 @@
+{
+  "name": "pocketsentinel",
+  "version": "1.0.0",
+  "description": "PocketSentinel — Autonomous Consumer Expense Watchdog & Subscription Sentinel Powered by Walrus Memory Recall & Tatum",
+  "main": "server/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js",
+    "seed": "node server/seedMemories.js",
+    "test": "node server/test/watchdog.test.js"
+  },
+  "keywords": [
+    "pocketsentinel",
+    "walrus-memory",
+    "tatum",
+    "sui",
+    "expense-watchdog",
+    "hackathon",
+    "total-recall"
+  ],
+  "author": "PocketSentinel Team",
+  "license": "MIT",
+  "dependencies": {
+    "@mysten-incubation/memwal": "^0.1.11",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "multer": "^1.4.5-lts.1"
+  }
+}

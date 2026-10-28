@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PocketSentinel: Every dollar your household spends. Visible.</title>
+  <meta name="description" content="Autonomous consumer expense watchdog & subscription sentinel with client-side encryption and zero-knowledge memory baselines. Real-time spend. Zero surprises.">
+  
+  <!-- Modern Geometric Typography & Monospace -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <link rel="stylesheet" href="/styles.css?v=2.6">
+</head>
+<body class="saas-theme in-app-view">
+
+  <!-- ================= TOP GLOBAL NAVIGATION ================= -->
+  <header class="site-header" id="siteHeader">
+
+    <!-- App Topbar (Default active view) -->
+    <div class="header-container app-header-bar" id="appHeaderBar" style="display: flex; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 20px !important; box-sizing: border-box !important; justify-content: space-between !important; align-items: center !important;">
+      <div class="header-left">
+        <a href="#app" class="brand-logo" onclick="filterAppView('all')">
+          <span class="logo-text">PocketSentinel</span>
+        </a>
+      </div>
+
+      <div class="header-center-status">
+        <div class="header-status-pill net-liquidity" onclick="filterAppView('wallets')" title="Net Household Liquidity across 4 Wallets">
+          <i data-lucide="wallet"></i>
+          <span>Net Liquidity: <strong id="headerNetLiquidity">$2,695.00</strong></span>
+        </div>
+        <div class="header-status-pill safe-spend" onclick="filterAppView('safespend')" title="Real-Time Cash Runway">
+          <i data-lucide="gauge"></i>
+          <span>Safe-to-Spend: <strong class="text-green" id="headerSafeSpend">$482.35</strong></span>
+        </div>
+      </div>
+
+      <div class="header-right">
+
+        <div class="header-user-profile" onclick="filterAppView('settings')" title="User Profile & Wage Settings">
+          <div class="header-user-avatar" id="headerUserAvatar">AR</div>
+          <div class="header-user-meta">
+            <span class="header-user-name" id="headerUserName">Alex Rivera</span>
+            <span class="header-user-wage" id="headerUserWage">$25/hr Life Energy</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ================= VIEW 2: CORE SENTINEL DASHBOARD APP (LEDGR AESTHETIC) ================= -->
+  <main class="view-panel active" id="viewApp">
+    <div class="app-shell-layout">
+      
+      <!-- Left Sidebar -->
+      <aside class="app-sidebar" id="appSidebar">
+        <!-- Top Primary Action Button (Desktop Quick Add & Scan) -->
+        <div class="sidebar-top-action" style="display: flex; gap: 8px;">
+          <button class="btn-sidebar-primary-cta" id="sidebarQuickAddBtn" onclick="openQuickAddModal()" style="flex: 1;">
+            <i data-lucide="plus-circle"></i>
+            <span>+ Log Expense</span>
+          </button>
+          <button class="btn-sidebar-camera-cta" id="sidebarCameraBtn" onclick="openCameraScannerModal()" title="Live Receipt Camera Scanner" style="background: #10b981; color: #141413; font-weight: 800; border: 2px solid #141413; border-radius: 10px; padding: 0 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 2px 2px 0 #141413;">
+            <i data-lucide="camera"></i>
+            <span>Scan</span>
+          </button>
+        </div>
+
+        <div class="sidebar-menu">
+          <div class="sidebar-category-header">EVERYDAY EXPENSES &amp; WALLETS</div>
+          <button class="sidebar-item active" id="sideBtnAll" onclick="filterAppView('all')">
+            <i data-lucide="layout-grid"></i>
+            <span>1. Overview &amp; Runway</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnTransactions" onclick="filterAppView('transactions')">
+            <i data-lucide="receipt"></i>
+            <span>2. Recent Transactions</span>
+            <span class="sidebar-counter-slate" id="sidebarTxCount">8 Txns</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnWallets" onclick="filterAppView('wallets')">
+            <i data-lucide="wallet"></i>
+            <span>3. Wallets &amp; Vaults</span>
+            <span class="sidebar-counter-green">$2,695</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnPlan" onclick="filterAppView('plan')">
+            <i data-lucide="layers"></i>
+            <span>4. Plan &amp; Envelopes</span>
+            <span class="sidebar-counter-amber">YNAB</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnSafeSpend" onclick="filterAppView('safespend')">
+            <i data-lucide="bot"></i>
+            <span>5. AI Copilot Coach</span>
+            <span class="sidebar-counter-green">Groq</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnReceipts" onclick="filterAppView('receipts')">
+            <i data-lucide="scan-line"></i>
+            <span>6. Receipt OCR Matcher</span>
+            <span class="sidebar-counter-slate">OCR</span>
+          </button>
+
+          <div class="sidebar-category-header">SUBSCRIPTION SENTINEL</div>
+          <button class="sidebar-item" id="sideBtnSubscriptions" onclick="filterAppView('subscriptions')">
+            <i data-lucide="calendar"></i>
+            <span>Active Subscriptions</span>
+            <span class="sidebar-counter-blue" id="sidebarSubCount">9</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnAlerts" onclick="filterAppView('alerts')">
+            <i data-lucide="alert-triangle"></i>
+            <span>Price Creep Alerts</span>
+            <span class="sidebar-counter" id="sidebarAlertCount">2</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnTrials" onclick="filterAppView('trials')">
+            <i data-lucide="clock"></i>
+            <span>Zombie Trials</span>
+            <span class="sidebar-counter urgent" id="sidebarTrialCount">1</span>
+          </button>
+          <button class="sidebar-item" id="sideBtnDisputes" onclick="filterAppView('disputes')">
+            <i data-lucide="shield-check"></i>
+            <span>Disputes &amp; Savings</span>
+            <span class="sidebar-counter-green">3</span>
+          </button>
+
+          <div class="sidebar-category-header">SOVEREIGNTY &amp; GOVERNANCE</div>
+          <button class="sidebar-item" id="sideBtnSettings" onclick="filterAppView('settings')">
+            <i data-lucide="sliders"></i>
+            <span>7. Settings &amp; Memory</span>
+            <span class="sidebar-counter-blue">12 Nodes</span>
+          </button>
+          <button class="sidebar-item" onclick="switchView('landing')" style="display:none;">
+            <i data-lucide="external-link"></i>
+            <span>Marketing Landing Page</span>
+          </button>
+        </div>
+
+        <div class="sidebar-bottom-actions">
+          <button class="btn-sidebar-ask" onclick="loadSampleDemoStatement()">
+            <i data-lucide="file-plus"></i>
+            <span>Audit Demo Statement</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Center Main Content -->
+      <section class="app-main-content" id="appMainScrollArea">
+        
+        <!-- SUBVIEW 1: OVERVIEW & RADAR (CLEAN 4-ROW DEDUPLICATED HOME DASHBOARD) -->
+        <div class="subview-panel active" id="subviewOverview">
+          
+          <!-- ROW 1: TOP GREETING BAR -->
+          <div class="mobile-personal-bar" id="mobilePersonalBar">
+            <div class="personal-user-info">
+              <div class="personal-avatar" onclick="filterAppView('settings')" title="Edit Profile & Wage">
+                <span id="userAvatarText">AR</span>
+              </div>
+              <div class="personal-greeting-wrap">
+                <span class="greeting-time">Good Morning,</span>
+                <h3 class="user-display-name" id="userDisplayName">Alex Rivera</h3>
+              </div>
+              <div class="wage-life-energy-pill" onclick="filterAppView('settings')" title="Configured Hourly Wage for Vicki Robin Life Energy Calculation">
+                <i data-lucide="clock"></i>
+                <span id="userWagePillDisplay">$25.00 / hr Life Energy</span>
+              </div>
+            </div>
+            <div class="personal-quick-actions">
+              <button class="btn-copilot-pill" onclick="openCopilotFromAnywhere()" title="Open Groq AI Copilot Coach">
+                <i data-lucide="bot"></i>
+                <span>Ask AI Copilot</span>
+              </button>
+            </div>
+          </div>
+
+
+          <!-- ROW 3: CASH FLOW DISTRIBUTION BAR -->
+          <div class="cashflow-allocator-card">
+            <div class="cashflow-card-header">
+              <div class="cashflow-title-group">
+                <h3><i data-lucide="pie-chart" class="text-green"></i> Monthly Cash Flow &amp; Runway Distribution</h3>
+                <p>October income allocation</p>
+              </div>
+              <div class="cashflow-inflow-badge">
+                <i data-lucide="wallet"></i> Inflow: <strong>$4,850.00</strong>
+              </div>
+            </div>
+
+            <!-- Single Proportional Progress Bar -->
+            <div class="cashflow-bar-container">
+              <div class="cashflow-bar" title="Fixed Bills 6.2%, Babylon Reserve 10.3%, Variable Spent 73.5%, Safe-to-Spend 10.0%">
+                <div class="cf-seg subs" style="width: 6.2%;" title="Fixed Subscriptions: $301.46 (6.2%)"></div>
+                <div class="cf-seg savings" style="width: 10.3%;" title="Babylon Reserve: $500.00 (10.3%)"></div>
+                <div class="cf-seg spent" style="width: 73.5%;" title="Variable Expenses: $3,566.19 (73.5%)"></div>
+                <div class="cf-seg safespend" style="width: 10.0%;" title="Safe-to-Spend Runway: $482.35 (10.0%)"></div>
+              </div>
+            </div>
+
+            <!-- 4 Plain-English Breakdown Cards With Icons -->
+            <div class="cashflow-metrics-grid">
+              <div class="cf-metric-card" onclick="filterAppView('plan')" style="cursor:pointer;" title="View all 9 recurring subscriptions">
+                <div class="cf-metric-top">
+                  <span class="cf-metric-label"><i data-lucide="repeat" class="text-coral"></i> Fixed Bills</span>
+                  <span class="cf-metric-pct">6.2%</span>
+                </div>
+                <div class="cf-metric-val">$301.46</div>
+                <div class="cf-metric-sub">9 recurring bills</div>
+              </div>
+
+              <div class="cf-metric-card" onclick="filterAppView('wallets')" style="cursor:pointer;" title="View emergency buffer vault">
+                <div class="cf-metric-top">
+                  <span class="cf-metric-label"><i data-lucide="piggy-bank" class="text-blue"></i> Reserve</span>
+                  <span class="cf-metric-pct">10.3%</span>
+                </div>
+                <div class="cf-metric-val">$500.00</div>
+                <div class="cf-metric-sub">Locked savings</div>
+              </div>
+
+              <div class="cf-metric-card" title="Statement debits processed this month">
+                <div class="cf-metric-top">
+                  <span class="cf-metric-label"><i data-lucide="shopping-bag" class="text-neutral"></i> Variable Spent</span>
+                  <span class="cf-metric-pct">73.5%</span>
+                </div>
+                <div class="cf-metric-val">$3,566.19</div>
+                <div class="cf-metric-sub">Living expenses</div>
+              </div>
+
+              <div class="cf-metric-card safespend-card" onclick="filterAppView('safespend')" style="cursor:pointer;" title="Click to test a purchase against your safe cash">
+                <div class="cf-metric-top">
+                  <span class="cf-metric-label"><i data-lucide="shield-check" class="text-green"></i> Safe-to-Spend</span>
+                  <span class="cf-metric-pct text-green font-bold">10.0%</span>
+                </div>
+                <div class="cf-metric-val text-green" id="overviewSafeSpendVal">$482.35</div>
+                <div class="cf-metric-sub"><strong id="overviewDailyAllowance">$48.23 / day</strong> · 10 days left</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROW 4: CLEAN LINE NAVIGATION BUTTONS (NO SCATTERED CARDS ON HOME) -->
+          <div class="home-line-nav-section">
+            <div class="home-line-nav-grid">
+              
+              <!-- 1. Recent Transactions Line Button -->
+              <button type="button" class="home-nav-line-btn tx-line-btn" id="homeLineBtnTransactions" onclick="filterAppView('transactions')" title="Open dedicated Recent Transactions page">
+                <div class="line-btn-left">
+                  <div class="line-btn-icon-wrap green">
+                    <i data-lucide="receipt"></i>
+                  </div>
+                  <div class="line-btn-info">
+                    <div class="line-btn-title-row">
+                      <strong class="line-btn-title">Recent Transactions &amp; Audit Feed</strong>
+                      <span class="line-btn-pill green" id="homeLineTxBadge">8 Audited</span>
+                    </div>
+                    <span class="line-btn-sub">Audited debits and memory baselines</span>
+                  </div>
+                </div>
+                <div class="line-btn-right">
+                  <span class="line-btn-action-text">View Ledger &rarr;</span>
+                  <i data-lucide="chevron-right" class="line-btn-arrow"></i>
+                </div>
+              </button>
+
+              <!-- 2. Active Sentinel Radar Alerts Line Button -->
+              <button type="button" class="home-nav-line-btn alert-line-btn" id="homeLineBtnAlerts" onclick="filterAppView('alerts')" title="Open dedicated Active Sentinel Alerts triage page">
+                <div class="line-btn-left">
+                  <div class="line-btn-icon-wrap coral">
+                    <i data-lucide="alert-triangle"></i>
+                  </div>
+                  <div class="line-btn-info">
+                    <div class="line-btn-title-row">
+                      <strong class="line-btn-title">Active Sentinel Radar Alerts</strong>
+                      <span class="line-btn-pill red" id="homeLineAlertBadge">2 Action Needed</span>
+                    </div>
+                    <span class="line-btn-sub">Netflix price hike (+$2.50) · Adobe 48h trial renewal</span>
+                  </div>
+                </div>
+                <div class="line-btn-right">
+                  <span class="line-btn-action-text text-coral">Review Alerts &rarr;</span>
+                  <i data-lucide="chevron-right" class="line-btn-arrow"></i>
+                </div>
+              </button>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SUBVIEW 2: DEDICATED RECENT TRANSACTIONS & AUDIT FEED PAGE -->
+        <div class="subview-panel" id="subviewTransactions" style="display:none;">
+          
+          <!-- Top Header & Navigation -->
+          <div class="subview-header-bar">
+            <div>
+              <div class="subview-breadcrumb" onclick="filterAppView('all')" style="cursor:pointer;" title="Back to Home Overview">
+                <i data-lucide="arrow-left"></i> <span>Back to Overview</span>
+              </div>
+              <h2 class="subview-page-title"><i data-lucide="receipt" class="text-green"></i> Transactions &amp; Audit Feed</h2>
+              <p class="subview-page-subtitle">Debits audited against memory baselines</p>
+            </div>
+            <div class="subview-header-actions">
+              <button class="btn-ghost-action" onclick="loadSampleDemoStatement()" title="Re-audit sample statement against memory baselines">
+                <i data-lucide="rotate-cw"></i> <span>Audit Demo Statement</span>
+              </button>
+              <button class="btn-primary-action" onclick="openQuickAddModal()" title="Manually log or scan a receipt">
+                <i data-lucide="plus-circle"></i> <span>Log Expense / Scan</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Transaction Summary KPI Metrics -->
+          <div class="tx-kpi-summary-row">
+            <div class="tx-kpi-card">
+              <div class="tx-kpi-label"><i data-lucide="credit-card" class="text-blue"></i> October Volume</div>
+              <div class="tx-kpi-value" id="txKpiVolumeDisplay">$3,566.19</div>
+              <div class="tx-kpi-sub" id="txKpiCountSub">8 processed statement debits</div>
+            </div>
+            <div class="tx-kpi-card">
+              <div class="tx-kpi-label"><i data-lucide="clock" class="text-amber"></i> Life Energy Spent</div>
+              <div class="tx-kpi-value" id="txKpiLifeEnergy">142.6 hrs</div>
+              <div class="tx-kpi-sub" id="txKpiWageSub">At $25.00/hr wage</div>
+            </div>
+            <div class="tx-kpi-card">
+              <div class="tx-kpi-label"><i data-lucide="shield-check" class="text-green"></i> Policy Verification</div>
+              <div class="tx-kpi-value text-green">100% On-Chain</div>
+              <div class="tx-kpi-sub">12 Mainnet baselines</div>
+            </div>
+            <div class="tx-kpi-card">
+              <div class="tx-kpi-label"><i data-lucide="alert-triangle" class="text-coral"></i> Discrepancies</div>
+              <div class="tx-kpi-value text-coral" id="txKpiAlertsCount">2 Flagged</div>
+              <div class="tx-kpi-sub">Disputes ready</div>
+            </div>
+          </div>
+
+          <!-- Dedicated Full Transactions Panel -->
+          <div class="transactions-full-panel app-panel">
+            <div class="panel-header">
+              <div class="panel-title-wrap">
+                <h3 class="panel-title"><i data-lucide="list-checks" class="text-green"></i> Statement Records</h3>
+                <p class="panel-subtitle">Filter and audit statement history</p>
+              </div>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div class="tx-filter-bar">
+              <div class="tx-search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="txSearchInput" placeholder="Search merchant, category, or wallet..." oninput="handleTxSearch(this.value)">
+              </div>
+              <div class="tx-filter-chips">
+                <button type="button" class="chip active" data-filter="all" onclick="filterTxTable('all')">All</button>
+                <button type="button" class="chip" data-filter="subscription" onclick="filterTxTable('subscription')">Subscriptions</button>
+                <button type="button" class="chip" data-filter="flagged" onclick="filterTxTable('flagged')">Flagged</button>
+              </div>
+            </div>
+
+            <!-- Clean Table / List of Recent Expenses -->
+            <div class="audit-records-list" id="auditRecordsList">
+              <!-- Populated dynamically with full audit records -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SUBVIEW: WALLETS & SOVEREIGN VAULTS (TAB 3) -->
+        <div class="subview-panel" id="subviewWallets" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">Multi-Wallets &amp; Reserves</h2>
+              <p class="subview-subtitle">Household accounts, cash reserves, and statement feeds</p>
+            </div>
+            <div class="subview-actions-cluster">
+              <button class="btn-amber-card-action" onclick="openAddWalletModal()">
+                <i data-lucide="plus-circle"></i>
+                <span>Add Wallet</span>
+              </button>
+              <button class="btn-ghost-action" onclick="openTransferModal()">
+                <i data-lucide="arrow-right-left"></i>
+                <span>Transfer</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Total Net Liquidity Header -->
+          <div class="wallets-liquidity-banner">
+            <div>
+              <span class="liquidity-label">Total Household Net Liquidity</span>
+              <div class="liquidity-amount text-green" id="totalNetLiquidityDisplay">$2,695.00</div>
+            </div>
+            <div class="liquidity-meta">
+              <span>Sovereignty: <strong>WebCrypto AES-256</strong></span>
+              <span>Tatum Sui Balance: <strong id="walletsSuiBalance">4.580 SUI</strong></span>
+            </div>
+          </div>
+
+          <!-- Wallets Grid -->
+          <div class="wallets-cards-grid" id="walletsCardsContainer">
+            <!-- Checking Account -->
+            <div class="wallet-card primary">
+              <div class="wallet-card-top">
+                <div class="wallet-title-wrap">
+                  <span class="wallet-icon checking"><i data-lucide="landmark"></i></span>
+                  <div>
+                    <h4 class="wallet-name">Primary Checking Account</h4>
+                    <span class="wallet-sub">Primary spending rail</span>
+                  </div>
+                </div>
+              </div>
+              <div class="wallet-balance-wrap">
+                <span class="wallet-balance-amt" id="walletCheckingBal">$2,430.00</span>
+                <span class="wallet-balance-hint">Covers $482.35 Safe Runway</span>
+              </div>
+              <div class="wallet-footer-actions">
+                <button class="btn-wallet-action" onclick="openQuickAddModal('Primary Checking')"><i data-lucide="plus"></i> Spend</button>
+                <button class="btn-wallet-action ghost" onclick="openTransferModal('Primary Checking')">Transfer</button>
+              </div>
+            </div>
+
+            <!-- Babylon 10% Gold Reserve -->
+            <div class="wallet-card babylon">
+              <div class="wallet-card-top">
+                <div class="wallet-title-wrap">
+                  <span class="wallet-icon babylon"><i data-lucide="shield-alert"></i></span>
+                  <div>
+                    <h4 class="wallet-name">10% Emergency Reserve</h4>
+                    <span class="wallet-sub">Locked emergency buffer</span>
+                  </div>
+                </div>
+              </div>
+              <div class="wallet-balance-wrap">
+                <span class="wallet-balance-amt text-amber" id="walletBabylonBal">$500.00</span>
+                <span class="wallet-balance-hint">Protected savings</span>
+              </div>
+              <div class="wallet-footer-actions">
+                <button class="btn-wallet-action babylon-btn" onclick="openBabylonUnlockModal()"><i data-lucide="key"></i> Emergency Access</button>
+              </div>
+            </div>
+
+            <!-- Physical Cash -->
+            <div class="wallet-card">
+              <div class="wallet-card-top">
+                <div class="wallet-title-wrap">
+                  <span class="wallet-icon cash"><i data-lucide="banknote"></i></span>
+                  <div>
+                    <h4 class="wallet-name">Physical Cash</h4>
+                    <span class="wallet-sub">Cash on hand</span>
+                  </div>
+                </div>
+              </div>
+              <div class="wallet-balance-wrap">
+                <span class="wallet-balance-amt" id="walletCashBal">$185.00</span>
+                <span class="wallet-balance-hint">Offline cash</span>
+              </div>
+              <div class="wallet-footer-actions">
+                <button class="btn-wallet-action" onclick="openQuickAddModal('Physical Cash')"><i data-lucide="plus"></i> Log Cash Spend</button>
+              </div>
+            </div>
+
+            <!-- Household Credit Card -->
+            <div class="wallet-card card">
+              <div class="wallet-card-top">
+                <div class="wallet-title-wrap">
+                  <span class="wallet-icon card-icon"><i data-lucide="credit-card"></i></span>
+                  <div>
+                    <h4 class="wallet-name">Household Credit Card</h4>
+                    <span class="wallet-sub">Statement liability</span>
+                  </div>
+                </div>
+              </div>
+              <div class="wallet-balance-wrap">
+                <span class="wallet-balance-amt text-coral" id="walletCreditBal">-$420.00</span>
+                <span class="wallet-balance-hint">Due Nov 01</span>
+              </div>
+              <div class="wallet-footer-actions">
+                <button class="btn-wallet-action" onclick="openQuickAddModal('Credit Card')"><i data-lucide="plus"></i> Log Card Spend</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connected Bank CSV & Google Sheets Import Card -->
+          <div class="wallet-import-card">
+            <div class="import-card-header">
+              <div class="import-title-group">
+                <span class="import-icon"><i data-lucide="file-spreadsheet"></i></span>
+                <div>
+                  <h4>Statement Import &amp; Live Feed</h4>
+                  <p>Import CSV statements or sync live with Google Sheets</p>
+                </div>
+              </div>
+              <button class="btn-amber-card-action" onclick="document.getElementById('hiddenStatementUpload').click()">
+                <i data-lucide="upload"></i> Upload CSV
+              </button>
+              <input type="file" id="hiddenStatementUpload" accept=".csv" style="display:none;" onchange="handleStatementFileUpload(event)">
+            </div>
+            <div class="import-formula-box">
+              <div class="formula-box-header">
+                <label><i data-lucide="table"></i> Google Sheets Feed Formula:</label>
+                <span class="formula-sync-hint">Live 9-Column CSV Sync</span>
+              </div>
+              <div class="formula-copy-row">
+                <div class="formula-code-container">
+                  <code>=IMPORTDATA("http://localhost:3000/api/feed/csv")</code>
+                </div>
+                <button class="btn-copy-mini" onclick="copyText('=IMPORTDATA(&quot;http://localhost:3000/api/feed/csv&quot;)', this)" title="Copy formula to clipboard">
+                  <i data-lucide="copy"></i> <span>Copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW: PLAN — ZERO-BASED ENVELOPES, SPEND CALENDAR & SUBSCRIPTIONS (TAB 3) -->
+        <div class="subview-panel" id="subviewPlan" style="display:none;">
+          
+          <!-- Subview Header -->
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">Plan &amp; Envelopes</h2>
+              <p class="subview-subtitle">Category budgets, deficit rebalancing, and spending cadence</p>
+            </div>
+            <div class="subview-actions-cluster">
+              <button class="btn-amber-card-action" onclick="rebalanceEnvelopesWithPunch()">
+                <i data-lucide="refresh-cw"></i>
+                <span>Rebalance Deficit</span>
+              </button>
+              <button class="btn-ghost-outline" onclick="showToast('Zero-based envelope manager: Ready to create custom category envelope.')">
+                <i data-lucide="folder-plus"></i>
+                <span>+ Add Category</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION 1: ZERO-BASED DIGITAL ENVELOPES ALLOCATOR -->
+          <div class="plan-section-card app-panel">
+            <div class="panel-header">
+              <div class="panel-title-wrap">
+                <h3 class="panel-title"><i data-lucide="mail" class="text-amber"></i> Digital Envelopes</h3>
+                <p class="panel-subtitle">$4,850.00 monthly income assigned</p>
+              </div>
+              <span class="status-pill green"><i data-lucide="check-circle"></i> Balanced</span>
+            </div>
+
+            <!-- Zero-Based Balance Status Strip -->
+            <div class="envelope-pool-banner">
+              <div class="pool-stat">
+                <span>Inflow:</span>
+                <strong id="planInflowPoolDisplay">$4,850.00</strong>
+              </div>
+              <div class="pool-divider">→</div>
+              <div class="pool-stat">
+                <span>Allocated:</span>
+                <strong id="planAllocatedPoolDisplay">$4,850.00</strong>
+              </div>
+              <div class="pool-divider">→</div>
+              <div class="pool-stat highlight green">
+                <span>Unassigned:</span>
+                <strong id="planUnassignedPoolDisplay">$0.00 (Balanced)</strong>
+              </div>
+            </div>
+
+            <!-- Envelopes Cards Grid -->
+            <div class="envelopes-cards-grid">
+              <!-- Envelope 1: Groceries -->
+              <div class="envelope-card">
+                <div class="env-header">
+                  <div class="env-title-wrap">
+                    <span class="env-icon"><i data-lucide="shopping-cart"></i></span>
+                    <div>
+                      <strong>Groceries</strong>
+                      <span class="env-meta">Target: $600.00 / mo</span>
+                    </div>
+                  </div>
+                  <span class="env-remaining-pill green">+$104.80 Left</span>
+                </div>
+                <div class="env-progress-bar">
+                  <div class="env-fill green" style="width: 82%;"></div>
+                </div>
+                <div class="env-footer">
+                  <span>Spent: $495.20</span>
+                  <span>Allocated: $600.00</span>
+                </div>
+              </div>
+
+              <!-- Envelope 2: Dining Out (Deficit) -->
+              <div class="envelope-card alert-deficit" id="planEnvDiningCard">
+                <div class="env-header">
+                  <div class="env-title-wrap">
+                    <span class="env-icon"><i data-lucide="utensils"></i></span>
+                    <div>
+                      <strong>Dining Out</strong>
+                      <span class="env-meta">Target: $350.00 / mo</span>
+                    </div>
+                  </div>
+                  <span class="env-remaining-pill red" id="planEnvDiningPill">-$45.00 Deficit</span>
+                </div>
+                <div class="env-progress-bar">
+                  <div class="env-fill red" id="planEnvDiningBar" style="width: 112%;"></div>
+                </div>
+                <div class="env-footer">
+                  <span id="planEnvDiningSpent">Spent: $395.00</span>
+                  <span id="planEnvDiningAlloc">Allocated: $350.00</span>
+                </div>
+                <div class="env-rebalance-callout" id="planEnvDiningCallout">
+                  <span>⚠️ Overspent by $45.00</span>
+                  <button class="btn-mini-rebalance" onclick="rebalanceEnvelopesWithPunch()">Rebalance from Fun</button>
+                </div>
+              </div>
+
+              <!-- Envelope 3: Fun (Surplus) -->
+              <div class="envelope-card" id="planEnvFunCard">
+                <div class="env-header">
+                  <div class="env-title-wrap">
+                    <span class="env-icon"><i data-lucide="ticket"></i></span>
+                    <div>
+                      <strong>Discretionary Fun</strong>
+                      <span class="env-meta">Target: $250.00 / mo</span>
+                    </div>
+                  </div>
+                  <span class="env-remaining-pill blue" id="planEnvFunPill">+$130.00 Surplus</span>
+                </div>
+                <div class="env-progress-bar">
+                  <div class="env-fill blue" id="planEnvFunBar" style="width: 48%;"></div>
+                </div>
+                <div class="env-footer">
+                  <span id="planEnvFunSpent">Spent: $120.00</span>
+                  <span id="planEnvFunAlloc">Allocated: $250.00</span>
+                </div>
+              </div>
+
+              <!-- Envelope 4: Transport -->
+              <div class="envelope-card">
+                <div class="env-header">
+                  <div class="env-title-wrap">
+                    <span class="env-icon"><i data-lucide="fuel"></i></span>
+                    <div>
+                      <strong>Transport &amp; Fuel</strong>
+                      <span class="env-meta">Target: $250.00 / mo</span>
+                    </div>
+                  </div>
+                  <span class="env-remaining-pill green">+$65.80 Left</span>
+                </div>
+                <div class="env-progress-bar">
+                  <div class="env-fill green" style="width: 74%;"></div>
+                </div>
+                <div class="env-footer">
+                  <span>Spent: $184.20</span>
+                  <span>Allocated: $250.00</span>
+                </div>
+              </div>
+
+              <!-- Envelope 5: Utilities -->
+              <div class="envelope-card">
+                <div class="env-header">
+                  <div class="env-title-wrap">
+                    <span class="env-icon"><i data-lucide="zap"></i></span>
+                    <div>
+                      <strong>Utilities &amp; Internet</strong>
+                      <span class="env-meta">Target: $150.00 / mo</span>
+                    </div>
+                  </div>
+                  <span class="env-remaining-pill green">+$10.00 Left</span>
+                </div>
+                <div class="env-progress-bar">
+                  <div class="env-fill green" style="width: 93%;"></div>
+                </div>
+                <div class="env-footer">
+                  <span>Spent: $140.00</span>
+                  <span>Allocated: $150.00</span>
+                </div>
+              </div>
+
+              <!-- Envelope 6: Babylon Sinking Reserve -->
+              <div class="envelope-card reserve-card">
+                <div class="env-header">
+                  <div class="env-title-wrap">
+                    <span class="env-icon amber"><i data-lucide="shield"></i></span>
+                    <div>
+                      <strong>10% Emergency Reserve</strong>
+                      <span class="env-meta">Locked reserve</span>
+                    </div>
+                  </div>
+                  <span class="env-remaining-pill amber"><i data-lucide="lock"></i> $500.00 Locked</span>
+                </div>
+                <div class="env-progress-bar">
+                  <div class="env-fill amber" style="width: 100%;"></div>
+                </div>
+                <div class="env-footer">
+                  <span>Spent: $0.00</span>
+                  <span>Target: $500.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RECURRING SUBSCRIPTIONS REDIRECT TO SETTINGS -->
+          <div class="app-panel subscriptions-redirect-card" style="margin-top: 16px;">
+            <div class="redirect-card-left">
+              <div class="redirect-card-icon"><i data-lucide="calendar"></i></div>
+              <div>
+                <h4 class="redirect-card-title">Manage Subscriptions &amp; Spend Calendar</h4>
+                <p class="redirect-card-sub">9 recurring services, 48-hour trial alerts, and renewal cadence calendar.</p>
+              </div>
+            </div>
+            <button class="btn-amber-card-action" onclick="filterAppView('subscriptions')">
+              <i data-lucide="sliders"></i>
+              <span>Open Manage Subscriptions</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- SUBVIEW: DEDICATED AI COPILOT CHATROOM (ZERO CLUTTER) -->
+        <div class="subview-panel" id="subviewSafeSpend" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">AI Copilot Coach</h2>
+              <p class="subview-subtitle">Real-time spending decisions and budget guidance</p>
+            </div>
+            <div class="copilot-header-actions">
+              <div class="copilot-mode-toggles">
+                <button class="mode-pill active" id="btnModeSentinel" onclick="setCopilotMode('sentinel')" title="Forensic telemetry">
+                  <i data-lucide="shield"></i> <span>Sentinel</span>
+                </button>
+                <button class="mode-pill" id="btnModeRoast" onclick="setCopilotMode('roast')" title="Brutal roast">
+                  <i data-lucide="flame"></i> <span>Roast</span>
+                </button>
+                <button class="mode-pill" id="btnModeHype" onclick="setCopilotMode('hype')" title="Celebrating wins">
+                  <i data-lucide="trending-up"></i> <span>Hype</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEDICATED CLEAN CHATROOM WRAPPER -->
+          <div class="copilot-clean-chat-wrapper">
+            <!-- Suggested Prompt Chips -->
+            <div class="copilot-chips-strip">
+              <button class="chip-btn" onclick="sendQuickPrompt('Can I afford a $65 dinner tonight?')">Can I afford dinner tonight?</button>
+              <button class="chip-btn" onclick="sendQuickPrompt('Roast my spending this week')"><i data-lucide="flame"></i> <span>Roast my spending</span></button>
+              <button class="chip-btn" onclick="sendQuickPrompt('Can I afford a $120 weekend trip?')">Can I afford a $120 trip?</button>
+              <button class="chip-btn" onclick="sendQuickPrompt('What does Morgan Housel teach about my emergency reserve?')">Morgan Housel Wisdom</button>
+              <button class="chip-btn" onclick="sendQuickPrompt('How does Ramit Sethi look at my subscriptions?')">Ramit Sethi Advice</button>
+              <button class="chip-btn" onclick="sendQuickPrompt('What is the life energy cost of my spending?')">Vicki Robin Life Energy</button>
+            </div>
+
+            <!-- Full-Height Live Chat Container -->
+            <div class="copilot-chat-container">
+              <div class="chat-messages-scroll" id="copilotChatMessages">
+                <div class="chat-bubble assistant">
+                  <div class="chat-avatar"><i data-lucide="shield"></i></div>
+                  <div class="chat-bubble-body">
+                    <strong>PocketSentinel AI</strong>
+                    <p>Hello Alex! Ask if you can afford a purchase, request spending guidance, or get a spending audit.</p>
+                    <span class="chat-time">Online</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chat Input Bar -->
+              <form class="chat-input-bar" onsubmit="handleCopilotChatSubmit(event)">
+                <input type="text" id="copilotChatInput" placeholder="Ask PocketSentinel anything (e.g. 'Can I afford takeout?', 'Roast my DoorDash habit')..." autocomplete="off" required>
+                <button type="submit" class="btn-send-chat" title="Send message">
+                  <i data-lucide="send"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW: ZERO-BASED ENVELOPES & ROLL WITH PUNCHES (PARADIGM 1) -->
+        <div class="subview-panel" id="subviewEnvelopes" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">Digital Envelopes</h2>
+              <p class="subview-subtitle">Category allocations and rebalancing</p>
+            </div>
+            <div class="subview-actions-cluster">
+              <button class="btn-amber-card-action" onclick="rebalanceEnvelopesWithPunch()">
+                <i data-lucide="refresh-cw"></i>
+                <span>1-Tap Rebalance Deficit</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Zero-Based Balance Status Strip -->
+          <div class="envelope-pool-banner">
+            <div class="pool-stat">
+              <span>Total Monthly Cash Pool:</span>
+              <strong>$4,850.00</strong>
+            </div>
+            <div class="pool-divider">→</div>
+            <div class="pool-stat">
+              <span>Allocated to Digital Envelopes:</span>
+              <strong>$4,850.00</strong>
+            </div>
+            <div class="pool-divider">→</div>
+            <div class="pool-stat highlight green">
+              <span>Unassigned ("To Be Budgeted"):</span>
+              <strong id="toBeBudgetedDisplay">$0.00 (Balanced · Every Dollar Assigned)</strong>
+            </div>
+          </div>
+
+          <!-- Envelopes Grid -->
+          <div class="envelopes-cards-grid">
+            
+            <!-- Envelope 1: Groceries -->
+            <div class="envelope-card">
+              <div class="env-header">
+                <div class="env-title-wrap">
+                  <span class="env-icon"><i data-lucide="shopping-cart"></i></span>
+                  <div>
+                    <strong>Groceries & Household</strong>
+                    <span class="env-meta">Target: $600.00 / mo</span>
+                  </div>
+                </div>
+                <span class="env-remaining-pill green">+$104.80 Left</span>
+              </div>
+              <div class="env-progress-bar">
+                <div class="env-fill green" style="width: 82%;"></div>
+              </div>
+              <div class="env-footer">
+                <span>Spent: $495.20</span>
+                <span>Allocated: $600.00</span>
+              </div>
+            </div>
+
+            <!-- Envelope 2: Dining Out (Overspent Deficit) -->
+            <div class="envelope-card alert-deficit" id="envDiningCard">
+              <div class="env-header">
+                <div class="env-title-wrap">
+                  <span class="env-icon"><i data-lucide="utensils"></i></span>
+                  <div>
+                    <strong>Dining Out & Social</strong>
+                    <span class="env-meta">Target: $350.00 / mo</span>
+                  </div>
+                </div>
+                <span class="env-remaining-pill red" id="envDiningPill">-$45.00 DEFICIT!</span>
+              </div>
+              <div class="env-progress-bar">
+                <div class="env-fill red" id="envDiningFill" style="width: 112%;"></div>
+              </div>
+              <div class="env-footer">
+                <span id="envDiningSpent">Spent: $395.00</span>
+                <span id="envDiningAllocated">Allocated: $350.00</span>
+              </div>
+            </div>
+
+            <!-- Envelope 3: Transport & Fuel -->
+            <div class="envelope-card">
+              <div class="env-header">
+                <div class="env-title-wrap">
+                  <span class="env-icon"><i data-lucide="fuel"></i></span>
+                  <div>
+                    <strong>Transport & Fuel</strong>
+                    <span class="env-meta">Target: $180.00 / mo</span>
+                  </div>
+                </div>
+                <span class="env-remaining-pill green">+$67.60 Left</span>
+              </div>
+              <div class="env-progress-bar">
+                <div class="env-fill green" style="width: 62%;"></div>
+              </div>
+              <div class="env-footer">
+                <span>Spent: $112.40</span>
+                <span>Allocated: $180.00</span>
+              </div>
+            </div>
+
+            <!-- Envelope 4: Utilities & Mobile -->
+            <div class="envelope-card">
+              <div class="env-header">
+                <div class="env-title-wrap">
+                  <span class="env-icon"><i data-lucide="zap"></i></span>
+                  <div>
+                    <strong>Utilities & Internet</strong>
+                    <span class="env-meta">Target: $220.00 / mo</span>
+                  </div>
+                </div>
+                <span class="env-remaining-pill green">+$31.50 Left</span>
+              </div>
+              <div class="env-progress-bar">
+                <div class="env-fill green" style="width: 85%;"></div>
+              </div>
+              <div class="env-footer">
+                <span>Spent: $188.50</span>
+                <span>Allocated: $220.00</span>
+              </div>
+            </div>
+
+            <!-- Envelope 5: Discretionary Fun -->
+            <div class="envelope-card" id="envFunCard">
+              <div class="env-header">
+                <div class="env-title-wrap">
+                  <span class="env-icon"><i data-lucide="ticket"></i></span>
+                  <div>
+                    <strong>Discretionary Fun</strong>
+                    <span class="env-meta">Target: $250.00 / mo</span>
+                  </div>
+                </div>
+                <span class="env-remaining-pill blue" id="envFunPill">+$130.00 Surplus</span>
+              </div>
+              <div class="env-progress-bar">
+                <div class="env-fill blue" id="envFunFill" style="width: 48%;"></div>
+              </div>
+              <div class="env-footer">
+                <span id="envFunSpent">Spent: $120.00</span>
+                <span id="envFunAllocated">Allocated: $250.00</span>
+              </div>
+            </div>
+
+            <!-- Envelope 6: Emergency Reserve -->
+            <div class="envelope-card">
+              <div class="env-header">
+                <div class="env-title-wrap">
+                  <span class="env-icon"><i data-lucide="shield-check"></i></span>
+                  <div>
+                    <strong>Emergency Buffer (Encrypted)</strong>
+                    <span class="env-meta">Target: $500.00 / mo</span>
+                  </div>
+                </div>
+                <span class="env-remaining-pill green">+$500.00 Protected</span>
+              </div>
+              <div class="env-progress-bar">
+                <div class="env-fill green" style="width: 0%;"></div>
+              </div>
+              <div class="env-footer">
+                <span>Spent: $0.00</span>
+                <span>Allocated: $500.00</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Roll With The Punches Interactive Rebalance Callout -->
+          <div class="app-panel roll-punches-panel" id="rollPunchesBox">
+            <div class="punch-left">
+              <span class="status-pill red"><i data-lucide="alert-octagon"></i> Deficit Detected</span>
+              <h4>Deficit Rebalance</h4>
+              <p>Dining Out is overspent by <strong>-$45.00</strong>. Shift $45.00 from Fun (+$130 available) to balance category.</p>
+            </div>
+            <button class="btn-amber-cta" onclick="rebalanceEnvelopesWithPunch()">
+              <i data-lucide="arrow-right-left"></i>
+              <span>Transfer $45.00 from Fun → Dining</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- (Sentinel AI Copilot is now merged into subviewSafeSpend) -->
+
+        <!-- SUBVIEW: RECEIPT OCR INGESTION & TAX MATCHER (PARADIGM 05) -->
+        <div class="subview-panel" id="subviewReceipts" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">Receipt OCR &amp; Tax Matcher</h2>
+              <p class="subview-subtitle">Auto-match receipt line items to statement debits</p>
+            </div>
+            <button class="btn-ghost-action" onclick="exportReceiptTaxAuditBundle()">
+              <i data-lucide="download"></i>
+              <span>Export IRS Audit Bundle</span>
+            </button>
+          </div>
+
+          <!-- Dropzone and Scanner Area -->
+          <div class="receipt-scanner-split">
+            
+            <div class="receipt-dropzone-box" id="receiptDropzone" onclick="simulateReceiptScan()">
+              <div class="receipt-drop-content">
+                <i data-lucide="camera" class="camera-icon"></i>
+                <h4>Drag &amp; Drop Receipt</h4>
+                <p>PNG, JPG, PDF receipt scans</p>
+                <button type="button" class="btn-amber-card-action" onclick="event.stopPropagation(); simulateReceiptScan();">
+                  <i data-lucide="scan"></i>
+                  <span>Scan Sample Receipt ($42.18)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live OCR Extraction Card -->
+            <div class="receipt-extraction-card" id="receiptExtractionCard">
+              <div class="card-tag-row">
+                <small>Chase Sapphire Match</small>
+              </div>
+              <h4 id="receiptMerchantTitle">Blue Bottle Coffee & Breakfast Co.</h4>
+              <div class="receipt-meta-grid">
+                <div><span>Date:</span> <strong id="receiptDate">Oct 19, 2026</strong></div>
+                <div><span>Payment Rail:</span> <strong>Chase Card ending in 4102</strong></div>
+                <div><span>Tax Deductible:</span> <strong class="text-green">100% Business Meal</strong></div>
+                <div><span>Statement Status:</span> <strong class="text-green">Matched to Line Debit</strong></div>
+              </div>
+              
+              <div class="receipt-line-items">
+                <div class="receipt-line"><span>2x Single Origin Pour Over</span><span>$14.00</span></div>
+                <div class="receipt-line"><span>1x Sourdough Avocado Toast</span><span>$14.50</span></div>
+                <div class="receipt-line"><span>1x Kyoto Style Cold Brew</span><span>$6.00</span></div>
+                <div class="receipt-line subtotal"><span>Subtotal</span><span>$34.50</span></div>
+                <div class="receipt-line tax"><span>Sales Tax (9.0%)</span><span>$3.11</span></div>
+                <div class="receipt-line tip"><span>Gratuity (15.0%)</span><span>$4.57</span></div>
+                <div class="receipt-line total"><span>Total Debit Reconciled</span><strong class="text-green">$42.18</strong></div>
+              </div>
+
+              <div class="receipt-action-row">
+                <button class="btn-ghost-outline" onclick="showToast('Tax deduction tagged: Category Business Entertainment.')">
+                  <i data-lucide="tag"></i> Re-tag Category
+                </button>
+                <button class="btn-amber-cta" onclick="showToast('Receipt cryptographically anchored to memory [MEM_REC_42]!')">
+                  <i data-lucide="shield-check"></i> Commit to Memory
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Verified Receipts Table -->
+          <div class="app-panel">
+            <h4 class="panel-title" style="margin-bottom:14px;">Recent Verified Receipt Archive</h4>
+            <div class="table-responsive">
+              <table class="disputes-table">
+                <thead>
+                  <tr>
+                    <th>Merchant</th>
+                    <th>Date Scanned</th>
+                    <th>Amount</th>
+                    <th>Tax Deduction Category</th>
+                    <th>Bank Debit Match</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Blue Bottle Coffee</strong></td>
+                    <td>Oct 19, 2026</td>
+                    <td><strong>$42.18</strong></td>
+                    <td><span class="category-chip chip-blue">Business Meal (50%)</span></td>
+                    <td>Chase Sapphire (Oct 19)</td>
+                    <td><span class="status-pill green">Matched</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Home Depot</strong></td>
+                    <td>Oct 11, 2026</td>
+                    <td><strong>$128.45</strong></td>
+                    <td><span class="category-chip chip-purple">Home Office Setup</span></td>
+                    <td>Chase Sapphire (Oct 11)</td>
+                    <td><span class="status-pill green">Matched</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Delta Airlines Wi-Fi</strong></td>
+                    <td>Oct 5, 2026</td>
+                    <td><strong>$18.00</strong></td>
+                    <td><span class="category-chip chip-amber">Travel Expense</span></td>
+                    <td>Amex Gold (Oct 5)</td>
+                    <td><span class="status-pill green">Matched</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- SUBVIEW 3: PRICE CREEP & ESCALATION ALERTS -->
+        <div class="subview-panel" id="subviewAlerts" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <div class="subview-breadcrumb" onclick="filterAppView('all')" style="cursor:pointer;" title="Back to Home Overview">
+                <i data-lucide="arrow-left"></i> <span>Back to Overview</span>
+              </div>
+              <h2 class="subview-page-title"><i data-lucide="alert-triangle" class="text-coral"></i> Active Sentinel Radar Alerts</h2>
+              <p class="subview-page-subtitle">Discrepancies and trials requiring action</p>
+            </div>
+            <button class="btn-amber-card-action" onclick="batchDisputeAllHikes()">
+              <i data-lucide="shield-check"></i>
+              <span>Dispute All Hikes (0% Rake)</span>
+            </button>
+          </div>
+
+          <!-- Active Alert Cards Grid -->
+          <div class="alerts-cards-grid">
+            
+            <!-- Alert Card 1: Netflix Price Creep -->
+            <div class="triage-card triage-creep">
+              <div class="triage-card-header">
+                <div class="triage-merchant-info">
+                  <div class="triage-logo-wrap">
+                    <img src="/assets/logos/netflix.svg" alt="Netflix" class="merchant-mini-logo">
+                  </div>
+                  <div>
+                    <h4 class="triage-name">Netflix Standard</h4>
+                    <span class="triage-meta">Chase Sapphire · Oct 20, 2026</span>
+                  </div>
+                </div>
+                <span class="triage-badge red"><i data-lucide="trending-up"></i> +$2.50 / mo Hike</span>
+              </div>
+              <div class="triage-comparison-box">
+                <div class="comp-col">
+                  <span class="comp-label">Baseline</span>
+                  <strong class="comp-val">$15.49 / mo</strong>
+                  <span class="comp-sub">Approved [MEM_01]</span>
+                </div>
+                <div class="comp-arrow">→</div>
+                <div class="comp-col">
+                  <span class="comp-label">Recent Charge</span>
+                  <strong class="comp-val red">$17.99 / mo</strong>
+                  <span class="comp-sub">Unannounced hike</span>
+                </div>
+                <div class="comp-col highlight">
+                  <span class="comp-label">Annual Leakage</span>
+                  <strong class="comp-val red">+$30.00 / yr</strong>
+                  <span class="comp-sub">Recoverable</span>
+                </div>
+              </div>
+              <p class="triage-narrative">
+                Billed +$2.50/mo above your $15.49 approved baseline [MEM_01].
+              </p>
+              <div class="triage-actions-row">
+                <button class="btn-amber-cta" onclick="openDisputeModalForRecord('Netflix', 17.99, 15.49, 2.50, 'MEM_01')">
+                  <i data-lucide="scale"></i>
+                  <span>Dispute Hike ($30/yr)</span>
+                </button>
+                <button class="btn-ghost-outline" onclick="inspectMemoryDetail('MEM_01')">
+                  <i data-lucide="eye"></i>
+                  <span>View Memory</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Alert Card 2: Adobe CC Trial Expiration -->
+            <div class="triage-card triage-trial">
+              <div class="triage-card-header">
+                <div class="triage-merchant-info">
+                  <div class="triage-logo-wrap">
+                    <img src="/assets/logos/adobe.svg" alt="Adobe" class="merchant-mini-logo">
+                  </div>
+                  <div>
+                    <h4 class="triage-name">Adobe Creative Cloud</h4>
+                    <span class="triage-meta">7-Day Trial · Rebill in 48h</span>
+                  </div>
+                </div>
+                <span class="triage-badge amber"><i data-lucide="clock"></i> 48-Hour Alarm</span>
+              </div>
+              <div class="triage-comparison-box">
+                <div class="comp-col">
+                  <span class="comp-label">Trial Cost</span>
+                  <strong class="comp-val">$0.00</strong>
+                  <span class="comp-sub">7-Day Free Period</span>
+                </div>
+                <div class="comp-arrow">→</div>
+                <div class="comp-col">
+                  <span class="comp-label">Upcoming Rebill</span>
+                  <strong class="comp-val coral">$54.99 / mo</strong>
+                  <span class="comp-sub">Starts Oct 25, 2026</span>
+                </div>
+                <div class="comp-col highlight">
+                  <span class="comp-label">Annual Commitment</span>
+                  <strong class="comp-val coral">$659.88 / yr</strong>
+                  <span class="comp-sub">12-month contract</span>
+                </div>
+              </div>
+              <p class="triage-narrative">
+                Free trial ends in 48 hours. Auto-rebills at $54.99/mo on Oct 25.
+              </p>
+              <div class="triage-actions-row">
+                <button class="btn-amber-cta" onclick="openDisputeModalForTrial()">
+                  <i data-lucide="shield-alert"></i>
+                  <span>Cancel Subscription</span>
+                </button>
+                <button class="btn-ghost-outline" onclick="copyTrialCancelTemplate()">
+                  <i data-lucide="copy"></i>
+                  <span>Copy Notice</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Alert Card 3: Spotify + Apple Music Overlap -->
+            <div class="triage-card triage-overlap">
+              <div class="triage-card-header">
+                <div class="triage-merchant-info">
+                  <div class="triage-logo-wrap">
+                    <img src="/assets/logos/spotify.svg" alt="Spotify" class="merchant-mini-logo">
+                  </div>
+                  <div>
+                    <h4 class="triage-name">Spotify + Apple Music</h4>
+                    <span class="triage-meta">Active duplicate streaming accounts</span>
+                  </div>
+                </div>
+                <span class="triage-badge blue"><i data-lucide="layers"></i> Redundant</span>
+              </div>
+              <div class="triage-comparison-box">
+                <div class="comp-col">
+                  <span class="comp-label">Spotify Family</span>
+                  <strong class="comp-val">$16.99 / mo</strong>
+                  <span class="comp-sub">Active</span>
+                </div>
+                <div class="comp-col">
+                  <span class="comp-label">Apple Music</span>
+                  <strong class="comp-val">$10.99 / mo</strong>
+                  <span class="comp-sub">Active</span>
+                </div>
+                <div class="comp-col highlight">
+                  <span class="comp-label">Potential Savings</span>
+                  <strong class="comp-val text-green">Save $131.88 / yr</strong>
+                  <span class="comp-sub">Consolidate tiers</span>
+                </div>
+              </div>
+              <p class="triage-narrative">
+                Two active music streaming subscriptions detected [MEM_11]. Consolidating saves $131.88/yr.
+              </p>
+              <div class="triage-actions-row">
+                <button class="btn-amber-cta" onclick="openDisputeModalForOverlap()">
+                  <i data-lucide="arrow-right-left"></i>
+                  <span>Consolidate</span>
+                </button>
+                <button class="btn-ghost-outline" onclick="suppressOverlapFor90Days()">
+                  <i data-lucide="clock"></i>
+                  <span>Snooze</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Alert Card 4: Unknown Merchant Spend Gate Simulator -->
+            <div class="triage-card triage-gate">
+              <div class="triage-card-header">
+                <div class="triage-merchant-info">
+                  <div class="triage-logo-wrap">
+                    <span class="gate-icon-placeholder"><i data-lucide="shield"></i></span>
+                  </div>
+                  <div>
+                    <h4 class="triage-name">Unknown Merchant Gate</h4>
+                    <span class="triage-meta">Threshold: $50.00 [MEM_07]</span>
+                  </div>
+                </div>
+                <span class="triage-badge green"><i data-lucide="shield-check"></i> Armed</span>
+              </div>
+              <p class="triage-narrative">
+                Quarantines first-time charges above $50.00 for your approval.
+              </p>
+              <div class="triage-actions-row">
+                <button class="btn-ghost-outline" onclick="simulateUnknownMerchantDebit()">
+                  <i data-lucide="zap"></i>
+                  <span>Simulate $79.99 Charge</span>
+                </button>
+                <button class="btn-ghost-outline" onclick="filterAppView('settings')">
+                  <i data-lucide="sliders"></i>
+                  <span>Adjust Gate</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SUBVIEW 4: ZOMBIE TRIALS WATCHDOG -->
+        <div class="subview-panel" id="subviewTrials" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">Trial Horizons &amp; Expiration Countdown</h2>
+              <p class="subview-subtitle">48-hour advance alarms preventing unexpected subscription roll-overs</p>
+            </div>
+            <button class="btn-amber-card-action" onclick="openAddTrialModal()">
+              <i data-lucide="plus"></i>
+              <span>Track Free Trial</span>
+            </button>
+          </div>
+
+          <div class="trials-radar-list">
+            
+            <div class="trial-row-card urgent">
+              <div class="trial-row-left">
+                <img src="/assets/logos/adobe.svg" alt="Adobe" class="merchant-mini-logo">
+                <div class="trial-row-info">
+                  <strong>Adobe Creative Cloud (7-Day Trial)</strong>
+                  <span>Rebills $54.99/mo on Oct 25</span>
+                </div>
+              </div>
+              <div class="trial-row-countdown">
+                <div class="countdown-tag red">48 HOURS LEFT</div>
+                <div class="countdown-progress-bar">
+                  <div class="bar-fill red" style="width: 78%;"></div>
+                </div>
+              </div>
+              <div class="trial-row-actions">
+                <button class="btn-amber-cta" onclick="openDisputeModalForTrial()">
+                  <i data-lucide="x-circle"></i> Cancel
+                </button>
+              </div>
+            </div>
+
+            <div class="trial-row-card neutral">
+              <div class="trial-row-left">
+                <span class="trial-brand-pill">NOTION</span>
+                <div class="trial-row-info">
+                  <strong>Notion AI Workspace (14-Day Trial)</strong>
+                  <span>Rebills $10.00/mo on Oct 28</span>
+                </div>
+              </div>
+              <div class="trial-row-countdown">
+                <div class="countdown-tag blue">5 DAYS LEFT</div>
+                <div class="countdown-progress-bar">
+                  <div class="bar-fill blue" style="width: 55%;"></div>
+                </div>
+              </div>
+              <div class="trial-row-actions">
+                <button class="btn-ghost-outline" onclick="showToast('Notion AI alert scheduled for 48h prior to conversion.')">
+                  <i data-lucide="bell"></i> Horizon Set
+                </button>
+              </div>
+            </div>
+
+            <div class="trial-row-card settled">
+              <div class="trial-row-left">
+                <span class="trial-brand-pill green">SAVED</span>
+                <div class="trial-row-info">
+                  <strong>Audible Premium Plus (Cancelled Day 28)</strong>
+                  <span>Cancelled before rebill · Saved $14.95/mo</span>
+                </div>
+              </div>
+              <div class="trial-row-countdown">
+                <span class="status-pill green"><i data-lucide="check"></i> Rebill Blocked</span>
+              </div>
+              <div class="trial-row-actions">
+                <span class="saved-amt-badge">+$179.40/yr Saved</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SUBVIEW 5: DISPUTES & PRESERVED SAVINGS LEDGER -->
+        <div class="subview-panel" id="subviewDisputes" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">Disputes &amp; Preserved Wealth</h2>
+              <p class="subview-subtitle">Preserved savings with 0% fee rake</p>
+            </div>
+            <button class="btn-ghost-action" onclick="openDisputeModalForRecord('Manual Merchant', 25.00, 15.00, 10.00, 'MEM_NEW')">
+              <i data-lucide="file-plus"></i>
+              <span>Draft Dispute Pack</span>
+            </button>
+          </div>
+
+          <!-- Savings KPI Matrix -->
+          <div class="disputes-kpi-grid">
+            <div class="dispute-kpi-card highlight">
+              <span class="kpi-label">Total Preserved</span>
+              <strong class="kpi-val text-green">$348.00</strong>
+              <span class="kpi-sub">3 disputes resolved</span>
+            </div>
+            <div class="dispute-kpi-card">
+              <span class="kpi-label">Sentinel Fee</span>
+              <strong class="kpi-val text-green">$0.00 (0% Rake)</strong>
+              <span class="kpi-sub">100% funds kept</span>
+            </div>
+            <div class="dispute-kpi-card">
+              <span class="kpi-label">Traditional Rake Avoided</span>
+              <strong class="kpi-val text-coral">-$139.20</strong>
+              <span class="kpi-sub">vs 40% competitor fee</span>
+            </div>
+            <div class="dispute-kpi-card">
+              <span class="kpi-label">Dispute Success Rate</span>
+              <strong class="kpi-val text-blue">100%</strong>
+              <span class="kpi-sub">Verified on-chain</span>
+            </div>
+          </div>
+
+          <!-- Disputes Ledger Table -->
+          <div class="app-panel">
+            <h4 class="panel-title" style="margin-bottom:16px;">Verified Dispute & Reversal History</h4>
+            <div class="table-responsive">
+              <table class="disputes-table">
+                <thead>
+                  <tr>
+                    <th>Merchant</th>
+                    <th>Dispute Reason</th>
+                    <th>Amount Saved</th>
+                    <th>Memory Proof</th>
+                    <th>SuiScan Verification</th>
+                    <th>Resolution Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="tx-cell-merchant">
+                        <img src="/assets/logos/netflix.svg" class="merchant-mini-logo" alt="Netflix">
+                        <strong>Netflix Standard</strong>
+                      </div>
+                    </td>
+                    <td>+$2.50 price hike</td>
+                    <td><strong class="text-green">+$30.00 / yr</strong></td>
+                    <td><code>MEM_09</code></td>
+                    <td>
+                      <a href="https://suiscan.xyz/mainnet/tx/8Xp4v9wK2mN1bL7qR5sT3uV" target="_blank" class="sui-digest-link">
+                        <i data-lucide="external-link"></i> 8Xp4...v9wK
+                      </a>
+                    </td>
+                    <td><span class="status-pill green">Won · Credit Issued</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="tx-cell-merchant">
+                        <img src="/assets/logos/adobe.svg" class="merchant-mini-logo" alt="Adobe">
+                        <strong>Adobe CC Trial</strong>
+                      </div>
+                    </td>
+                    <td>Cancelled before rebill</td>
+                    <td><strong class="text-green">+$54.99 Saved</strong></td>
+                    <td><code>MEM_10</code></td>
+                    <td>
+                      <a href="https://suiscan.xyz/mainnet/tx/3bL7qR5sT3uV8Xp4v9wK2mN" target="_blank" class="sui-digest-link">
+                        <i data-lucide="external-link"></i> 3bL7...R5sT
+                      </a>
+                    </td>
+                    <td><span class="status-pill green">Pre-empted · $0 Billed</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="tx-cell-merchant">
+                        <span class="merchant-logo-fallback"><i data-lucide="activity"></i></span>
+                        <strong>Planet Fitness</strong>
+                      </div>
+                    </td>
+                    <td>Annual fee objection</td>
+                    <td><strong class="text-green">+$59.00 Saved</strong></td>
+                    <td><code>MEM_06</code></td>
+                    <td>
+                      <a href="https://suiscan.xyz/mainnet/tx/5sT3uV8Xp4v9wK2mN1bL7qR" target="_blank" class="sui-digest-link">
+                        <i data-lucide="external-link"></i> 5sT3...4v9w
+                      </a>
+                    </td>
+                    <td><span class="status-pill green">Fee Waived</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 6: SENTINEL USER SETTINGS & POLICIES -->
+        <!-- SUBVIEW: DEDICATED MANAGE SUBSCRIPTIONS & CALENDAR PAGE -->
+        <div class="subview-panel" id="subviewSubscriptions" style="display:none;">
+          <div class="subview-header-bar subview-header-with-back">
+            <div class="subview-title-cluster">
+              <button class="btn-back-nav" onclick="filterAppView('settings')" title="Return to Settings">
+                <i data-lucide="arrow-left"></i>
+                <span>← Back to Settings</span>
+              </button>
+              <div>
+                <h2 class="subview-title">Manage Subscriptions &amp; Spend Calendar</h2>
+                <p class="subview-subtitle">Renewal cadence calendar, trial alerts, and memory baselines</p>
+              </div>
+            </div>
+            <div class="subview-actions-cluster">
+              <button class="btn-amber-card-action" onclick="openNewSubscriptionModal()">
+                <i data-lucide="plus-circle"></i>
+                <span>+ Add Subscription</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TOP RUNWAY & METRICS STRIP -->
+          <div class="subview-stats-strip subscription-metrics-strip">
+            <div class="strip-stat-box">
+              <span class="strip-label">Active Subscriptions</span>
+              <strong class="strip-val">9 Services</strong>
+            </div>
+            <div class="strip-stat-box">
+              <span class="strip-label">Monthly Fixed Run Rate</span>
+              <strong class="strip-val text-coral" id="settingsMonthlyRunRate">$301.46<small>/mo</small></strong>
+            </div>
+            <div class="strip-stat-box">
+              <span class="strip-label">Trial Conversion Risk</span>
+              <strong class="strip-val text-amber" id="settingsTrialRisk">$54.99<small>/mo</small></strong>
+            </div>
+            <div class="strip-stat-box">
+              <span class="strip-label">Mainnet Anchors</span>
+              <strong class="strip-val text-blue">12 Verified</strong>
+            </div>
+          </div>
+
+          <!-- SUBVIEW SUBTABS BAR (WHATSAPP-STYLE ZERO COGNITIVE LOAD ARCHITECTURE) -->
+          <div class="subtabs-segmented-bar" id="subsSubTabsBar">
+            <button class="subtab-segmented-btn active" id="subTabBtnLedger" onclick="switchSubsSubTab('ledger')">
+              <i data-lucide="list"></i>
+              <span>Active Subscriptions (9)</span>
+            </button>
+            <button class="subtab-segmented-btn" id="subTabBtnCalendar" onclick="switchSubsSubTab('calendar')">
+              <i data-lucide="calendar"></i>
+              <span>Spend Calendar</span>
+            </button>
+            <button class="subtab-segmented-btn" id="subTabBtnTrial" onclick="switchSubsSubTab('trial')">
+              <i data-lucide="clock"></i>
+              <span>Trial Conversion Alert</span>
+              <span class="subtab-badge-pill amber">1</span>
+            </button>
+          </div>
+
+          <!-- TAB PANEL 1: ACTIVE SUBSCRIPTIONS SURVEILLANCE LEDGER (DEFAULT FOCUS) -->
+          <div class="subtab-content-panel active" id="subsTabPanelLedger" style="display:block;">
+            <div class="settings-card card-full-width" id="subscriptionsLedgerCard">
+              <div class="settings-card-header">
+                <i data-lucide="shield-check" class="card-icon-amber"></i>
+                <div style="flex:1;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                      <h3 class="settings-card-title">Active Subscriptions</h3>
+                      <p class="settings-card-sub">Monitored against memory baselines</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <button class="btn-ghost-action" onclick="openNewSubscriptionModal()">
+                        <i data-lucide="plus-circle"></i> <span>+ Add</span>
+                      </button>
+                      <button class="btn-ghost-action" onclick="renderSubscriptionsLedger()">
+                        <i data-lucide="rotate-cw"></i> <span>Refresh</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="collapsible-card-body" id="ledgerBodyCollapseWrap" style="display:block;">
+                <!-- Filter & Search Toolbar -->
+                <div class="subscriptions-toolbar" style="margin-bottom: 14px; margin-top: 14px;">
+                  <div class="sub-filter-buttons">
+                    <button class="filter-btn active" onclick="filterSubsCategory('all', this)">All (9)</button>
+                    <button class="filter-btn" onclick="filterSubsCategory('streaming', this)">Streaming (2)</button>
+                    <button class="filter-btn" onclick="filterSubsCategory('ai', this)">AI &amp; Cloud (3)</button>
+                    <button class="filter-btn" onclick="filterSubsCategory('dev', this)">Dev Tools (2)</button>
+                    <button class="filter-btn" onclick="filterSubsCategory('productivity', this)">Productivity (2)</button>
+                  </div>
+                  <div class="sub-search-wrap">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="subSearchInput" placeholder="Filter merchant..." oninput="handleSubSearch(event)">
+                  </div>
+                </div>
+
+                <div class="subscriptions-table-scroll" id="subscriptionsContainer">
+                  <!-- Rendered dynamically by renderSubscriptionsLedger() -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB PANEL 2: SUBSCRIPTION CADENCE & RENEWAL CALENDAR -->
+          <div class="subtab-content-panel" id="subsTabPanelCalendar" style="display:none;">
+            <div class="settings-card card-full-width" id="spendCalendarCard">
+              <div class="settings-card-header">
+                <i data-lucide="calendar" class="card-icon-blue"></i>
+                <div style="flex:1;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                      <h3 class="settings-card-title">Renewal Calendar</h3>
+                      <p class="settings-card-sub">Recurring debits across October 2026</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div class="calendar-legend" id="calendarLegend" style="display:flex;">
+                        <span class="legend-item"><span class="legend-dot green"></span> Verified</span>
+                        <span class="legend-item"><span class="legend-dot red"></span> Price Creep</span>
+                        <span class="legend-item"><span class="legend-dot amber"></span> Trial Alert</span>
+                        <span class="legend-item"><span class="legend-dot blue"></span> Overridden</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Full Calendar Body Wrap -->
+              <div class="collapsible-card-body" id="calendarBodyCollapseWrap" style="display:block; margin-top:14px;">
+                <div class="calendar-weekdays-row">
+                  <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+                <div class="calendar-days-grid" id="calendarDaysGrid">
+                  <!-- Populated dynamically by app.js renderSpendCalendar() -->
+                </div>
+
+                <!-- Interactive Selected Day Drawer -->
+                <div class="cal-day-inspector" id="calDayInspector" style="display:none; margin-top:14px;">
+                  <!-- Populated when user clicks a day in calendar -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB PANEL 3: URGENT TRIAL SENTINEL & NOTIFICATION DEFENSE CARD -->
+          <div class="subtab-content-panel" id="subsTabPanelTrial" style="display:none;">
+            <div class="settings-card card-full-width trial-sentinel-hero-card" id="trialSentinelCard">
+              <div class="trial-card-top-alert">
+                <div class="trial-alert-badge"><i data-lucide="clock"></i> 48H TRIAL CONVERSION ALERT</div>
+                <div class="trial-countdown-ticker" id="trialCountdownTicker">
+                  <span class="pulse-amber-dot"></span>
+                  <strong id="trialTimeRemaining">47h : 58m : 14s remaining</strong>
+                </div>
+              </div>
+
+              <div class="trial-card-body-grid">
+                <div class="trial-info-block">
+                  <div class="trial-merchant-header">
+                    <img src="/assets/logos/adobe.svg" class="merchant-hero-logo" alt="Adobe">
+                    <div>
+                      <h3 class="trial-merchant-title" id="trialMerchantTitle">Adobe Creative Cloud</h3>
+                      <p class="trial-merchant-sub">Rebills $54.99/mo on <strong>October 27, 2026</strong></p>
+                    </div>
+                  </div>
+
+                  <div class="trial-metadata-pills">
+                    <span class="trial-meta-pill"><i data-lucide="credit-card"></i> <strong>Card:</strong> Chase Sapphire 4102</span>
+                    <span class="trial-meta-pill"><i data-lucide="clock"></i> <strong>Cadence:</strong> 7-Day Free Trial</span>
+                    <span id="trialStatusPill"><span class="status-pill amber"><i data-lucide="alert-triangle"></i> Action Needed · 48h to Rebill</span></span>
+                  </div>
+
+                  <div class="trial-decision-actions" id="trialDecisionActions">
+                    <button class="btn-cancel-trial-danger" id="btnCancelTrial" onclick="cancelTrialSubscription('Adobe Creative Cloud')">
+                      <i data-lucide="x-circle"></i>
+                      <span>Cancel Subscription</span>
+                    </button>
+                    <button class="btn-keep-trial-success" id="btnKeepTrial" onclick="keepTrialSubscription('Adobe Creative Cloud')">
+                      <i data-lucide="check-circle-2"></i>
+                      <span>Keep Subscription</span>
+                    </button>
+                    <button class="btn-ghost-outline" onclick="openDisputeModalForTrial()">
+                      <i data-lucide="file-text"></i>
+                      <span>Cancellation Pack</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="trial-notifications-block" id="trialNotificationsBlock">
+                  <div class="trial-notif-header" onclick="toggleTrialRules()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <i data-lucide="bell" class="text-amber"></i>
+                      <h4>Trial Alert Rules</h4>
+                    </div>
+                    <button class="btn-subblock-toggle" id="btnToggleTrialRules" onclick="event.stopPropagation(); toggleTrialRules();" title="Toggle Alert Rules">
+                      <span id="trialRulesToggleText">Configure ▾</span>
+                    </button>
+                  </div>
+
+                  <!-- Preview row when collapsed -->
+                  <div class="trial-rules-preview" id="trialRulesPreview" onclick="toggleTrialRules()" style="cursor:pointer; margin-top:4px;">
+                    <p class="setting-hint" style="margin:0;">🔔 48h advance alarm · Web Push &amp; Telegram active</p>
+                  </div>
+
+                  <!-- Collapsible body -->
+                  <div class="trial-rules-collapsible-body" id="trialRulesCollapsibleBody" style="display:none; margin-top:10px;">
+                    <div class="setting-item" style="margin-top: 10px;">
+                      <label class="setting-label">Notify Me Before Expiration:</label>
+                      <select id="trialNotificationLeadTime" class="settings-select" onchange="saveTrialNotificationPreferences()">
+                        <option value="48" selected>48 Hours Before</option>
+                        <option value="24">24 Hours Before</option>
+                        <option value="72">3 Days Before</option>
+                        <option value="168">7 Days Before</option>
+                      </select>
+                    </div>
+
+                    <div class="trial-channel-toggles" style="margin-top: 8px;">
+                      <label class="checkbox-row">
+                        <input type="checkbox" id="toggleTrialWebPush" checked onchange="saveTrialNotificationPreferences()">
+                        <span>Browser Web Push Alert</span>
+                      </label>
+                      <label class="checkbox-row">
+                        <input type="checkbox" id="toggleTrialTelegram" checked onchange="saveTrialNotificationPreferences()">
+                        <span>Telegram Bot (@sovereign_sentinel_user)</span>
+                      </label>
+                      <label class="checkbox-row">
+                        <input type="checkbox" id="toggleTrialAutoFreeze" checked onchange="saveTrialNotificationPreferences()">
+                        <span>Auto-freeze debit if unconfirmed</span>
+                      </label>
+                    </div>
+
+                    <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+                      <button class="btn-amber-card-action" onclick="triggerTrialExpirationNotification()">
+                        <i data-lucide="bell-ring"></i>
+                        <span>Send Test Alert</span>
+                      </button>
+                      <button class="btn-ghost-outline" onclick="resetTrialStateDemo()">
+                        <i data-lucide="rotate-ccw"></i>
+                        <span>Reset Demo</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SUBVIEW 6: SENTINEL USER SETTINGS & POLICIES -->
+        <div class="subview-panel" id="subviewSettings" style="display:none;">
+          <div class="subview-header-bar">
+            <div>
+              <h2 class="subview-title">Settings &amp; Policies</h2>
+              <p class="subview-subtitle">Spending gates, alerts, and user profile</p>
+            </div>
+            <button class="btn-amber-card-action" onclick="saveAllUserSettings()">
+              <i data-lucide="save"></i>
+              <span>Save Preferences</span>
+            </button>
+          </div>
+
+          <!-- PROMINENT MANAGE SUBSCRIPTIONS ENTRY CARD IN SETTINGS -->
+          <div class="settings-nav-card" onclick="filterAppView('subscriptions')" title="Open Dedicated Manage Subscriptions Page">
+            <div class="settings-nav-card-left">
+              <div class="settings-nav-icon amber"><i data-lucide="calendar"></i></div>
+              <div class="settings-nav-card-text">
+                <div class="settings-nav-card-header-row">
+                  <h4>Manage Subscriptions &amp; Spend Calendar</h4>
+                  <span class="badge-amber-pill">1 Urgent Alert</span>
+                </div>
+                <p>9 active subscriptions · Renewal calendar · 1 trial alert</p>
+              </div>
+            </div>
+            <div class="settings-nav-card-right">
+              <span class="btn-open-nav-arrow">Open Subscriptions <i data-lucide="arrow-right"></i></span>
+            </div>
+          </div>
+
+          <!-- SETTINGS CATEGORY SEGMENTED TABS (ZERO COGNITIVE LOAD ARCHITECTURE) -->
+          <div class="subtabs-segmented-bar" id="settingsCategoryBar">
+            <button class="subtab-segmented-btn active" id="setTabBtnProfile" onclick="switchSettingsCategory('profile')">
+              <i data-lucide="user-check"></i>
+              <span>Profile &amp; Wage</span>
+            </button>
+            <button class="subtab-segmented-btn" id="setTabBtnEscalation" onclick="switchSettingsCategory('escalation')">
+              <i data-lucide="shield-alert"></i>
+              <span>Spend Escalation</span>
+            </button>
+            <button class="subtab-segmented-btn" id="setTabBtnNotifs" onclick="switchSettingsCategory('notifs')">
+              <i data-lucide="bell-ring"></i>
+              <span>Notifications</span>
+            </button>
+            <button class="subtab-segmented-btn" id="setTabBtnCeilings" onclick="switchSettingsCategory('ceilings')">
+              <i data-lucide="shield-check"></i>
+              <span>Ceilings &amp; Overrides</span>
+            </button>
+            <button class="subtab-segmented-btn" id="setTabBtnReports" onclick="switchSettingsCategory('reports')">
+              <i data-lucide="file-spreadsheet"></i>
+              <span>Reports &amp; Exports</span>
+            </button>
+          </div>
+
+          <div class="settings-sections-wrap">
+            
+            <!-- Settings Panel 0: Personal Profile & Life Energy Setup -->
+            <div class="subtab-content-panel active" id="settingsPanelProfile" style="display:block;">
+              <div class="settings-card card-full-width">
+                <div class="settings-card-header">
+                  <i data-lucide="user-check" class="card-icon-amber"></i>
+                  <div>
+                    <h3 class="settings-card-title">Profile &amp; Wage</h3>
+                    <p class="settings-card-sub">Name, currency, and hourly wage for Life Energy tracking</p>
+                  </div>
+                </div>
+
+                <div class="settings-form-body">
+                  <div class="profile-settings-grid">
+                    <div class="setting-item">
+                      <label class="setting-label">Your Name</label>
+                      <input type="text" id="settingProfileName" class="text-input" value="Alex Rivera" placeholder="e.g. Alex Rivera">
+                      <p class="setting-hint">Used for Copilot and reports</p>
+                    </div>
+
+                    <div class="setting-item">
+                      <label class="setting-label">Primary Currency</label>
+                      <select id="settingProfileCurrency" class="settings-select" onchange="updateCurrencySymbolDisplay(this.value)">
+                        <option value="$" selected>$ USD - United States Dollar</option>
+                        <option value="₦">₦ NGN - Nigerian Naira</option>
+                        <option value="€">€ EUR - Euro</option>
+                        <option value="£">£ GBP - British Pound</option>
+                      </select>
+                    </div>
+
+                    <div class="setting-item">
+                      <label class="setting-label">Monthly Household Inflow</label>
+                      <div class="input-with-icon">
+                        <span class="input-prefix" id="currencyPrefixInflow">$</span>
+                        <input type="number" id="settingProfileInflow" class="text-input" value="4850.00" step="10">
+                      </div>
+                      <p class="setting-hint">Base for 10% reserve and envelope pools</p>
+                    </div>
+
+                    <div class="setting-item">
+                      <label class="setting-label">Real Hourly Wage</label>
+                      <div class="input-with-icon">
+                        <span class="input-prefix" id="currencyPrefixWage">$</span>
+                        <input type="number" id="settingProfileWage" class="text-input" value="25.00" step="1">
+                      </div>
+                      <p class="setting-hint">Translates purchases into hours of work</p>
+                    </div>
+
+                    <div class="setting-item">
+                      <label class="setting-label">Billing Cycle Days Remaining</label>
+                      <input type="number" id="settingProfileCycleDays" class="text-input" value="10" min="1" max="31">
+                      <p class="setting-hint">Days left until next cycle</p>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <button class="btn-ghost-outline text-coral" onclick="resetToHackathonDefaults()">
+                      <i data-lucide="rotate-ccw"></i> Reset Defaults
+                    </button>
+                    <button class="btn-amber-card-action" onclick="saveUserProfileSettings()">
+                      <i data-lucide="check"></i>
+                      <span>Save Profile</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Panel 1: Escalation & Micro-Inflation Controls -->
+            <div class="subtab-content-panel" id="settingsPanelEscalation" style="display:none;">
+              <div class="settings-card card-full-width">
+                <div class="settings-card-header">
+                  <i data-lucide="shield-alert" class="card-icon-amber"></i>
+                  <div>
+                    <h3 class="settings-card-title">Spend Escalation &amp; Sensitivity</h3>
+                    <p class="settings-card-sub">Rules for flagging unexpected debits and creeping fees</p>
+                  </div>
+                </div>
+
+                <div class="settings-form-body">
+                  
+                  <!-- Slider: Unknown Merchant Gate -->
+                  <div class="setting-item">
+                    <div class="setting-item-top">
+                      <label class="setting-label">Unknown Merchant Escalation Gate</label>
+                      <span class="setting-val-display" id="gateValueDisplay">$50.00</span>
+                    </div>
+                    <p class="setting-hint">Requires review for new merchants above this amount</p>
+                    <input type="range" class="range-slider" id="gateSlider" min="10" max="200" step="5" value="50" oninput="updateGateDisplay(this.value)">
+                    <div class="range-ticks">
+                      <span>$10</span>
+                      <span>$50</span>
+                      <span>$100</span>
+                      <span>$200</span>
+                    </div>
+                  </div>
+
+                  <!-- Dropdown: Micro-Inflation Sensitivity -->
+                  <div class="setting-item">
+                    <label class="setting-label">Micro-Inflation Flagging Sensitivity</label>
+                    <p class="setting-hint">Minimum price hike that triggers an alert</p>
+                    <select class="settings-select" id="microInflationSelect">
+                      <option value="0.50" selected>Zero Tolerance (&gt;= $0.50)</option>
+                      <option value="1.00">Standard (&gt;= $1.00)</option>
+                      <option value="2.50">Relaxed (&gt;= $2.50)</option>
+                    </select>
+                  </div>
+
+                  <!-- Slider: Annual Inflation Ceiling -->
+                  <div class="setting-item">
+                    <div class="setting-item-top">
+                      <label class="setting-label">Annual Subscription CPI Ceiling</label>
+                      <span class="setting-val-display" id="inflationCapDisplay">5.0%</span>
+                    </div>
+                    <p class="setting-hint">Flags price hikes above this annual rate</p>
+                    <input type="range" class="range-slider" id="inflationSlider" min="1" max="15" step="0.5" value="5.0" oninput="updateInflationDisplay(this.value)">
+                    <div class="range-ticks">
+                      <span>1%</span>
+                      <span>5%</span>
+                      <span>10%</span>
+                      <span>15%</span>
+                    </div>
+                  </div>
+
+                  <!-- Toggle: Redundant Overlap -->
+                  <div class="setting-item toggle-row">
+                    <div>
+                      <label class="setting-label">Duplicate Service Radar</label>
+                      <p class="setting-hint">Flag duplicate subscriptions (e.g. Spotify + Apple Music)</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" id="toggleOverlap" checked>
+                      <span class="slider-switch"></span>
+                    </label>
+                  </div>
+
+                  <!-- Toggle: Auto Draft CFPB -->
+                  <div class="setting-item toggle-row">
+                    <div>
+                      <label class="setting-label">Auto-Draft Dispute Packs</label>
+                      <p class="setting-hint">Pre-generate objection letters on hike detection</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" id="toggleAutoDispute" checked>
+                      <span class="slider-switch"></span>
+                    </label>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Panel 2: Notification & Alert Rails -->
+            <div class="subtab-content-panel" id="settingsPanelNotifs" style="display:none;">
+              <div class="settings-card card-full-width">
+                <div class="settings-card-header">
+                  <i data-lucide="bell-ring" class="card-icon-blue"></i>
+                  <div>
+                    <h3 class="settings-card-title">Notification Channels</h3>
+                    <p class="settings-card-sub">Channels for alerts and briefings</p>
+                  </div>
+                </div>
+
+                <div class="settings-form-body">
+                  
+                  <!-- Web Push -->
+                  <div class="setting-item toggle-row">
+                    <div>
+                      <label class="setting-label">Browser Notifications</label>
+                      <p class="setting-hint">Instant alert when a debit is flagged</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" id="toggleWebPush" checked>
+                      <span class="slider-switch"></span>
+                    </label>
+                  </div>
+
+                  <!-- Telegram Sentinel Bot -->
+                  <div class="setting-item">
+                    <label class="setting-label">Telegram Bot Integration</label>
+                    <p class="setting-hint">Telegram alerts with 1-tap approve/dispute buttons</p>
+                    <div class="telegram-input-row">
+                      <div class="input-with-icon">
+                        <span class="input-prefix">@</span>
+                        <input type="text" class="text-input" id="telegramHandleInput" placeholder="Telegram handle" value="sovereign_sentinel_user">
+                      </div>
+                      <button class="btn-ghost-outline" onclick="sendTestTelegramAlert()">
+                        <i data-lucide="send"></i> Test Alert
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- 20-Second Voice Pulse -->
+                  <div class="setting-item toggle-row">
+                    <div>
+                      <label class="setting-label">20-Second Audio Pulse</label>
+                      <p class="setting-hint">Voice briefing on dashboard launch</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" id="toggleVoicePulse" checked>
+                      <span class="slider-switch"></span>
+                    </label>
+                  </div>
+
+                  <!-- Critical High-Value SMS Gate -->
+                  <div class="setting-item">
+                    <label class="setting-label">Emergency SMS (Debits &gt; $100)</label>
+                    <p class="setting-hint">Direct SMS for high-value anomalies</p>
+                    <input type="tel" class="text-input" id="smsPhoneInput" placeholder="+1 (555) 019-2834" value="+1 (555) 392-8172">
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Panel 3: Approved Spending Ceilings & Exceptions -->
+            <div class="subtab-content-panel" id="settingsPanelCeilings" style="display:none;">
+              <div class="settings-card card-full-width">
+                <div class="settings-card-header">
+                  <i data-lucide="shield-check" class="card-icon-amber"></i>
+                  <div>
+                    <h3 class="settings-card-title">Approved Spending Ceilings</h3>
+                    <p class="settings-card-sub">Pre-approved limits that suppress false alarms</p>
+                  </div>
+                </div>
+
+                <div class="settings-form-body">
+                  <table class="overrides-table">
+                    <thead>
+                      <tr>
+                        <th>Merchant</th>
+                        <th>Ceiling</th>
+                        <th>Reason</th>
+                        <th>Policy</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="overridesTableBody">
+                      <tr>
+                        <td>
+                          <div class="tx-cell-merchant">
+                            <img src="/assets/logos/aws.svg" class="merchant-mini-logo" alt="AWS">
+                            <strong>Amazon Web Services</strong>
+                          </div>
+                        </td>
+                        <td>$180.00 / mo (Normal: $64)</td>
+                        <td>Q4 Machine Learning Surge</td>
+                        <td><code>POL-04</code></td>
+                        <td><span class="status-pill green">Active</span></td>
+                        <td><button class="btn-inspect-mini text-coral" onclick="removeOverrideRow(this)"><i data-lucide="trash-2"></i></button></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div class="tx-cell-merchant">
+                            <span class="merchant-logo-fallback"><i data-lucide="activity"></i></span>
+                            <strong>Equinox Gym</strong>
+                          </div>
+                        </td>
+                        <td>$0.00 / mo (Normal: $240)</td>
+                        <td>Temporary Freeze</td>
+                        <td><code>POL-05</code></td>
+                        <td><span class="status-pill blue">Frozen</span></td>
+                        <td><button class="btn-inspect-mini text-coral" onclick="removeOverrideRow(this)"><i data-lucide="trash-2"></i></button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div class="add-override-box">
+                    <h5 class="add-override-title">+ Add Approved Exception</h5>
+                    <div class="override-form-row">
+                      <input type="text" class="text-input" id="newOverrideMerchant" placeholder="Merchant">
+                      <input type="number" class="text-input" id="newOverrideCeiling" placeholder="Ceiling ($)">
+                      <input type="text" class="text-input" id="newOverrideReason" placeholder="Reason">
+                      <button class="btn-amber-card-action" onclick="addNewOverridePolicy()">
+                        <i data-lucide="plus"></i> Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Panel 4: Connected Spreadsheets & Reports -->
+            <div class="subtab-content-panel" id="settingsPanelReports" style="display:none;">
+              <div class="settings-card card-full-width">
+                <div class="settings-card-header">
+                  <i data-lucide="file-spreadsheet" class="card-icon-blue"></i>
+                  <div>
+                    <h3 class="settings-card-title">Spreadsheet Feeds &amp; Reports</h3>
+                    <p class="settings-card-sub">Export normalized CSV or live Google Sheets stream</p>
+                  </div>
+                </div>
+
+                <div class="settings-form-body">
+                  <div class="vault-status-banner">
+                    <i data-lucide="check-circle" class="text-green"></i>
+                    <div>
+                      <strong>Normalization Engine Active</strong>
+                      <p>Transactions normalized into clean 9-column format.</p>
+                    </div>
+                  </div>
+
+                  <div class="setting-item">
+                    <label class="setting-label">Google Sheets Formula</label>
+                    <div class="code-box-display">
+                      <code>=IMPORTDATA("http://localhost:3000/api/feed/csv")</code>
+                      <button class="btn-copy-code" onclick="copyText('=IMPORTDATA(&quot;http://localhost:3000/api/feed/csv&quot;)')"><i data-lucide="copy"></i></button>
+                    </div>
+                  </div>
+
+                  <div class="setting-item">
+                    <div style="display: flex; gap: 12px; margin-top: 10px;">
+                      <button class="btn-amber-card-action" onclick="exportNormalizedTillerCSV()">
+                        <i data-lucide="download"></i> Download CSV
+                      </button>
+                      <button class="btn-ghost-outline" onclick="showToast('Webhook registered: Ready for Google Sheets =IMPORTDATA formula.')">
+                        <i data-lucide="link"></i> Test Connection
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- Persistent Sticky Mobile Bottom Navigation Bar (5 Items) -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+      <button class="nav-item active" id="mNavHome" onclick="switchMobileTab('home')">
+        <i data-lucide="home"></i>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" id="mNavWallets" onclick="switchMobileTab('wallets')">
+        <i data-lucide="wallet"></i>
+        <span>Wallets</span>
+      </button>
+      <button class="nav-item nav-fab-btn" id="mNavAdd" onclick="openQuickAddModal()" title="3-Tap Quick-Add Expense">
+        <div class="fab-circle">
+          <i data-lucide="plus"></i>
+        </div>
+        <span>Log Spend</span>
+      </button>
+      <button class="nav-item" id="mNavPlan" onclick="switchMobileTab('plan')">
+        <i data-lucide="layers"></i>
+        <span>Plan</span>
+      </button>
+      <button class="nav-item" id="mNavSettings" onclick="switchMobileTab('settings')">
+        <i data-lucide="settings"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+  </main>
+
+  <!-- ================= LIVE CAMERA RECEIPT SCANNER VIEWFINDER MODAL ================= -->
+  <div class="modal-backdrop" id="cameraViewfinderModal" style="display:none; z-index: 10000;">
+    <div class="modal-card camera-scanner-card" style="max-width: 620px; width: 95%; background: #0c0e12; border: 2px solid #2a3342; border-radius: 18px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.85); color: #f8fafc;">
+      
+      <!-- Camera Header -->
+      <div class="modal-header" style="background: rgba(18, 22, 30, 0.95); border-bottom: 1px solid #232c3b; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+        <div class="modal-title-row" style="display: flex; align-items: center; gap: 10px;">
+          <span class="modal-icon" style="background: #10b981; color: #0c0e12; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i data-lucide="camera"></i>
+          </span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #ffffff;">Live Receipt Camera</h3>
+            <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+              <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+              Google Gemini Multimodal Vision Active
+            </p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeCameraScannerModal()" style="color: #94a3b8; background: transparent; border: none; font-size: 1.6rem; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <!-- Viewfinder Body -->
+      <div class="modal-body" style="padding: 16px; position: relative;">
+        
+        <!-- Live Video Viewport Container -->
+        <div class="camera-viewport-wrap" id="cameraViewportWrap" style="position: relative; width: 100%; aspect-ratio: 4/3; max-height: 400px; background: #000; border-radius: 14px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1.5px solid #334155;">
+          
+          <!-- Live Video Stream -->
+          <video id="cameraStreamVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+          
+          <!-- Captured Snapshot Canvas (Hidden) -->
+          <canvas id="cameraSnapshotCanvas" style="display: none;"></canvas>
+
+          <!-- Holographic Receipt Alignment Box -->
+          <div class="receipt-targeting-frame" id="receiptTargetFrame" style="position: absolute; inset: 12% 10%; border: 2px dashed rgba(16, 185, 129, 0.45); border-radius: 12px; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between;">
+            <!-- Corner Accents -->
+            <div style="display: flex; justify-content: space-between;">
+              <span style="width: 22px; height: 22px; border-top: 3px solid #10b981; border-left: 3px solid #10b981; border-top-left-radius: 6px;"></span>
+              <span style="width: 22px; height: 22px; border-top: 3px solid #10b981; border-right: 3px solid #10b981; border-top-right-radius: 6px;"></span>
+            </div>
+            
+            <!-- Scanning Laser Line -->
+            <div class="scanner-laser-line" id="scannerLaserLine"></div>
+
+            <!-- Alignment Guide Text -->
+            <div style="text-align: center; margin-bottom: 8px;">
+              <span style="background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); color: #e2e8f0; font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                Center receipt in frame
+              </span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between;">
+              <span style="width: 22px; height: 22px; border-bottom: 3px solid #10b981; border-left: 3px solid #10b981; border-bottom-left-radius: 6px;"></span>
+              <span style="width: 22px; height: 22px; border-bottom: 3px solid #10b981; border-right: 3px solid #10b981; border-bottom-right-radius: 6px;"></span>
+            </div>
+          </div>
+
+          <!-- Camera Loading / Permission Alert Overlay -->
+          <div class="camera-status-overlay" id="cameraStatusOverlay" style="position: absolute; inset: 0; background: rgba(12, 14, 18, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center; z-index: 5;">
+            <div class="spinner-amber" style="width: 36px; height: 36px; border: 3px solid rgba(16,185,129,0.2); border-top-color: #10b981; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <div id="cameraStatusText" style="font-size: 0.88rem; font-weight: 600; color: #e2e8f0;">Starting camera...</div>
+            <button type="button" class="btn-ghost-outline" id="btnFallbackUpload" onclick="triggerFileInputFallback()" style="margin-top: 8px; font-size: 0.78rem; padding: 6px 14px; background: #1e293b; color: #fff; border-radius: 8px; border: 1px solid #475569; cursor: pointer;">
+              📁 Choose photo from device
+            </button>
+          </div>
+
+          <!-- Processing Overlay (Visible when analyzing snapshot) -->
+          <div class="camera-analyzing-overlay" id="cameraAnalyzingOverlay" style="display:none; position: absolute; inset: 0; background: rgba(12, 14, 18, 0.92); backdrop-filter: blur(6px); flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; z-index: 10;">
+            <div class="pulsing-gemini-ring" style="width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #3b82f6); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); animation: pulseGlow 1.5s infinite;">
+              <i data-lucide="sparkles" style="color: #fff; width: 28px; height: 28px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 1rem; font-weight: 800; color: #ffffff;">Google Gemini Vision Analyzing...</div>
+              <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">Extracting merchant, total amount &amp; envelope</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Controls Toolbar -->
+        <div class="camera-controls-bar" style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          
+          <!-- Upload from device fallback button -->
+          <button type="button" class="btn-camera-util" onclick="triggerFileInputFallback()" title="Upload image file" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="image"></i>
+            <span>Upload</span>
+          </button>
+
+          <!-- Big Shutter Button -->
+          <button type="button" class="btn-shutter-capture" id="btnCaptureReceipt" onclick="captureReceiptSnapshot()" title="Take Photo &amp; Analyze" style="width: 66px; height: 66px; border-radius: 50%; background: #ffffff; border: 4px solid #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="camera" style="color: #0c0e12; width: 24px; height: 24px;"></i>
+            </div>
+          </button>
+
+          <!-- Flip Camera Button (Front / Rear) -->
+          <button type="button" class="btn-camera-util" id="btnFlipCamera" onclick="flipCameraFacingMode()" title="Flip Camera" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="refresh-cw"></i>
+            <span>Flip</span>
+          </button>
+        </div>
+
+        <!-- Presets demo pills for rapid offline test -->
+        <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+          <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Demo Receipts:</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="ocr-chip" data-preset="wholefoods" onclick="runPresetAndClose('wholefoods')">🛒 Whole Foods</button>
+            <button type="button" class="ocr-chip" data-preset="aws" onclick="runPresetAndClose('aws')">☁️ AWS Cloud</button>
+            <button type="button" class="ocr-chip" data-preset="uber" onclick="runPresetAndClose('uber')">🚗 Uber</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 3-TAP QUICK-ADD TRANSACTION & RECEIPT OCR MODAL ================= -->
+  <div class="modal-backdrop" id="quickAddModal" style="display:none;">
+    <div class="modal-card quick-add-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="plus-circle"></i></span>
+          <div>
+            <h3>Log Transaction</h3>
+            <p>Record spending or scan receipt</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeQuickAddModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Smart Receipt Camera Box -->
+        <div class="ocr-scanner-box" id="ocr-scanner-box">
+          <div class="ocr-scanner-header">
+            <!-- Hidden file input fallback -->
+            <input
+              type="file"
+              id="receipt-camera-input"
+              accept="image/*"
+              capture="environment"
+              style="display: none;"
+            />
+            <button type="button" class="btn-camera-scan" id="btn-trigger-camera" onclick="openCameraScannerModal()">
+              📷 Open Camera Scanner
+            </button>
+          </div>
+
+          <!-- Live OCR Audit Output Banner (Hidden until scanned) -->
+          <div id="ocr-audit-result" class="ocr-audit-result hidden"></div>
+        </div>
+
+        <!-- Transaction Type Switcher -->
+        <div class="tx-type-toggle">
+          <button type="button" class="tx-type-btn active" data-type="expense" onclick="setTxType('expense')">Expense</button>
+          <button type="button" class="tx-type-btn" data-type="income" onclick="setTxType('income')">Income</button>
+          <button type="button" class="tx-type-btn" data-type="transfer" onclick="setTxType('transfer')">Transfer</button>
+        </div>
+
+        <!-- Amount Input -->
+        <div class="form-group">
+          <label>Transaction Amount</label>
+          <div class="amount-input-wrap">
+            <span class="amount-currency-prefix" id="txCurrencyPrefix">$</span>
+            <input type="number" id="tx-amount" step="0.01" class="text-input amount-input" placeholder="0.00">
+          </div>
+        </div>
+
+        <!-- Wallet Selector -->
+        <div class="form-group">
+          <label>Paying Wallet / Account</label>
+          <select id="tx-wallet" class="settings-select">
+            <option value="Primary Checking" selected>Primary Checking ($2,430.00)</option>
+            <option value="Physical Cash">Physical Cash / Pocket ($185.00)</option>
+            <option value="Credit Card">Household Credit Card (-$420.00)</option>
+            <option value="Babylon 10% Reserve">Babylon 10% Reserve ($500.00 Locked)</option>
+          </select>
+        </div>
+
+        <!-- Category & Envelope Grid -->
+        <div class="form-group">
+          <label>Category Envelope</label>
+          <select id="tx-category" class="settings-select">
+            <option value="Groceries" selected>🛒 Groceries &amp; Household</option>
+            <option value="Food & Dining">🍽️ Food &amp; Dining Out</option>
+            <option value="Transport & Fuel">⛽ Transportation &amp; Fuel</option>
+            <option value="Rent & Utilities">💡 Utilities &amp; Rent</option>
+            <option value="Shopping">🛍️ Discretionary Shopping</option>
+            <option value="Entertainment">🎟️ Entertainment &amp; Fun</option>
+            <option value="Subscriptions">📅 Recurring Subscriptions</option>
+            <option value="Health & Medical">💊 Health &amp; Medical</option>
+            <option value="Miscellaneous">📦 Miscellaneous</option>
+          </select>
+        </div>
+
+        <!-- Merchant / Note Input -->
+        <div class="form-group">
+          <label>Merchant / Note</label>
+          <input type="text" id="tx-merchant" class="text-input" placeholder="e.g. Whole Foods, Blue Bottle Coffee, Uber...">
+        </div>
+
+        <!-- Date Input -->
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="tx-date" class="text-input">
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeQuickAddModal()">Cancel</button>
+        <button class="btn-amber-cta" onclick="confirmSaveQuickAddTransaction()">
+          <i data-lucide="check"></i>
+          <span>Save &amp; Log Expense</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TRANSFER BETWEEN WALLETS MODAL ================= -->
+  <div class="modal-backdrop" id="transferModal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="arrow-right-left"></i></span>
+          <div>
+            <h3>Transfer Funds</h3>
+            <p>Move balances between accounts</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeTransferModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>From Wallet</label>
+          <select id="transferFromWallet" class="settings-select">
+            <option value="Primary Checking">Primary Checking ($2,430.00)</option>
+            <option value="Physical Cash">Physical Cash ($185.00)</option>
+            <option value="Babylon 10% Reserve">Babylon 10% Reserve ($500.00)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>To Wallet</label>
+          <select id="transferToWallet" class="settings-select">
+            <option value="Physical Cash">Physical Cash ($185.00)</option>
+            <option value="Primary Checking">Primary Checking ($2,430.00)</option>
+            <option value="Babylon 10% Reserve">Babylon 10% Reserve ($500.00)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Transfer Amount ($)</label>
+          <input type="number" id="transferAmount" class="text-input" placeholder="50.00" step="5">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeTransferModal()">Cancel</button>
+        <button class="btn-amber-cta" onclick="confirmWalletTransfer()">Execute Transfer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADD NEW WALLET MODAL ================= -->
+  <div class="modal-backdrop" id="addWalletModal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="plus-circle"></i></span>
+          <div>
+            <h3>Add Account</h3>
+            <p>Link checking, cash, or credit account</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeAddWalletModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Wallet Name</label>
+          <input type="text" id="newWalletName" class="text-input" placeholder="e.g. High-Yield Savings, Travel Cash">
+        </div>
+        <div class="form-group">
+          <label>Wallet Type</label>
+          <select id="newWalletType" class="settings-select">
+            <option value="bank">Bank / Checking Account</option>
+            <option value="cash">Physical Cash</option>
+            <option value="vault">Sinking Vault / Savings</option>
+            <option value="card">Credit Card Liability</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Starting Balance ($)</label>
+          <input type="number" id="newWalletBalance" class="text-input" placeholder="500.00" step="10">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeAddWalletModal()">Cancel</button>
+        <button class="btn-amber-cta" onclick="confirmAddNewWallet()">Add Wallet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 1-TAP DISPUTE DRAWER MODAL ================= -->
+  <div class="modal-backdrop" id="disputeModal" style="display:none;">
+    <div class="modal-card dispute-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="scale"></i></span>
+          <div>
+            <h3 id="disputeModalTitle">Dispute Pack</h3>
+            <p id="disputeModalSubtitle">Pre-filled merchant notice</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeDisputeModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="dispute-meta-strip" id="disputeMetaStrip">
+          <!-- Injected dynamically -->
+        </div>
+
+        <div class="letter-preview-box">
+          <div class="letter-header">
+            <span>Subject: <strong id="disputeSubject">Formal Notice: Billing Discrepancy & Price Hike Objection</strong></span>
+            <button class="btn-copy-letter" onclick="copyDisputeLetter()"><i data-lucide="copy"></i> Copy Text</button>
+          </div>
+          <textarea class="letter-textarea" id="disputeLetterBody" readonly rows="10"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeDisputeModal()">Cancel</button>
+        <button class="btn-amber-cta" id="btnConfirmDispute" onclick="confirmDisputeAction()">
+          <i data-lucide="check-circle"></i>
+          <span>Confirm & Generate Dispute Pack</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= ADD SUBSCRIPTION MODAL ================= -->
+  <div class="modal-backdrop" id="newSubModal" style="display:none;">
+    <div class="modal-card key-vault-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="plus-circle"></i></span>
+          <div>
+            <h3>Track Subscription</h3>
+            <p>Set approved monthly baseline</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeNewSubscriptionModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Merchant / Service Name</label>
+          <input type="text" id="newSubName" class="text-input" placeholder="e.g. Netflix, ChatGPT Plus, Figma...">
+        </div>
+        <div class="form-group">
+          <label>Monthly Baseline Amount ($)</label>
+          <input type="number" id="newSubAmount" step="0.01" class="text-input" placeholder="e.g. 15.49">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="newSubCategory" class="settings-select">
+            <option value="Streaming">Streaming Video / Music</option>
+            <option value="AI & Cloud">AI, Cloud & Infrastructure</option>
+            <option value="Developer Tools">Developer Tools & APIs</option>
+            <option value="Productivity">Productivity & News</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Monthly Renewal Day (1-31)</label>
+          <input type="number" id="newSubRenewalDay" min="1" max="31" class="text-input" placeholder="e.g. 20">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeNewSubscriptionModal()">Cancel</button>
+        <button class="btn-amber-cta" onclick="confirmAddSubscription()">
+          <i data-lucide="check"></i>
+          <span>Save Baseline</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADD FREE TRIAL MODAL ================= -->
+  <div class="modal-backdrop" id="newTrialModal" style="display:none;">
+    <div class="modal-card key-vault-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="clock"></i></span>
+          <div>
+            <h3>Track Free Trial</h3>
+            <p>Set 48-hour expiration alert</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeAddTrialModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Trial Service Name</label>
+          <input type="text" id="newTrialName" class="text-input" placeholder="e.g. Notion AI, Coursera, Loom...">
+        </div>
+        <div class="form-group">
+          <label>Upcoming Recurring Rebill Rate ($/mo)</label>
+          <input type="number" id="newTrialRebillRate" step="0.01" class="text-input" placeholder="e.g. 49.00">
+        </div>
+        <div class="form-group">
+          <label>Days Until Expiration</label>
+          <input type="number" id="newTrialDaysLeft" min="1" max="365" class="text-input" placeholder="e.g. 7">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeAddTrialModal()">Cancel</button>
+        <button class="btn-amber-cta" onclick="confirmAddTrial()">
+          <i data-lucide="bell"></i>
+          <span>Arm Alarm</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADD NEW SUBSCRIPTION MODAL ================= -->
+  <div class="modal-backdrop" id="newSubscriptionModal" style="display:none;">
+    <div class="modal-card quick-add-modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="plus-circle"></i></span>
+          <div>
+            <h3>Add Subscription</h3>
+            <p>Set renewal date and alerts</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeNewSubscriptionModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form onsubmit="handleAddNewSubscription(event)">
+          <div class="form-group">
+            <label class="setting-label">Service / Merchant Name</label>
+            <input type="text" class="text-input" id="newSubMerchant" placeholder="e.g. Claude Pro, Disney+, Cursor AI" required>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px;">
+            <div class="form-group">
+              <label class="setting-label">Monthly Cost</label>
+              <div class="input-with-icon">
+                <span class="input-prefix">$</span>
+                <input type="number" step="0.01" class="text-input" id="newSubCost" placeholder="19.99" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="setting-label">Category</label>
+              <select class="settings-select" id="newSubCategory">
+                <option value="streaming">Streaming Video/Audio</option>
+                <option value="ai" selected>AI &amp; Cloud</option>
+                <option value="dev">Developer Tools</option>
+                <option value="productivity">Productivity &amp; News</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px;">
+            <div class="form-group">
+              <label class="setting-label">Renewal Day of Month</label>
+              <input type="number" min="1" max="31" class="text-input" id="newSubDay" value="15" required>
+            </div>
+            <div class="form-group">
+              <label class="setting-label">Payment Wallet</label>
+              <select class="settings-select" id="newSubWallet">
+                <option value="checking" selected>Chase Sapphire Checking</option>
+                <option value="credit">Amex Card</option>
+                <option value="babylon">Babylon Reserve</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-item toggle-row" style="margin-top:16px;">
+            <div>
+              <label class="setting-label">Is this a Free Trial?</label>
+              <p class="setting-hint">Arms advance alert before rebill.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="newSubIsTrial">
+              <span class="slider-switch"></span>
+            </label>
+          </div>
+
+          <div class="modal-footer" style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-ghost-outline" onclick="closeNewSubscriptionModal()">Cancel</button>
+            <button type="submit" class="btn-amber-card-action">
+              <i data-lucide="check"></i> Add Subscription
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER FOR DYNAMIC NOTIFICATIONS -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- FLOATING BRAND AURA PILL (MATCHING BOTTOM RIGHT OF IMAGES) -->
+  <div class="floating-aura-pill" id="floatingAuraPill" onclick="switchView('app')">
+    <span class="aura-icon"><i data-lucide="shield"></i></span>
+    <span class="aura-text">PocketSentinel Active</span>
+  </div>
+
+  <script src="/app.js?v=2.6"></script>
+</body>
+</html>

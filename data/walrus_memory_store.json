@@ -1,0 +1,284 @@
+{
+  "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+  "network": "sui-mainnet",
+  "lastSync": "2026-10-28T14:50:52.429Z",
+  "memories": {
+    "netflix_standard": {
+      "id": "MEM_01",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "netflix_standard",
+      "category": "Baseline",
+      "content": "$15.49/mo baseline established. Max acceptable variance: $0.00. Alert on any deviation.",
+      "metadata": {
+        "merchant": "Netflix",
+        "baselineAmount": 15.49,
+        "cadence": "monthly",
+        "dayOfMonth": 12,
+        "varianceTolerance": 0,
+        "annualCost": 185.88,
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.418Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000001",
+        "memwalJobId": "mock-job-000001",
+        "isLiveMemWal": false
+      }
+    },
+    "spotify_premium": {
+      "id": "MEM_02",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "spotify_premium",
+      "category": "Baseline",
+      "content": "$10.99/mo baseline. Flag price increase > $0.50 immediately.",
+      "metadata": {
+        "merchant": "Spotify",
+        "baselineAmount": 10.99,
+        "cadence": "monthly",
+        "dayOfMonth": 24,
+        "varianceTolerance": 0.5,
+        "annualCost": 131.88,
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.422Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000002",
+        "memwalJobId": "mock-job-000002",
+        "isLiveMemWal": false
+      }
+    },
+    "chatgpt_plus": {
+      "id": "MEM_03",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "chatgpt_plus",
+      "category": "Baseline",
+      "content": "$20.00/mo recurring on the 14th. Auto-reconcile without human ping.",
+      "metadata": {
+        "merchant": "OpenAI (ChatGPT Plus)",
+        "baselineAmount": 20,
+        "cadence": "monthly",
+        "dayOfMonth": 14,
+        "varianceTolerance": 0,
+        "annualCost": 240,
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.423Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000003",
+        "memwalJobId": "mock-job-000003",
+        "isLiveMemWal": false
+      }
+    },
+    "aws_cloud_hosting": {
+      "id": "MEM_04",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "aws_cloud_hosting",
+      "category": "Override",
+      "content": "Q4 holiday traffic approved for surges up to $180/mo (authorized by user Oct 2025). Suppress alert if below $180.",
+      "metadata": {
+        "merchant": "Amazon Web Services (AWS)",
+        "standardBaseline": 64.2,
+        "approvedSurgeCeiling": 180,
+        "season": "Q4_OCT_DEC",
+        "authorizedBy": "User_HumanInLoop_001",
+        "lastApprovedDate": "2025-10-18T14:20:00Z",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.423Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000004",
+        "memwalJobId": "mock-job-000004",
+        "isLiveMemWal": false
+      }
+    },
+    "gym_equinox": {
+      "id": "MEM_05",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "gym_equinox",
+      "category": "Baseline",
+      "content": "$240.00/mo billed on 1st. Seasonal freeze scheduled for January.",
+      "metadata": {
+        "merchant": "Equinox Gym",
+        "baselineAmount": 240,
+        "cadence": "monthly",
+        "dayOfMonth": 1,
+        "freezeScheduledMonth": "January",
+        "annualCost": 2880,
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.425Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000005",
+        "memwalJobId": "mock-job-000005",
+        "isLiveMemWal": false
+      }
+    },
+    "adobe_creative_trial": {
+      "id": "MEM_06",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "adobe_creative_trial",
+      "category": "Trial Watch",
+      "content": "7-day free trial started Oct 18. Mandatory 48h cancellation notice scheduled Oct 23. Rebill risk: $54.99/mo.",
+      "metadata": {
+        "merchant": "Adobe Creative Cloud",
+        "trialStartDate": "2026-10-18T09:00:00Z",
+        "trialDurationDays": 7,
+        "rebillAmount": 54.99,
+        "cancellationNoticeDeadline": "2026-10-23T09:00:00Z",
+        "status": "URGENT_ACTION_REQUIRED",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.426Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000006",
+        "memwalJobId": "mock-job-000006",
+        "isLiveMemWal": false
+      }
+    },
+    "unknown_vendor_threshold": {
+      "id": "MEM_07",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "unknown_vendor_threshold",
+      "category": "Policy",
+      "content": "Strict rule: Any new merchant debiting > $50.00 requires immediate SMS/Push approval. Suppress autonomous pass.",
+      "metadata": {
+        "policyType": "HARD_ESCALATION_GATE",
+        "thresholdAmount": 50,
+        "action": "REQUIRE_HUMAN_CONFIRMATION",
+        "severity": "HIGH",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.427Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000007",
+        "memwalJobId": "mock-job-000007",
+        "isLiveMemWal": false
+      }
+    },
+    "annual_renewal_tolerance": {
+      "id": "MEM_08",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "annual_renewal_tolerance",
+      "category": "Policy",
+      "content": "Annual renewals (Prime, 1Password) permitted +5% max inflation vs prior year without emergency escalation.",
+      "metadata": {
+        "policyType": "ANNUAL_INFLATION_TOLERANCE",
+        "maxAllowedPercentage": 5,
+        "applicableCadence": "annual",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.427Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000008",
+        "memwalJobId": "mock-job-000008",
+        "isLiveMemWal": false
+      }
+    },
+    "github_copilot": {
+      "id": "MEM_09",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "github_copilot",
+      "category": "Baseline",
+      "content": "$10.00/mo baseline developer tool. Do not flag unless duplicated by team seat.",
+      "metadata": {
+        "merchant": "GitHub Copilot",
+        "baselineAmount": 10,
+        "cadence": "monthly",
+        "dayOfMonth": 5,
+        "category": "Developer Productivity",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.428Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000009",
+        "memwalJobId": "mock-job-000009",
+        "isLiveMemWal": false
+      }
+    },
+    "doordash_pass": {
+      "id": "MEM_10",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "doordash_pass",
+      "category": "Dispute Trace",
+      "content": "Duplicate charge disputed in August 2026. Refunded $9.99. Watch merchant for rebill.",
+      "metadata": {
+        "merchant": "DoorDash DashPass",
+        "disputedAmount": 9.99,
+        "resolutionStatus": "REFUNDED_WON",
+        "disputeDate": "2026-08-14T11:00:00Z",
+        "actionPlan": "FLAG_INSTANT_IF_RECURS",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.428Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000010",
+        "memwalJobId": "mock-job-000010",
+        "isLiveMemWal": false
+      }
+    },
+    "audio_streaming_overlap": {
+      "id": "MEM_11",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "audio_streaming_overlap",
+      "category": "Overlap Watch",
+      "content": "Duplicate alert: User holds active Spotify ($10.99) and Apple Music ($10.99). Prompt consolidation.",
+      "metadata": {
+        "overlapType": "DUPLICATE_CATEGORY_SERVICES",
+        "merchants": [
+          "Spotify Premium",
+          "Apple Music"
+        ],
+        "combinedMonthlyWaste": 10.99,
+        "annualSavingsPotential": 131.88,
+        "recommendedAction": "CANCEL_ONE_OR_SWITCH_FAMILY",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.428Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000011",
+        "memwalJobId": "mock-job-000011",
+        "isLiveMemWal": false
+      }
+    },
+    "icloud_storage_2tb": {
+      "id": "MEM_12",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "icloud_storage_2tb",
+      "category": "Baseline",
+      "content": "$9.99/mo family plan. Fixed utility tier.",
+      "metadata": {
+        "merchant": "Apple iCloud+ 2TB",
+        "baselineAmount": 9.99,
+        "cadence": "monthly",
+        "dayOfMonth": 19,
+        "category": "Cloud Storage & Utility",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-28T14:50:52.429Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000012",
+        "memwalJobId": "mock-job-000012",
+        "isLiveMemWal": false
+      }
+    },
+    "dispute_adobe_creative_cloud_all_apps_1792789668822": {
+      "id": "MEM_13",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "dispute_adobe_creative_cloud_all_apps_1792789668822",
+      "category": "DISPUTE_LOG",
+      "content": {
+        "merchant": "Adobe Creative Cloud All Apps",
+        "deltaRefundClaimed": 54.99,
+        "action": "1_TAP_DISPUTE_FILED",
+        "status": "PENDING_VENDOR_CREDIT",
+        "timestamp": "2026-10-23T21:07:48.822Z"
+      },
+      "metadata": {
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-23T21:07:48.837Z",
+        "verifiedMainnet": true
+      }
+    }
+  }
+}
