@@ -524,7 +524,7 @@
                 <i data-lucide="refresh-cw"></i>
                 <span>Rebalance Deficit</span>
               </button>
-              <button class="btn-ghost-outline" onclick="showToast('Zero-based envelope manager: Ready to create custom category envelope.')">
+              <button class="btn-ghost-outline" onclick="openCreateCategoryModal()">
                 <i data-lucide="folder-plus"></i>
                 <span>+ Add Category</span>
               </button>
@@ -560,7 +560,7 @@
             </div>
 
             <!-- Envelopes Cards Grid -->
-            <div class="envelopes-cards-grid">
+            <div class="envelopes-cards-grid" id="envelopesCardsGrid">
               <!-- Envelope 1: Groceries -->
               <div class="envelope-card">
                 <div class="env-header">
@@ -965,39 +965,46 @@
           <!-- Dropzone and Scanner Area -->
           <div class="receipt-scanner-split">
             
-            <div class="receipt-dropzone-box" id="receiptDropzone" onclick="simulateReceiptScan()">
+            <div class="receipt-dropzone-box" id="receiptDropzone" onclick="triggerReceiptDropzoneUpload()">
+              <input type="file" id="receiptDropzoneFileInput" accept="image/*,.pdf" style="display:none;" onchange="handleReceiptFileSelected(event)">
               <div class="receipt-drop-content">
                 <i data-lucide="camera" class="camera-icon"></i>
-                <h4>Drag &amp; Drop Receipt</h4>
-                <p>PNG, JPG, PDF receipt scans</p>
-                <button type="button" class="btn-amber-card-action" onclick="event.stopPropagation(); simulateReceiptScan();">
-                  <i data-lucide="scan"></i>
-                  <span>Scan Sample Receipt ($42.18)</span>
-                </button>
+                <h4 id="receiptDropTitle">Drag &amp; Drop Receipt</h4>
+                <p id="receiptDropSubtitle">PNG, JPG, PDF receipt scans or click to browse</p>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 10px;">
+                  <button type="button" class="btn-amber-card-action" onclick="event.stopPropagation(); triggerReceiptDropzoneUpload();">
+                    <i data-lucide="upload-cloud"></i>
+                    <span>Upload Receipt Image</span>
+                  </button>
+                  <button type="button" class="btn-ghost-outline" style="font-size: 0.76rem; padding: 4px 10px;" onclick="event.stopPropagation(); scanSampleReceiptDemo();">
+                    <i data-lucide="sparkles"></i>
+                    <span>Scan Sample Demo ($42.18)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- Live OCR Extraction Card -->
             <div class="receipt-extraction-card" id="receiptExtractionCard">
               <div class="card-tag-row">
-                <small>Chase Sapphire Match</small>
+                <small id="receiptMatchBadge">Chase Sapphire Match</small>
               </div>
-              <h4 id="receiptMerchantTitle">Blue Bottle Coffee & Breakfast Co.</h4>
+              <h4 id="receiptMerchantTitle">Blue Bottle Coffee &amp; Breakfast Co.</h4>
               <div class="receipt-meta-grid">
                 <div><span>Date:</span> <strong id="receiptDate">Oct 19, 2026</strong></div>
-                <div><span>Payment Rail:</span> <strong>Chase Card ending in 4102</strong></div>
-                <div><span>Tax Deductible:</span> <strong class="text-green">100% Business Meal</strong></div>
-                <div><span>Statement Status:</span> <strong class="text-green">Matched to Line Debit</strong></div>
+                <div><span>Payment Rail:</span> <strong id="receiptPaymentRail">Chase Card ending in 4102</strong></div>
+                <div><span>Tax Deductible:</span> <strong id="receiptTaxDeductible" class="text-green">100% Business Meal</strong></div>
+                <div><span>Statement Status:</span> <strong id="receiptStatementStatus" class="text-green">Matched to Line Debit</strong></div>
               </div>
               
-              <div class="receipt-line-items">
+              <div class="receipt-line-items" id="receiptLineItemsList">
                 <div class="receipt-line"><span>2x Single Origin Pour Over</span><span>$14.00</span></div>
                 <div class="receipt-line"><span>1x Sourdough Avocado Toast</span><span>$14.50</span></div>
                 <div class="receipt-line"><span>1x Kyoto Style Cold Brew</span><span>$6.00</span></div>
                 <div class="receipt-line subtotal"><span>Subtotal</span><span>$34.50</span></div>
                 <div class="receipt-line tax"><span>Sales Tax (9.0%)</span><span>$3.11</span></div>
                 <div class="receipt-line tip"><span>Gratuity (15.0%)</span><span>$4.57</span></div>
-                <div class="receipt-line total"><span>Total Debit Reconciled</span><strong class="text-green">$42.18</strong></div>
+                <div class="receipt-line total"><span>Total Debit Reconciled</span><strong class="text-green" id="receiptTotalAmount">$42.18</strong></div>
               </div>
 
               <div class="receipt-action-row">
@@ -2200,16 +2207,6 @@
           </button>
         </div>
 
-        <!-- Presets demo pills for rapid offline test -->
-        <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-          <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Demo Receipts:</span>
-          <div style="display: flex; gap: 6px;">
-            <button type="button" class="ocr-chip" data-preset="wholefoods" onclick="runPresetAndClose('wholefoods')">🛒 Whole Foods</button>
-            <button type="button" class="ocr-chip" data-preset="aws" onclick="runPresetAndClose('aws')">☁️ AWS Cloud</button>
-            <button type="button" class="ocr-chip" data-preset="uber" onclick="runPresetAndClose('uber')">🚗 Uber</button>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -2598,6 +2595,118 @@
           </div>
         </form>
       </div>
+  <!-- ================= 10% EMERGENCY RESERVE UNLOCK MODAL ================= -->
+  <div class="modal-backdrop" id="emergencyUnlockModal" style="display:none;">
+    <div class="modal-card emergency-modal-card" style="max-width: 460px; box-shadow: 4px 4px 0px #141413; border: 2px solid #141413;">
+      <div class="modal-header" style="border-bottom: 2px solid #141413; background: #fffbe6; padding: 18px 24px;">
+        <div class="modal-title-row">
+          <span class="modal-icon" style="background: #fef08a; color: #b45309; border: 2px solid #141413; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0px #141413;">
+            <i data-lucide="shield-alert"></i>
+          </span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #141413;">10% Emergency Reserve</h3>
+            <p style="margin: 2px 0 0; font-size: 0.78rem; color: #78716c; font-weight: 500;">Babylonian Sinking Fund Protocol</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeEmergencyUnlockModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 24px;">
+        <div style="background: #fafaf9; border: 2px solid #141413; border-radius: 10px; padding: 16px; margin-bottom: 18px; box-shadow: 2px 2px 0px #141413;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 0.82rem; font-weight: 600; color: #57534e;">Locked Vault Balance:</span>
+            <strong style="font-size: 1.25rem; font-weight: 800; color: #d97706;" id="emergencyReserveModalAmount">$500.00</strong>
+          </div>
+          <p style="margin: 0; font-size: 0.84rem; line-height: 1.5; color: #44403c;">
+            The 10% reserve is locked against discretionary spending as an emergency safety buffer.
+          </p>
+        </div>
+
+        <p style="margin: 0 0 20px; font-size: 0.88rem; color: #292524; line-height: 1.5; font-weight: 500;">
+          Unlock this reserve for emergency allocation?
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" class="btn-ghost-outline" onclick="closeEmergencyUnlockModal()" style="border: 2px solid #141413; font-weight: 700; padding: 8px 16px;">
+            Cancel
+          </button>
+          <button type="button" class="btn-amber-cta" onclick="confirmEmergencyUnlock()" style="border: 2px solid #141413; background: #00d2d3; color: #141413; font-weight: 800; padding: 8px 18px; box-shadow: 2px 2px 0px #141413;">
+            <i data-lucide="unlock"></i> Unlock Reserve
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CREATE CUSTOM CATEGORY ENVELOPE MODAL ================= -->
+  <div class="modal-backdrop" id="createCategoryModal" style="display:none;">
+    <div class="modal-card" style="max-width: 480px; box-shadow: 4px 4px 0px #141413; border: 2px solid #141413;">
+      <div class="modal-header" style="border-bottom: 2px solid #141413; padding: 18px 24px;">
+        <div class="modal-title-row">
+          <span class="modal-icon" style="background: #fed7aa; color: #c2410c; border: 2px solid #141413; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0px #141413;">
+            <i data-lucide="folder-plus"></i>
+          </span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #141413;">Add Category Envelope</h3>
+            <p style="margin: 2px 0 0; font-size: 0.78rem; color: #78716c; font-weight: 500;">Zero-based digital envelope allocator</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeCreateCategoryModal()">&times;</button>
+      </div>
+
+      <form id="createCategoryForm" onsubmit="handleCreateCategorySubmit(event)">
+        <div class="modal-body" style="padding: 24px;">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="newCategoryName" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Category Name</label>
+            <input type="text" id="newCategoryName" class="form-input" placeholder="e.g. Healthcare, Gym, Pet Care, Education" required style="width: 100%; padding: 10px 12px; border: 2px solid #141413; border-radius: 8px;" />
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+            <div class="form-group">
+              <label class="form-label" for="newCategoryBudget" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Monthly Target ($)</label>
+              <input type="number" step="0.01" min="1" id="newCategoryBudget" class="form-input" placeholder="200.00" required style="width: 100%; padding: 10px 12px; border: 2px solid #141413; border-radius: 8px;" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="newCategoryInitialSpent" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Initial Spent ($)</label>
+              <input type="number" step="0.01" min="0" id="newCategoryInitialSpent" class="form-input" value="0.00" style="width: 100%; padding: 10px 12px; border: 2px solid #141413; border-radius: 8px;" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" style="font-weight: 700; margin-bottom: 8px; display: block; font-size: 0.85rem;">Envelope Icon</label>
+            <div class="category-icon-picker" id="categoryIconPicker">
+              <button type="button" class="icon-pick-btn active" data-icon="heart" onclick="selectCategoryIcon('heart')"><i data-lucide="heart"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="activity" onclick="selectCategoryIcon('activity')"><i data-lucide="activity"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="book-open" onclick="selectCategoryIcon('book-open')"><i data-lucide="book-open"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="coffee" onclick="selectCategoryIcon('coffee')"><i data-lucide="coffee"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="car" onclick="selectCategoryIcon('car')"><i data-lucide="car"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="briefcase" onclick="selectCategoryIcon('briefcase')"><i data-lucide="briefcase"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="gift" onclick="selectCategoryIcon('gift')"><i data-lucide="gift"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="smartphone" onclick="selectCategoryIcon('smartphone')"><i data-lucide="smartphone"></i></button>
+              <button type="button" class="icon-pick-btn" data-icon="smile" onclick="selectCategoryIcon('smile')"><i data-lucide="smile"></i></button>
+            </div>
+            <input type="hidden" id="newCategoryIcon" value="heart" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 22px;">
+            <label class="form-label" for="newCategoryColor" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Accent Theme</label>
+            <select id="newCategoryColor" class="form-input" style="width: 100%; padding: 10px 12px; border: 2px solid #141413; border-radius: 8px;">
+              <option value="blue">Blue (Balanced)</option>
+              <option value="green">Green (Essential)</option>
+              <option value="amber">Amber (Guarded)</option>
+              <option value="purple">Purple (Growth)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn-ghost-outline" onclick="closeCreateCategoryModal()" style="border: 2px solid #141413; font-weight: 700; padding: 8px 16px;">Cancel</button>
+            <button type="submit" class="btn-amber-card-action" style="border: 2px solid #141413; background: #eab308; color: #141413; font-weight: 800; padding: 8px 18px; box-shadow: 2px 2px 0px #141413;">
+              <i data-lucide="plus"></i> Add Envelope
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 

@@ -5270,6 +5270,131 @@ body.dark-theme .cf-metric-card.safespend-card {
   color: var(--text-secondary);
 }
 
+/* Styled Rebalance Callout & Action Button */
+.env-rebalance-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(224, 86, 60, 0.08);
+  border: 1.5px dashed rgba(224, 86, 60, 0.4);
+  border-radius: var(--radius-subtle);
+  font-family: var(--font-body, system-ui, -apple-system);
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  transition: all var(--dur-fast);
+}
+
+body.dark-theme .env-rebalance-callout {
+  background: rgba(224, 86, 60, 0.14);
+  border-color: rgba(224, 86, 60, 0.5);
+  color: #fca5a5;
+}
+
+.env-rebalance-callout span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.btn-mini-rebalance {
+  background: #141413;
+  color: #ffffff;
+  border: 1.5px solid #141413;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-family: var(--font-body, system-ui, -apple-system);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.btn-mini-rebalance:hover {
+  background: #d97706;
+  border-color: #b45309;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.3);
+}
+
+.btn-mini-rebalance:active {
+  transform: translateY(1px);
+  box-shadow: 0px 0px 0px;
+}
+
+body.dark-theme .btn-mini-rebalance {
+  background: #f59e0b;
+  color: #141413;
+  border-color: #f59e0b;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-theme .btn-mini-rebalance:hover {
+  background: #fbbf24;
+  border-color: #fbbf24;
+}
+
+/* Category icon picker & custom envelope controls */
+.category-icon-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.icon-pick-btn {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafaf9;
+  border: 1.5px solid #e7e5e4;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #44403c;
+  transition: all 0.2s ease;
+}
+
+.icon-pick-btn:hover {
+  border-color: #141413;
+  transform: translateY(-1px);
+}
+
+.icon-pick-btn.active {
+  background: #fef3c7;
+  border-color: #d97706;
+  color: #b45309;
+  box-shadow: 2px 2px 0px #141413;
+}
+
+.custom-env-delete-btn {
+  background: transparent;
+  border: none;
+  color: #a8a29e;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.custom-env-delete-btn:hover {
+  color: #ef4444;
+}
+
 .roll-punches-panel {
   display: flex;
   align-items: center;

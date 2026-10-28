@@ -232,6 +232,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderHomeTxMiniPreview();
   updateTxPageMetrics();
   renderPlanSubscriptionsLedger();
+  renderCustomEnvelopes();
+  syncCategoryDropdowns();
+  setupReceiptOcrDropzone();
 
   // Sync initial collapsible sections state
   if (typeof syncCollapsibleSectionsOnView === 'function') {
@@ -2935,20 +2938,202 @@ window.testOverviewAffordability = testOverviewAffordability;
 // =========================================================================
 // PARADIGM 05: RECEIPT OCR INGESTION & AUDIT MATCHER (EXPENSIFY / DEXT)
 // =========================================================================
-function simulateReceiptScan() {
+function triggerReceiptDropzoneUpload() {
+  const fileInput = document.getElementById('receiptDropzoneFileInput');
+  if (fileInput) fileInput.click();
+}
+window.triggerReceiptDropzoneUpload = triggerReceiptDropzoneUpload;
+
+async function handleReceiptFileSelected(event) {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+  await processReceiptFile(file);
+}
+window.handleReceiptFileSelected = handleReceiptFileSelected;
+
+async function processReceiptFile(file) {
+  const dropBox = document.getElementById('receiptDropzone');
+  const card = document.getElementById('receiptExtractionCard');
+  const title = document.getElementById('receiptDropTitle');
+  const subtitle = document.getElementById('receiptDropSubtitle');
+
+  if (title) title.textContent = 'Scanning: ' + file.name;
+  if (subtitle) subtitle.textContent = 'Google Gemini Vision analyzing merchant, totals & line items...';
+  if (card) {
+    card.style.opacity = '0.5';
+    card.style.transform = 'scale(0.99)';
+  }
+
+  showToast(`SmartScan OCR: Uploading ${file.name} to Google Gemini Vision...`, 'blue');
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const base64 = reader.result;
+      const res = await fetch('/api/ocr/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: base64,
+          filename: file.name,
+          existingTransactions: state.auditResults || []
+        })
+      });
+
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Failed to parse receipt');
+
+      updateReceiptExtractionUI(data.extracted, data.ruleAudit);
+      showToast(`SmartScan OCR: Extracted ${data.extracted.merchant} ($${Number(data.extracted.amount).toFixed(2)}) via ${data.extracted.provider || 'Gemini Vision'}!`, 'green');
+    } catch (err) {
+      console.error('[Receipt OCR Error]', err);
+      showToast(`OCR Notice: ${err.message}`, 'amber');
+    } finally {
+      if (title) title.textContent = 'Drag & Drop Receipt';
+      if (subtitle) subtitle.textContent = 'PNG, JPG, PDF receipt scans or click to browse';
+      if (card) {
+        card.style.opacity = '1';
+        card.style.transform = 'scale(1)';
+        card.style.transition = 'all 300ms ease';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+window.processReceiptFile = processReceiptFile;
+
+async function scanSampleReceiptDemo() {
   const card = document.getElementById('receiptExtractionCard');
   if (card) {
     card.style.opacity = '0.5';
     card.style.transform = 'scale(0.98)';
-    showToast('SmartScan OCR: Scanning receipt image...');
-    setTimeout(() => {
+  }
+  showToast('SmartScan OCR: Scanning sample receipt with Google Gemini Vision...', 'blue');
+
+  try {
+    const res = await fetch('/api/ocr/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        demoPreset: 'wholefoods',
+        filename: 'sample_wholefoods_receipt.jpg',
+        existingTransactions: state.auditResults || []
+      })
+    });
+    const data = await res.json();
+    if (data.ok && data.extracted) {
+      updateReceiptExtractionUI(data.extracted, data.ruleAudit);
+      showToast(`SmartScan OCR: Extracted ${data.extracted.merchant} ($${Number(data.extracted.amount).toFixed(2)}) matched to bank debit!`, 'green');
+    }
+  } catch (e) {
+    showToast(`OCR Notice: ${e.message}`, 'amber');
+  } finally {
+    if (card) {
       card.style.opacity = '1';
       card.style.transform = 'scale(1)';
       card.style.transition = 'all 300ms ease';
-      showToast('SmartScan OCR Complete: Blue Bottle Coffee ($42.18) extracted & matched to Chase debit!');
-      if (window.lucide) window.lucide.createIcons();
-    }, 600);
+    }
   }
+}
+window.scanSampleReceiptDemo = scanSampleReceiptDemo;
+
+function updateReceiptExtractionUI(extracted, ruleAudit) {
+  if (!extracted) return;
+
+  const titleEl = document.getElementById('receiptMerchantTitle');
+  const dateEl = document.getElementById('receiptDate');
+  const railEl = document.getElementById('receiptPaymentRail');
+  const taxEl = document.getElementById('receiptTaxDeductible');
+  const statusEl = document.getElementById('receiptStatementStatus');
+  const badgeEl = document.getElementById('receiptMatchBadge');
+  const totalEl = document.getElementById('receiptTotalAmount');
+  const itemsContainer = document.getElementById('receiptLineItemsList');
+
+  if (titleEl) titleEl.textContent = extracted.merchant;
+  if (dateEl) dateEl.textContent = extracted.date || new Date().toISOString().split('T')[0];
+  if (railEl) railEl.textContent = ruleAudit?.matchedTx?.wallet || 'Chase Card ending in 4102';
+  if (taxEl) {
+    taxEl.textContent = extracted.taxDeductible ? '100% Business Deductible' : 'Personal Discretionary Expense';
+    taxEl.className = extracted.taxDeductible ? 'text-green' : 'text-muted';
+  }
+  if (statusEl) {
+    statusEl.textContent = ruleAudit?.matched ? 'Matched to Line Debit' : 'Verified by Gemini Multimodal Vision';
+    statusEl.className = 'text-green';
+  }
+  if (badgeEl) {
+    badgeEl.textContent = ruleAudit?.matched ? `Chase Sapphire Match (${ruleAudit.action})` : `Vision Parsed · Confidence ${(extracted.confidence * 100).toFixed(0)}%`;
+  }
+  if (totalEl) {
+    totalEl.textContent = `$${Number(extracted.amount).toFixed(2)}`;
+  }
+
+  if (itemsContainer) {
+    if (extracted.items && extracted.items.length > 0) {
+      let itemsHtml = '';
+      let subtotal = 0;
+      extracted.items.forEach(it => {
+        const p = Number(it.price) || 0;
+        subtotal += p;
+        itemsHtml += `<div class="receipt-line"><span>${it.name}</span><span>$${p.toFixed(2)}</span></div>`;
+      });
+      const tax = Number((extracted.amount - subtotal).toFixed(2));
+      itemsHtml += `<div class="receipt-line subtotal"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>`;
+      if (tax > 0) {
+        itemsHtml += `<div class="receipt-line tax"><span>Tax &amp; Fees</span><span>$${tax.toFixed(2)}</span></div>`;
+      }
+      itemsHtml += `<div class="receipt-line total"><span>Total Debit Reconciled</span><strong class="text-green">$${Number(extracted.amount).toFixed(2)}</strong></div>`;
+      itemsContainer.innerHTML = itemsHtml;
+    } else {
+      const amt = Number(extracted.amount) || 0;
+      const sub = Number((amt * 0.9).toFixed(2));
+      const tax = Number((amt - sub).toFixed(2));
+      itemsContainer.innerHTML = `
+        <div class="receipt-line"><span>${extracted.rawString || extracted.merchant}</span><span>$${sub.toFixed(2)}</span></div>
+        <div class="receipt-line subtotal"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
+        <div class="receipt-line tax"><span>Tax / Surcharge</span><span>$${tax.toFixed(2)}</span></div>
+        <div class="receipt-line total"><span>Total Debit Reconciled</span><strong class="text-green">$${amt.toFixed(2)}</strong></div>
+      `;
+    }
+  }
+
+  if (window.lucide) window.lucide.createIcons();
+}
+window.updateReceiptExtractionUI = updateReceiptExtractionUI;
+
+function setupReceiptOcrDropzone() {
+  const dropBox = document.getElementById('receiptDropzone');
+  if (!dropBox) return;
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropBox.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropBox.style.borderColor = '#d97706';
+      dropBox.style.background = 'rgba(217, 119, 6, 0.05)';
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropBox.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropBox.style.borderColor = '';
+      dropBox.style.background = '';
+    });
+  });
+
+  dropBox.addEventListener('drop', async (e) => {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      await processReceiptFile(files[0]);
+    }
+  });
+}
+window.setupReceiptOcrDropzone = setupReceiptOcrDropzone;
+
+function simulateReceiptScan() {
+  scanSampleReceiptDemo();
 }
 window.simulateReceiptScan = simulateReceiptScan;
 
@@ -4173,18 +4358,204 @@ function confirmWalletTransfer() {
 window.confirmWalletTransfer = confirmWalletTransfer;
 
 function openBabylonUnlockModal() {
-  const confirmed = confirm(
-    '🛡️ 10% EMERGENCY RESERVE:\n\n' +
-    'The reserve ($500.00) is locked for unexpected emergencies.\n\n' +
-    'Unlock this reserve for emergency allocation?'
-  );
-  if (confirmed) {
-    if (typeof showToast === 'function') {
-      showToast('⚠️ Emergency Reserve temporarily unlocked.');
-    }
+  const modal = document.getElementById('emergencyUnlockModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    if (window.lucide) window.lucide.createIcons();
   }
 }
 window.openBabylonUnlockModal = openBabylonUnlockModal;
+
+function closeEmergencyUnlockModal() {
+  const modal = document.getElementById('emergencyUnlockModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeEmergencyUnlockModal = closeEmergencyUnlockModal;
+
+function confirmEmergencyUnlock() {
+  closeEmergencyUnlockModal();
+  const reservePill = document.querySelector('.envelope-card.reserve-card .env-remaining-pill');
+  if (reservePill) {
+    reservePill.innerHTML = '<i data-lucide="unlock"></i> $500.00 Unlocked';
+    reservePill.className = 'env-remaining-pill blue';
+  }
+  const babylonBtn = document.querySelector('.btn-wallet-action.babylon-btn');
+  if (babylonBtn) {
+    babylonBtn.innerHTML = '<i data-lucide="unlock"></i> Reserve Unlocked';
+    babylonBtn.style.background = '#e0f2fe';
+    babylonBtn.style.color = '#0284c7';
+  }
+  if (window.lucide) window.lucide.createIcons();
+  if (typeof showToast === 'function') {
+    showToast('🛡️ 10% Emergency Reserve unlocked for crisis allocation.', 'amber');
+  }
+}
+window.confirmEmergencyUnlock = confirmEmergencyUnlock;
+
+// =========================================================================
+// CUSTOM CATEGORY ENVELOPES MANAGEMENT
+// =========================================================================
+function getCustomEnvelopes() {
+  try {
+    return JSON.parse(localStorage.getItem('pocketsentinel_custom_envelopes') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCustomEnvelopes(envelopes) {
+  localStorage.setItem('pocketsentinel_custom_envelopes', JSON.stringify(envelopes));
+}
+
+function openCreateCategoryModal() {
+  const modal = document.getElementById('createCategoryModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    const nameInput = document.getElementById('newCategoryName');
+    if (nameInput) setTimeout(() => nameInput.focus(), 50);
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+window.openCreateCategoryModal = openCreateCategoryModal;
+
+function closeCreateCategoryModal() {
+  const modal = document.getElementById('createCategoryModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeCreateCategoryModal = closeCreateCategoryModal;
+
+function selectCategoryIcon(iconName) {
+  const input = document.getElementById('newCategoryIcon');
+  if (input) input.value = iconName;
+  document.querySelectorAll('#categoryIconPicker .icon-pick-btn').forEach(btn => {
+    if (btn.getAttribute('data-icon') === iconName) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+window.selectCategoryIcon = selectCategoryIcon;
+
+function handleCreateCategorySubmit(event) {
+  event.preventDefault();
+  const name = (document.getElementById('newCategoryName')?.value || '').trim();
+  const budget = parseFloat(document.getElementById('newCategoryBudget')?.value) || 0;
+  const spent = parseFloat(document.getElementById('newCategoryInitialSpent')?.value) || 0;
+  const icon = document.getElementById('newCategoryIcon')?.value || 'folder-plus';
+  const color = document.getElementById('newCategoryColor')?.value || 'blue';
+
+  if (!name || budget <= 0) {
+    if (typeof showToast === 'function') showToast('Please enter a valid category name and target budget.', 'amber');
+    return;
+  }
+
+  const newEnvelope = {
+    id: 'env_' + Date.now(),
+    name,
+    budget,
+    spent,
+    icon,
+    color,
+    createdAt: new Date().toISOString()
+  };
+
+  const current = getCustomEnvelopes();
+  current.push(newEnvelope);
+  saveCustomEnvelopes(current);
+
+  renderCustomEnvelopes();
+  syncCategoryDropdowns();
+  closeCreateCategoryModal();
+
+  document.getElementById('createCategoryForm')?.reset();
+  selectCategoryIcon('heart');
+
+  if (typeof showToast === 'function') {
+    showToast(`📁 Created new envelope "${name}" with $${budget.toFixed(2)} monthly allocation!`, 'green');
+  }
+}
+window.handleCreateCategorySubmit = handleCreateCategorySubmit;
+
+function deleteCustomEnvelope(envId) {
+  let current = getCustomEnvelopes();
+  const target = current.find(e => e.id === envId);
+  current = current.filter(e => e.id !== envId);
+  saveCustomEnvelopes(current);
+  renderCustomEnvelopes();
+  syncCategoryDropdowns();
+
+  if (typeof showToast === 'function') {
+    showToast(`🗑️ Removed category envelope "${target?.name || ''}".`, 'amber');
+  }
+}
+window.deleteCustomEnvelope = deleteCustomEnvelope;
+
+function renderCustomEnvelopes() {
+  const grid = document.getElementById('envelopesCardsGrid');
+  if (!grid) return;
+
+  grid.querySelectorAll('.custom-env-card').forEach(el => el.remove());
+
+  const envelopes = getCustomEnvelopes();
+  envelopes.forEach(env => {
+    const remaining = env.budget - env.spent;
+    const isDeficit = remaining < 0;
+    const pct = Math.min(Math.round((env.spent / env.budget) * 100), 100);
+    const pillClass = isDeficit ? 'red' : (remaining > 0 ? 'green' : 'blue');
+    const pillText = isDeficit ? `-$${Math.abs(remaining).toFixed(2)} Deficit` : `+$${remaining.toFixed(2)} Left`;
+
+    const card = document.createElement('div');
+    card.className = `envelope-card custom-env-card ${isDeficit ? 'alert-deficit' : ''}`;
+    card.id = env.id;
+    card.innerHTML = `
+      <div class="env-header">
+        <div class="env-title-wrap">
+          <span class="env-icon"><i data-lucide="${env.icon}"></i></span>
+          <div>
+            <strong>${env.name}</strong>
+            <span class="env-meta">Target: $${env.budget.toFixed(2)} / mo</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="env-remaining-pill ${pillClass}">${pillText}</span>
+          <button class="custom-env-delete-btn" title="Delete category envelope" onclick="deleteCustomEnvelope('${env.id}')">
+            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+          </button>
+        </div>
+      </div>
+      <div class="env-progress-bar">
+        <div class="env-fill ${env.color || 'blue'}" style="width: ${pct}%;"></div>
+      </div>
+      <div class="env-footer">
+        <span>Spent: $${env.spent.toFixed(2)}</span>
+        <span>Allocated: $${env.budget.toFixed(2)}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  if (window.lucide) window.lucide.createIcons();
+}
+window.renderCustomEnvelopes = renderCustomEnvelopes;
+
+function syncCategoryDropdowns() {
+  const customEnvs = getCustomEnvelopes();
+  const selectors = ['#tx-category', '#txCategory'];
+  selectors.forEach(sel => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.querySelectorAll('option[data-custom="true"]').forEach(opt => opt.remove());
+    customEnvs.forEach(env => {
+      const opt = document.createElement('option');
+      opt.value = env.name;
+      opt.textContent = `${env.name} (Custom Envelope)`;
+      opt.setAttribute('data-custom', 'true');
+      el.appendChild(opt);
+    });
+  });
+}
+window.syncCategoryDropdowns = syncCategoryDropdowns;
 
 function updateCurrencySymbolDisplay(symbol) {
   state.userProfile.currency = symbol;

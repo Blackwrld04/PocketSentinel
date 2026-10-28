@@ -12,7 +12,7 @@ import 'dotenv/config';
 export class GeminiVisionClient {
   constructor(config = {}) {
     this.geminiApiKey = config.geminiApiKey || process.env.GEMINI_API_KEY || '';
-    this.geminiModel = config.geminiModel || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    this.geminiModel = config.geminiModel || process.env.GEMINI_MODEL || 'gemini-3.5-flash';
     this.gemmaEndpoint = config.gemmaEndpoint || process.env.GEMMA_ENDPOINT || 'http://localhost:11434/api/generate';
     this.gemmaModel = config.gemmaModel || process.env.GEMMA_MODEL || 'gemma2:9b';
   }
@@ -34,7 +34,7 @@ export class GeminiVisionClient {
           return {
             ...result,
             provider: 'Google Gemini Multimodal Vision (Cloud)',
-            model: this.geminiModel
+            model: result.usedModel || this.geminiModel
           };
         }
       } catch (err) {
@@ -64,7 +64,7 @@ export class GeminiVisionClient {
   }
 
   /**
-   * Calls Google AI Studio Gemini API with inline image data
+   * Calls Google AI Studio Gemini API with inline image data & automatic model failover
    */
   async callGeminiVision(dataUrl) {
     const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -80,6 +80,7 @@ Extract:
 - taxDeductible: boolean (true if typical business expense like software, cloud hosting, client meals, or travel)
 - rawString: concise one-line receipt summary or vendor line
 - confidence: number between 0.85 and 0.99
+- items: array of objects with "name" (string) and "price" (float) for line items if visible
 
 Respond ONLY with a valid raw JSON object matching this schema:
 {
@@ -89,59 +90,84 @@ Respond ONLY with a valid raw JSON object matching this schema:
   "category": "string",
   "taxDeductible": true,
   "rawString": "string",
-  "confidence": 0.95
+  "confidence": 0.95,
+  "items": [{"name": "string", "price": 0.00}]
 }`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${this.geminiApiKey}`;
+    // Priority model order: user configured model -> gemini-3.5-flash -> gemini-flash-latest -> gemini-3.8-flash
+    const candidateModels = [
+      this.geminiModel,
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-3.8-flash'
+    ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      signal: AbortSignal.timeout(6000),
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: promptText },
+    let lastError = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.geminiApiKey}`;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          signal: AbortSignal.timeout(9000),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
               {
-                inline_data: {
-                  mime_type: mimeType,
-                  data: base64Data
-                }
+                parts: [
+                  { text: promptText },
+                  {
+                    inline_data: {
+                      mime_type: mimeType,
+                      data: base64Data
+                    }
+                  }
+                ]
               }
-            ]
-          }
-        ],
-        generationConfig: {
-          response_mime_type: 'application/json',
-          temperature: 0.1
+            ],
+            generationConfig: {
+              response_mime_type: 'application/json',
+              temperature: 0.1
+            }
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.warn(`[GeminiVision] Model ${modelName} returned HTTP ${response.status}: ${errText.slice(0, 120)}`);
+          lastError = new Error(`Gemini API HTTP ${response.status} on ${modelName}`);
+          continue; // Try next model in candidate list
         }
-      })
-    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API HTTP ${response.status}: ${errText}`);
+        const data = await response.json();
+        const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!candidate) {
+          lastError = new Error(`Empty candidate text from ${modelName}`);
+          continue;
+        }
+
+        const cleanJson = candidate.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+        const parsed = JSON.parse(cleanJson);
+
+        return {
+          merchant: parsed.merchant || 'Unknown Merchant',
+          amount: parseFloat(parsed.amount) || 0.00,
+          date: parsed.date || new Date().toISOString().split('T')[0],
+          category: parsed.category || 'Discretionary',
+          taxDeductible: Boolean(parsed.taxDeductible),
+          rawString: parsed.rawString || `${parsed.merchant} - $${parsed.amount}`,
+          confidence: parsed.confidence || 0.95,
+          items: Array.isArray(parsed.items) ? parsed.items : [],
+          usedModel: modelName
+        };
+      } catch (modelErr) {
+        console.warn(`[GeminiVision] Model ${modelName} call failed: ${modelErr.message}`);
+        lastError = modelErr;
+      }
     }
 
-    const data = await response.json();
-    const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidate) {
-      throw new Error('Gemini API returned empty candidate response');
-    }
-
-    const cleanJson = candidate.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-    const parsed = JSON.parse(cleanJson);
-
-    return {
-      merchant: parsed.merchant || 'Unknown Merchant',
-      amount: parseFloat(parsed.amount) || 0.00,
-      date: parsed.date || new Date().toISOString().split('T')[0],
-      category: parsed.category || 'Discretionary',
-      taxDeductible: Boolean(parsed.taxDeductible),
-      rawString: parsed.rawString || `${parsed.merchant} - $${parsed.amount}`,
-      confidence: parsed.confidence || 0.95
-    };
+    throw lastError || new Error('All Gemini candidate models failed');
   }
 
   /**
