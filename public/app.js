@@ -1,5 +1,5 @@
 /**
- * app.js — PocketSentinel Sovereign Expense Sentinel Frontend
+ * app.js - PocketSentinel Sovereign Expense Sentinel Frontend
  * 
  * Target: Total Recall Hackathon | Tatum x Walrus Memory
  * Architecture:
@@ -312,9 +312,120 @@ function scrollToSection(id) {
 }
 window.scrollToSection = scrollToSection;
 
+function scrollToLandingSection(id) {
+  if (state.currentView !== 'landing') {
+    switchView('landing');
+  }
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 100);
+}
+window.scrollToLandingSection = scrollToLandingSection;
+
+function switchLandingHeroTab(tabId) {
+  const tabs = [
+    { id: 'envelopes', btn: 'heroTabBtnEnvelopes', panel: 'heroPanelEnvelopes' },
+    { id: 'subscriptions', btn: 'heroTabBtnSubscriptions', panel: 'heroPanelSubscriptions' },
+    { id: 'copilot', btn: 'heroTabBtnCopilot', panel: 'heroPanelCopilot' }
+  ];
+
+  tabs.forEach(t => {
+    const btn = document.getElementById(t.btn);
+    const panel = document.getElementById(t.panel);
+    if (t.id === tabId) {
+      if (btn) btn.classList.add('active');
+      if (panel) panel.style.display = 'block';
+    } else {
+      if (btn) btn.classList.remove('active');
+      if (panel) panel.style.display = 'none';
+    }
+  });
+
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.switchLandingHeroTab = switchLandingHeroTab;
+
+let demoRebalanceState = false;
+function demoRebalanceGroceries() {
+  const status = document.getElementById('demoGroceriesStatus');
+  const fill = document.getElementById('demoGroceriesFill');
+  const subtext = document.getElementById('demoGroceriesSubtext');
+  const btn = document.getElementById('demoRebalanceBtn');
+  const diningStatus = document.getElementById('demoDiningStatus');
+  const diningFill = document.getElementById('demoDiningFill');
+  const diningSubtext = document.getElementById('demoDiningSubtext');
+
+  if (!demoRebalanceState) {
+    demoRebalanceState = true;
+    if (status) {
+      status.textContent = '+$0.00 Balanced';
+      status.className = 'demo-env-status green';
+    }
+    if (fill) {
+      fill.className = 'demo-meter-fill green';
+      fill.style.width = '100%';
+    }
+    if (subtext) {
+      subtext.textContent = 'Equilibrium restored from Dining Out';
+    }
+    if (btn) {
+      btn.innerHTML = '<i data-lucide="check"></i><span>Balanced ✓</span>';
+      btn.style.background = '#10b981';
+      btn.style.color = '#141413';
+    }
+    if (diningStatus) {
+      diningStatus.textContent = '+$20.00 Left';
+    }
+    if (diningFill) {
+      diningFill.style.width = '85%';
+    }
+    if (diningSubtext) {
+      diningSubtext.textContent = '$330.00 spent of $350.00';
+    }
+    showToast('Adaptive Rebalance: $45.00 shifted from Dining to Groceries. Ledger in equilibrium.');
+  } else {
+    demoRebalanceState = false;
+    if (status) {
+      status.textContent = '-$45.00 Deficit';
+      status.className = 'demo-env-status red';
+    }
+    if (fill) {
+      fill.className = 'demo-meter-fill red';
+      fill.style.width = '100%';
+    }
+    if (subtext) {
+      subtext.textContent = 'Overspent by $45.00';
+    }
+    if (btn) {
+      btn.innerHTML = '<i data-lucide="refresh-cw"></i><span>Rebalance from Fun</span>';
+      btn.style.background = '#141413';
+      btn.style.color = '#ffffff';
+    }
+    if (diningStatus) {
+      diningStatus.textContent = '+$65.00 Left';
+    }
+    if (diningFill) {
+      diningFill.style.width = '72%';
+    }
+    if (diningSubtext) {
+      diningSubtext.textContent = '$285.00 spent of $350.00';
+    }
+  }
+
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.demoRebalanceGroceries = demoRebalanceGroceries;
+
 function handleHashNavigation() {
   const hash = window.location.hash.replace('#', '');
-  if (['landing', 'heroSection', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash)) {
+  if (['landing', 'heroSection', 'features', 'copilot-lab', 'sovereignty', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash)) {
     switchView('landing');
     if (hash !== 'landing') {
       setTimeout(() => {
@@ -2141,17 +2252,20 @@ window.suppressOverlapFor90Days = suppressOverlapFor90Days;
 
 // ================= MODAL CONTROLLERS (ADD SUB / ADD TRIAL) =================
 function openNewSubscriptionModal() {
-  const modal = document.getElementById('newSubModal');
+  const modal = document.getElementById('newSubscriptionModal') || document.getElementById('newSubModal');
   if (modal) modal.style.display = 'flex';
   if (window.lucide) window.lucide.createIcons();
 }
 window.openNewSubscriptionModal = openNewSubscriptionModal;
 
 function closeNewSubscriptionModal() {
-  const modal = document.getElementById('newSubModal');
-  if (modal) modal.style.display = 'none';
+  const modal1 = document.getElementById('newSubscriptionModal');
+  const modal2 = document.getElementById('newSubModal');
+  if (modal1) modal1.style.display = 'none';
+  if (modal2) modal2.style.display = 'none';
 }
 window.closeNewSubscriptionModal = closeNewSubscriptionModal;
+
 
 function confirmAddSubscription() {
   const name = document.getElementById('newSubName')?.value.trim();
@@ -2465,15 +2579,7 @@ function openUploadModal() {
   if (fileInput) fileInput.click();
 }
 
-function scrollToSection(id) {
-  setTimeout(() => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, 50);
-}
-window.scrollToSection = scrollToSection;
+// scrollToSection is declared above and aliased to scrollToLandingSection
 
 function handleDemoSubmit(event) {
   event.preventDefault();
@@ -3751,18 +3857,8 @@ function resetTrialStateDemo() {
 }
 window.resetTrialStateDemo = resetTrialStateDemo;
 
-function openNewSubscriptionModal() {
-  const modal = document.getElementById('newSubscriptionModal');
-  if (modal) modal.style.display = 'flex';
-  if (window.lucide) window.lucide.createIcons();
-}
-window.openNewSubscriptionModal = openNewSubscriptionModal;
+// openNewSubscriptionModal and closeNewSubscriptionModal are declared above
 
-function closeNewSubscriptionModal() {
-  const modal = document.getElementById('newSubscriptionModal');
-  if (modal) modal.style.display = 'none';
-}
-window.closeNewSubscriptionModal = closeNewSubscriptionModal;
 
 function handleAddNewSubscription(e) {
   if (e) e.preventDefault();

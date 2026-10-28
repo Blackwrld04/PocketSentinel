@@ -1,5 +1,5 @@
 /**
- * server.js — Main Express Application for RecallRamp
+ * server.js - Main Express Application for RecallRamp
  * 
  * Hackathon Target: Total Recall | Tatum x Walrus Memory
  * Architecture:
@@ -256,7 +256,7 @@ app.get('/api/pulse/audio-summary', handleAudioPulse);
 app.get('/api/pulse/audio', handleAudioPulse);
 
 /**
- * POST /api/ocr/scan — Camera Receipt OCR + RULE_OCR_MATCH Reconciliation
+ * POST /api/ocr/scan - Camera Receipt OCR + RULE_OCR_MATCH Reconciliation
  */
 app.post('/api/ocr/scan', express.json({ limit: '10mb' }), async (req, res) => {
   try {
@@ -284,7 +284,7 @@ app.post('/api/ocr/scan', express.json({ limit: '10mb' }), async (req, res) => {
 });
 
 /**
- * GET /api/feed/csv — 9-Column Live Feed for Google Sheets =IMPORTDATA
+ * GET /api/feed/csv - 9-Column Live Feed for Google Sheets =IMPORTDATA
  */
 app.get('/api/feed/csv', async (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
@@ -330,7 +330,8 @@ app.post('/api/audit', async (req, res) => {
  */
 app.post('/api/copilot/chat', async (req, res) => {
   try {
-    const { query, history, mode, envelopesRebalanced, userProfile } = req.body;
+    const { query: rawQuery, message, history, mode, envelopesRebalanced, userProfile } = req.body;
+    const query = rawQuery || message;
     if (!query) {
       return res.status(400).json({ error: 'Query is required' });
     }
