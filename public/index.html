@@ -91,50 +91,50 @@
     <section class="saas-hero-section" id="heroSection">
       <div class="hero-inner-container">
         
-        <!-- Left Hero Column -->
-        <div class="hero-left-col">
-          <span class="section-eyebrow" style="margin-bottom: 16px;">[01] HOUSEHOLD INTELLIGENCE</span>
-
-          <h1 class="saas-hero-headline">
-            Every dollar<br>
-            your household<br>
-            spends.<br>
-            <span class="text-amber">Visible.</span>
-          </h1>
-
-          <p class="saas-hero-subhead">
-            PocketSentinel gives households real-time visibility into cash flow: zero-based digital envelopes, automated subscription defense, and private spending guidance before the month closes.
-          </p>
-
-          <div class="hero-cta-group">
-            <button class="btn-hero-dark" onclick="switchView('app')">
-              <i data-lucide="shield-check"></i>
-              <span>LAUNCH APP FREE</span>
-              <span class="cta-arrow">→</span>
-            </button>
-            <button class="btn-hero-ghost" onclick="scrollToLandingSection('visibilitySection')">
-              <span>SEE IT LIVE</span>
-              <span class="icon-circle">⊙</span>
-            </button>
+        <!-- Top Hero Briefing Row: Headline on Left, Subhead & CTAs on Right -->
+        <div class="hero-briefing-row">
+          <div class="hero-headline-col">
+            <span class="section-eyebrow" style="margin-bottom: 16px;">[01] HOUSEHOLD INTELLIGENCE</span>
+            <h1 class="saas-hero-headline">
+              Every dollar<br>
+              your household spends.<br>
+              <span class="text-amber">Visible.</span>
+            </h1>
           </div>
 
-          <div class="hero-social-proof">
-            <div class="swatch-cluster">
-              <span class="swatch s-dark"></span>
-              <span class="swatch s-gray"></span>
-              <span class="swatch s-amber"></span>
+          <div class="hero-actions-col">
+            <p class="saas-hero-subhead">
+              PocketSentinel gives households real-time visibility into cash flow: zero-based digital envelopes, automated subscription defense, and private spending guidance before the month closes.
+            </p>
+
+            <div class="hero-cta-group">
+              <button class="btn-hero-dark" onclick="switchView('app')">
+                <i data-lucide="shield-check"></i>
+                <span>LAUNCH APP FREE</span>
+                <span class="cta-arrow">→</span>
+              </button>
+              <button class="btn-hero-ghost" onclick="scrollToLandingSection('visibilitySection')">
+                <span>SEE IT LIVE</span>
+                <span class="icon-circle">⊙</span>
+              </button>
             </div>
-            <span class="proof-text-mono">
-              100% CLIENT-SIDE ENCRYPTION. <strong>$0 NEGOTIATION RAKE</strong>. WALRUS SUI MAINNET.
-            </span>
+
+            <div class="hero-social-proof">
+              <div class="swatch-cluster">
+                <span class="swatch s-dark"></span>
+                <span class="swatch s-gray"></span>
+                <span class="swatch s-amber"></span>
+              </div>
+              <span class="proof-text-mono">
+                100% CLIENT-SIDE ENCRYPTION. <strong>$0 NEGOTIATION RAKE</strong>. WALRUS SUI MAINNET.
+              </span>
+            </div>
           </div>
         </div>
 
-        <!-- Right Hero Column: Standalone, High-Res Screenshot Showcase (No borders, no surrounding text, non-clickable) -->
-        <div class="hero-right-col">
-          <div class="hero-showcase-wrapper">
-            <img src="assets/screenshot-envelopes.png" alt="PocketSentinel Digital Envelopes Workspace" class="hero-standalone-screenshot" draggable="false">
-          </div>
+        <!-- Grand Showcase: Full-Width, High-Def Screenshot (Visible for everybody, non-clickable) -->
+        <div class="hero-showcase-wrapper hero-showcase-grand">
+          <img src="assets/screenshot-envelopes.png" alt="PocketSentinel Digital Envelopes Workspace" class="hero-standalone-screenshot" draggable="false">
         </div>
 
       </div>

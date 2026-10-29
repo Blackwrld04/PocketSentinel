@@ -251,16 +251,52 @@ body.saas-theme {
 
 /* ================= [01] HERO SECTION (MATCHING IMAGE 1) ================= */
 .saas-hero-section {
-  padding: 72px 32px 96px;
-  max-width: 1480px;
+  padding: 64px 32px 88px;
+  max-width: 1520px;
   margin: 0 auto;
 }
 
 .hero-inner-container {
-  display: grid;
-  grid-template-columns: 0.9fr 1.35fr;
-  gap: 48px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  width: 100%;
+  gap: 40px;
+}
+
+.hero-briefing-row {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 56px;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 1440px;
+}
+
+.hero-headline-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hero-actions-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hero-actions-col .saas-hero-subhead {
+  max-width: 580px;
+  margin-bottom: 24px;
+}
+
+.hero-actions-col .hero-cta-group {
+  margin-bottom: 28px;
+}
+
+.hero-actions-col .hero-social-proof {
+  padding-top: 20px;
+  width: 100%;
 }
 
 .saas-hero-headline {
@@ -380,6 +416,8 @@ body.saas-theme {
 .hero-showcase-wrapper {
   position: relative;
   width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -393,10 +431,10 @@ body.saas-theme {
   height: auto;
   max-width: 100%;
   display: block;
-  border-radius: 12px;
+  border-radius: 14px;
   border: none;
   outline: none;
-  box-shadow: 0 24px 60px -15px rgba(15, 23, 42, 0.14), 0 8px 24px -8px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 32px 85px -20px rgba(15, 23, 42, 0.16), 0 12px 30px -10px rgba(15, 23, 42, 0.08);
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   transform: translateZ(0);
@@ -5949,8 +5987,9 @@ body.dark-theme .playground-chip {
   .eq-op {
     display: none;
   }
-  .hero-inner-container {
+  .hero-briefing-row {
     grid-template-columns: 1fr;
+    gap: 32px;
   }
   .reality-grid {
     grid-template-columns: 1fr;
