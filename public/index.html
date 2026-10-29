@@ -939,109 +939,15 @@
         </div>
 
         <div class="playground-output-box">
-          <!-- Terminal Window Header Chrome -->
-          <div class="output-window-header">
-            <div class="output-window-dots">
-              <span class="w-dot dot-red" title="Neural Terminal"></span>
-              <span class="w-dot dot-amber" title="Standby Mode"></span>
-              <span class="w-dot dot-green" title="Live Inference Core"></span>
-              <span class="terminal-brand-title">// POCKETSENTINEL_AI · NEURAL RUNWAY ENGINE</span>
-            </div>
-            <div class="output-window-right">
-              <span class="security-shield-badge">
-                <i data-lucide="shield-check"></i>
-                <span>ZERO CLOUD RETENTION</span>
-              </span>
-            </div>
-          </div>
-
-          <!-- Hardware Telemetry Ribbon -->
           <div class="output-meta-bar">
             <div class="output-meta-left">
-              <span class="output-badge-groq">
-                <i data-lucide="cpu"></i>
-                <span>GROQ LPU</span>
-              </span>
-              <span class="meta-chip-spec">
-                <i data-lucide="bot"></i>
-                <span>LLaMA-3.3-70B</span>
-              </span>
-              <span class="meta-chip-spec">
-                <i data-lucide="zap"></i>
-                <span>~340ms Latency</span>
-              </span>
-              <span class="meta-chip-status" id="playgroundStatusText">
-                <span class="status-pulse-dot"></span>
-                <span>Ready</span>
-              </span>
+              <span class="output-badge-groq">GROQ LPU</span>
+              <span id="playgroundStatusText">Model: LLaMA-3.3-70B · Latency: ~340ms · Status: Ready</span>
             </div>
-            <div class="output-meta-right">
-              <span class="meta-spec-faint">TPU_CORE_04 // ACTIVE</span>
-            </div>
+            <span style="font-family:var(--font-mono); font-size:11px; color:#64748B;">ZERO CLOUD RETENTION</span>
           </div>
-
-          <!-- Structured Reasoning Body -->
           <div class="output-content-area" id="landingCopilotOutput">
-            
-            <!-- Verdict Banner -->
-            <div class="copilot-verdict-banner">
-              <div class="verdict-tag safe">
-                <i data-lucide="check-circle-2"></i>
-                <strong>SAFE TO SPEND APPROVED</strong>
-              </div>
-              <span class="verdict-mode-pill">SENTINEL MODE · ZERO DEFICIT</span>
-            </div>
-
-            <!-- Financial Runway HUD (4 Mini Stat Panels) -->
-            <div class="copilot-hud-grid">
-              <div class="copilot-hud-card">
-                <span class="hud-label">SAFE RUNWAY</span>
-                <strong class="hud-val text-mint">$482.35</strong>
-                <span class="hud-sub">10 cycle days remaining</span>
-              </div>
-              <div class="copilot-hud-card">
-                <span class="hud-label">DAILY VELOCITY</span>
-                <strong class="hud-val">$48.23<small>/day</small></strong>
-                <span class="hud-sub">Recommended burn limit</span>
-              </div>
-              <div class="copilot-hud-card">
-                <span class="hud-label">DISCRETIONARY SURPLUS</span>
-                <strong class="hud-val text-blue">+$130.00</strong>
-                <span class="hud-sub">Dinner absorbed safely</span>
-              </div>
-              <div class="copilot-hud-card">
-                <span class="hud-label">EMERGENCY BUFFER</span>
-                <strong class="hud-val text-amber">$500.00</strong>
-                <span class="hud-sub">100% Protected (untouched)</span>
-              </div>
-            </div>
-
-            <!-- Natural Reasoning Narrative -->
-            <div class="copilot-reasoning-narrative">
-              <div class="narrative-agent-line">
-                <span class="agent-avatar-glyph">⚡</span>
-                <p class="narrative-text">
-                  "Alex, you have <strong class="text-mint">$482.35</strong> in safe cash runway across 10 remaining cycle days (<strong class="text-mono">$48.23/day</strong>). A <strong class="text-amber">$65.00 dinner</strong> tonight is completely safe because your <strong class="text-blue">Discretionary Fun</strong> envelope currently holds a <strong class="text-mint">+$130.00</strong> surplus. All fixed subscriptions ($301.46) and your $500 buffer remain untouched."
-                </p>
-              </div>
-            </div>
-
-            <!-- Copilot Terminal Action Footer -->
-            <div class="copilot-terminal-footer">
-              <div class="terminal-quick-actions">
-                <button class="copilot-hud-action-btn active" onclick="applyLandingPrompt('Can I afford a $65 sushi dinner tonight with 10 days left?')">
-                  <i data-lucide="check"></i> <span>Verify $65 Dinner</span>
-                </button>
-                <button class="copilot-hud-action-btn" onclick="applyLandingPrompt('I overspent on dining out by $45. How do I balance my envelopes?')">
-                  <i data-lucide="refresh-cw"></i> <span>Rebalance Deficit</span>
-                </button>
-                <button class="copilot-hud-action-btn" onclick="applyLandingPrompt('Is buying a $1,200 smartphone worth it? Run a Life Energy check at $25/hr.')">
-                  <i data-lucide="clock"></i> <span>Life Energy Check</span>
-                </button>
-              </div>
-              <span class="terminal-telemetry-mono">750 T/s INFERENCE // GROQ TENSOR CORE</span>
-            </div>
-
+            "Alex, you have $482.35 safe runway across 10 remaining cycle days ($48.23/day). A $65 dinner tonight is safe because your Discretionary Fun envelope holds a +$130.00 surplus. Tap above to ask a live question!"
           </div>
         </div>
 
@@ -1133,60 +1039,7 @@
       </div>
     </footer>
 
-    <!-- ================= RUNNING TICKER TAPE (FROM ALL REFERENCE IMAGES) ================= -->
-    <div class="running-ticker-tape">
-      <div class="ticker-track">
-        <span class="ticker-item">SAFE-TO-SPEND <span class="val">$48.23 / DAY</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">EMERGENCY BUFFER <span class="val">$500.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">GROCERIES <span class="val">$600.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">DINING OUT <span class="val">$350.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">DISCRETIONARY <span class="val">$250.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">NETFLIX <span class="val">$17.99</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">SPOTIFY <span class="val">$16.99</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">CHATGPT PLUS <span class="val">$20.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">AWS CLOUD <span class="val">$142.50</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">FIGMA <span class="val">$15.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">SUPABASE <span class="val">$25.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">ADOBE CC <span class="val">$54.99</span></span>
-        <span class="ticker-sep">//</span>
-        <!-- Duplicated for seamless infinite scroll -->
-        <span class="ticker-item">SAFE-TO-SPEND <span class="val">$48.23 / DAY</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">EMERGENCY BUFFER <span class="val">$500.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">GROCERIES <span class="val">$600.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">DINING OUT <span class="val">$350.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">DISCRETIONARY <span class="val">$250.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">NETFLIX <span class="val">$17.99</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">SPOTIFY <span class="val">$16.99</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">CHATGPT PLUS <span class="val">$20.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">AWS CLOUD <span class="val">$142.50</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">FIGMA <span class="val">$15.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">SUPABASE <span class="val">$25.00</span></span>
-        <span class="ticker-sep">//</span>
-        <span class="ticker-item">ADOBE CC <span class="val">$54.99</span></span>
-        <span class="ticker-sep">//</span>
-      </div>
-    </div>
+
 
   </main>
 
@@ -4285,11 +4138,7 @@
   <!-- TOAST CONTAINER FOR DYNAMIC NOTIFICATIONS -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- FLOATING BRAND AURA PILL (MATCHING BOTTOM RIGHT OF IMAGES) -->
-  <div class="floating-aura-pill" id="floatingAuraPill" onclick="switchView('app')">
-    <span class="aura-icon"><i data-lucide="shield"></i></span>
-    <span class="aura-text">PocketSentinel Active</span>
-  </div>
+
 
   <script src="/app.js?v=2.8"></script>
 </body>
