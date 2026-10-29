@@ -251,7 +251,12 @@ body.saas-theme {
 
 /* ================= [01] HERO SECTION (MATCHING IMAGE 1) ================= */
 .saas-hero-section {
-  padding: 60px 32px 88px;
+  min-height: calc(100vh - 68px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 32px 100px;
   max-width: 1540px;
   margin: 0 auto;
 }
@@ -1991,7 +1996,7 @@ body.saas-theme {
 
 /* ================= [02] THE REALITY (MATCHING IMAGE 2) ================= */
 .saas-reality-section {
-  padding: 100px 32px;
+  padding: 130px 32px;
   border-top: 1px solid var(--border-hairline);
   background-color: var(--bg-canvas);
 }
