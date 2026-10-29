@@ -13578,12 +13578,9 @@ body.dark-theme .line-btn-arrow {
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   margin-top: 20px;
-  transition: transform var(--dur-fast), box-shadow var(--dur-fast);
-}
-
-.dark-ledger-preview-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  user-select: none;
+  pointer-events: none; /* strictly preview-only, unclickable */
 }
 
 .dlp-toolbar {
