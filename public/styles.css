@@ -6554,40 +6554,74 @@ body.dark-theme .playground-chip {
 
   .section-eyebrow {
     font-size: 11px !important;
-    margin-bottom: 12px !important;
-    letter-spacing: 0.06em !important;
+    margin-bottom: 14px !important;
+    letter-spacing: 0.08em !important;
+    font-weight: 700 !important;
   }
 
   .saas-hero-headline {
-    font-size: 34px !important;
-    line-height: 1.12 !important;
-    letter-spacing: -0.03em !important;
-    margin-bottom: 14px !important;
+    font-size: clamp(40px, 11vw, 48px) !important;
+    line-height: 1.06 !important;
+    font-weight: 450 !important;
+    letter-spacing: -0.04em !important;
+    margin-bottom: 22px !important;
     word-break: break-word !important;
   }
 
   .saas-hero-subhead {
-    font-size: 14px !important;
-    line-height: 1.55 !important;
-    margin-bottom: 20px !important;
+    font-size: 15px !important;
+    line-height: 1.62 !important;
+    margin-bottom: 34px !important;
     max-width: 100% !important;
+    color: var(--text-secondary) !important;
   }
 
   .hero-cta-group {
     display: flex !important;
     flex-direction: column !important;
-    gap: 10px !important;
+    gap: 12px !important;
     width: 100% !important;
-    margin-bottom: 20px !important;
+    margin-top: 4px !important;
+    margin-bottom: 34px !important;
   }
 
   .btn-hero-dark,
   .btn-hero-ghost {
     width: 100% !important;
     justify-content: center !important;
-    padding: 12px 18px !important;
-    font-size: 12px !important;
+    height: 52px !important;
+    padding: 14px 22px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.06em !important;
+    border-radius: 8px !important;
     box-sizing: border-box !important;
+    box-shadow: 2px 2px 0px #141413 !important;
+    border: 2px solid #141413 !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  }
+
+  .btn-hero-dark {
+    background: #111827 !important;
+    color: #FFFFFF !important;
+  }
+
+  .btn-hero-ghost {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+  }
+
+  body.dark-theme .btn-hero-dark {
+    background: #111827 !important;
+    border-color: #374151 !important;
+    box-shadow: 2px 2px 0px #0b0d11 !important;
+  }
+
+  body.dark-theme .btn-hero-ghost {
+    background: #1c232d !important;
+    color: #F3F4F6 !important;
+    border-color: #374151 !important;
+    box-shadow: 2px 2px 0px #0b0d11 !important;
   }
 
   .hero-social-proof {
@@ -6595,13 +6629,14 @@ body.dark-theme .playground-chip {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 8px !important;
-    padding-top: 14px !important;
+    padding-top: 6px !important;
+    margin-bottom: 8px !important;
     width: 100% !important;
   }
 
   .proof-text-mono {
-    font-size: 10px !important;
-    line-height: 1.45 !important;
+    font-size: 10.5px !important;
+    line-height: 1.5 !important;
     letter-spacing: 0.04em !important;
   }
 
