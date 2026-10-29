@@ -350,6 +350,62 @@ function switchLandingHeroTab(tabId) {
 }
 window.switchLandingHeroTab = switchLandingHeroTab;
 
+let heroRebalanceState = false;
+function demoRebalanceHero() {
+  const diningDeficit = document.getElementById('captionDiningDeficit');
+  const funSurplus = document.getElementById('captionFunSurplus');
+  const btnTxt = document.getElementById('btnHeroRebalanceTxt');
+  const btn = document.getElementById('btnHeroRebalance');
+
+  if (!heroRebalanceState) {
+    heroRebalanceState = true;
+    if (diningDeficit) {
+      diningDeficit.textContent = '+$0.00 (Balanced)';
+      diningDeficit.className = 'text-green';
+    }
+    if (funSurplus) {
+      funSurplus.textContent = '+$85.00 Discretionary';
+    }
+    if (btnTxt) btnTxt.textContent = 'Balanced ✓';
+    if (btn) {
+      btn.style.background = '#10b981';
+      btn.style.color = '#141413';
+    }
+    if (typeof showToast === 'function') {
+      showToast('Adaptive Rebalancing: $45.00 shifted from Fun to Dining Out. Envelope balanced!');
+    }
+  } else {
+    heroRebalanceState = false;
+    if (diningDeficit) {
+      diningDeficit.textContent = '-$45.00 Dining Out';
+      diningDeficit.className = 'text-coral';
+    }
+    if (funSurplus) {
+      funSurplus.textContent = '+$130.00 Discretionary';
+    }
+    if (btnTxt) btnTxt.textContent = '1-Tap Rebalance Deficit';
+    if (btn) {
+      btn.style.background = '#eab308';
+      btn.style.color = '#141413';
+    }
+  }
+  if (window.lucide) setTimeout(() => window.lucide.createIcons(), 30);
+}
+window.demoRebalanceHero = demoRebalanceHero;
+
+function demoDisputeHero() {
+  if (typeof showToast === 'function') {
+    showToast('Dispute Pack generated for Netflix ($2.50 hike flagged). Pre-filled letter ready in app.');
+  }
+  setTimeout(() => {
+    switchView('app');
+    if (typeof openDisputeModalForRecord === 'function') {
+      openDisputeModalForRecord('Netflix', 17.99, 15.49, 2.50, 'MEM_01');
+    }
+  }, 700);
+}
+window.demoDisputeHero = demoDisputeHero;
+
 let demoRebalanceState = false;
 function demoRebalanceGroceries() {
   const status = document.getElementById('demoGroceriesStatus');

@@ -161,262 +161,147 @@
               </div>
             </div>
 
-            <!-- Tab Panel 1: Digital Envelopes & Cash Runway (Screenshot 1) -->
+            <!-- Tab Panel 1: Digital Envelopes & Cash Runway (Direct Screenshot 1) -->
             <div class="hero-tab-panel active" id="heroPanelEnvelopes">
-              <!-- Runway Banner -->
-              <div class="demo-runway-banner">
-                <div class="demo-runway-top">
-                  <span class="demo-cycle-tag"><i data-lucide="calendar"></i> Cycle Window: Nov 1-30 (10 Days Left)</span>
-                  <span class="demo-velocity-pill"><i data-lucide="zap"></i> $48.23 / Day Safe Velocity</span>
+              <div class="hero-screenshot-frame">
+                <div class="screenshot-browser-bar">
+                  <div class="browser-dots">
+                    <span class="browser-dot red"></span>
+                    <span class="browser-dot yellow"></span>
+                    <span class="browser-dot green"></span>
+                  </div>
+                  <div class="browser-url-pill">
+                    <i data-lucide="lock" style="width:12px;height:12px;color:#10b981;"></i>
+                    <span>pocketsentinel.app/plan</span>
+                  </div>
+                  <span class="browser-badge">Zero-Based Protocol</span>
                 </div>
-                <div class="demo-runway-metrics">
-                  <div class="demo-metric-cell">
-                    <small>Monthly Inflow</small>
-                    <strong>$4,850.00</strong>
-                  </div>
-                  <div class="demo-metric-cell">
-                    <small>Allocated</small>
-                    <strong>$4,850.00</strong>
-                  </div>
-                  <div class="demo-metric-cell">
-                    <small>Unassigned</small>
-                    <strong class="text-green">$0.00 (Balanced)</strong>
-                  </div>
-                  <div class="demo-metric-cell highlight">
-                    <small>Safe-to-Spend Runway</small>
-                    <strong class="text-amber">$482.35</strong>
-                  </div>
+                <div class="screenshot-img-container">
+                  <img src="assets/screenshot-envelopes.png" alt="PocketSentinel Digital Envelopes and Cash Velocity Dashboard" class="hero-screenshot-img" onclick="switchView('app'); switchTab('plan');" title="Click to open live Envelopes in app">
                 </div>
-              </div>
-
-              <!-- Digital Envelopes Grid -->
-              <div class="demo-envelopes-grid">
-                <!-- Groceries with Deficit Rebalance action -->
-                <div class="demo-envelope-card" id="demoEnvGroceries">
-                  <div class="demo-env-header">
-                    <div class="demo-env-title">
-                      <span class="demo-env-icon"><i data-lucide="shopping-cart"></i></span>
-                      <div>
-                        <strong>Groceries</strong>
-                        <small>Target: $600.00 / mo</small>
-                      </div>
+                <div class="screenshot-caption-bar">
+                  <div class="caption-metrics-group">
+                    <div class="caption-metric-pill">
+                      <small>Monthly Inflow</small>
+                      <strong>$4,850.00</strong>
                     </div>
-                    <span class="demo-env-status red" id="demoGroceriesStatus">-$45.00 Deficit</span>
+                    <div class="caption-metric-pill">
+                      <small>Allocated Target</small>
+                      <strong class="text-green">$4,850.00 (Balanced)</strong>
+                    </div>
+                    <div class="caption-metric-pill">
+                      <small>Active Deficit</small>
+                      <strong class="text-coral" id="captionDiningDeficit">-$45.00 Dining Out</strong>
+                    </div>
+                    <div class="caption-metric-pill">
+                      <small>Available Surplus</small>
+                      <strong class="text-blue" id="captionFunSurplus">+$130.00 Discretionary</strong>
+                    </div>
                   </div>
-                  <div class="demo-meter-track">
-                    <div class="demo-meter-fill red" id="demoGroceriesFill" style="width: 100%;"></div>
-                  </div>
-                  <div class="demo-env-footer">
-                    <small id="demoGroceriesSubtext">Overspent by $45.00</small>
-                    <button class="btn-demo-rebalance" id="demoRebalanceBtn" onclick="demoRebalanceGroceries()">
+                  <div class="caption-actions-group">
+                    <button class="btn-caption-interactive" id="btnHeroRebalance" onclick="demoRebalanceHero()">
                       <i data-lucide="refresh-cw"></i>
-                      <span>Rebalance from Fun</span>
+                      <span id="btnHeroRebalanceTxt">1-Tap Rebalance Deficit</span>
                     </button>
-                  </div>
-                </div>
-
-                <!-- Dining Out -->
-                <div class="demo-envelope-card" id="demoEnvDining">
-                  <div class="demo-env-header">
-                    <div class="demo-env-title">
-                      <span class="demo-env-icon"><i data-lucide="utensils"></i></span>
-                      <div>
-                        <strong>Dining Out</strong>
-                        <small>Target: $350.00 / mo</small>
-                      </div>
-                    </div>
-                    <span class="demo-env-status green" id="demoDiningStatus">+$65.00 Left</span>
-                  </div>
-                  <div class="demo-meter-track">
-                    <div class="demo-meter-fill green" id="demoDiningFill" style="width: 72%;"></div>
-                  </div>
-                  <div class="demo-env-footer">
-                    <small id="demoDiningSubtext">$285.00 spent of $350.00</small>
-                    <span class="demo-status-pill green">Healthy</span>
-                  </div>
-                </div>
-
-                <!-- Discretionary Fun -->
-                <div class="demo-envelope-card">
-                  <div class="demo-env-header">
-                    <div class="demo-env-title">
-                      <span class="demo-env-icon"><i data-lucide="ticket"></i></span>
-                      <div>
-                        <strong>Discretionary Fun</strong>
-                        <small>Target: $250.00 / mo</small>
-                      </div>
-                    </div>
-                    <span class="demo-env-status blue">+$130.00 Surplus</span>
-                  </div>
-                  <div class="demo-meter-track">
-                    <div class="demo-meter-fill blue" style="width: 48%;"></div>
-                  </div>
-                  <div class="demo-env-footer">
-                    <small>$120.00 spent of $250.00</small>
-                    <span class="demo-status-pill blue">Flexible</span>
-                  </div>
-                </div>
-
-                <!-- 10% Emergency Reserve -->
-                <div class="demo-envelope-card">
-                  <div class="demo-env-header">
-                    <div class="demo-env-title">
-                      <span class="demo-env-icon amber"><i data-lucide="shield"></i></span>
-                      <div>
-                        <strong>10% Emergency Reserve</strong>
-                        <small>Babylon Wealth Buffer</small>
-                      </div>
-                    </div>
-                    <span class="demo-env-status amber">$500.00 Locked</span>
-                  </div>
-                  <div class="demo-meter-track">
-                    <div class="demo-meter-fill amber" style="width: 100%;"></div>
-                  </div>
-                  <div class="demo-env-footer">
-                    <small>Untouchable safety reserve</small>
-                    <span class="demo-status-pill amber"><i data-lucide="lock" style="width:10px;height:10px;"></i> Vault Secured</span>
+                    <button class="btn-caption-launch" onclick="switchView('app'); switchTab('plan')">
+                      <span>Open Live App</span>
+                      <i data-lucide="arrow-right"></i>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Tab Panel 2: Subscriptions Sentinel (Screenshot 3) -->
+            <!-- Tab Panel 2: Subscription Sentinel & Trial Watchdog (Direct Screenshot 3) -->
             <div class="hero-tab-panel" id="heroPanelSubscriptions" style="display: none;">
-              <div class="demo-subs-table-wrap">
-                <div class="demo-subs-header-strip">
-                  <span>9 Active Subscriptions Monitored</span>
-                  <span class="demo-subs-alert-count">2 Anomalies Flagged</span>
+              <div class="hero-screenshot-frame">
+                <div class="screenshot-browser-bar">
+                  <div class="browser-dots">
+                    <span class="browser-dot red"></span>
+                    <span class="browser-dot yellow"></span>
+                    <span class="browser-dot green"></span>
+                  </div>
+                  <div class="browser-url-pill">
+                    <i data-lucide="shield-alert" style="width:12px;height:12px;color:#eab308;"></i>
+                    <span>pocketsentinel.app/subscriptions</span>
+                  </div>
+                  <span class="browser-badge">Autonomous Watchdog</span>
                 </div>
-                <div class="demo-subs-rows">
-                  <!-- Netflix -->
-                  <div class="demo-sub-item alert-hike">
-                    <div class="demo-sub-vendor">
-                      <span class="demo-vendor-icon"><i data-lucide="tv"></i></span>
-                      <div>
-                        <strong>Netflix Standard</strong>
-                        <small>Streaming Video · Renews Oct 20</small>
-                      </div>
+                <div class="screenshot-img-container">
+                  <img src="assets/screenshot-subscriptions.png" alt="PocketSentinel Subscription Sentinel & Trial Watchdog" class="hero-screenshot-img" onclick="switchView('app'); switchTab('subscriptions');" title="Click to open live Subscription Watchdog in app">
+                </div>
+                <div class="screenshot-caption-bar">
+                  <div class="caption-metrics-group">
+                    <div class="caption-metric-pill">
+                      <small>Tracked Contracts</small>
+                      <strong>9 Active Services</strong>
                     </div>
-                    <div class="demo-sub-cost">
-                      <strong>$17.99</strong>
-                      <small>Baseline: $15.49</small>
+                    <div class="caption-metric-pill">
+                      <small>Price Creep Flagged</small>
+                      <strong class="text-coral">+$2.50 Hike (Netflix)</strong>
                     </div>
-                    <div class="demo-sub-flag red">
-                      <i data-lucide="trending-up"></i>
-                      <span>+$2.50 Hike Flagged</span>
+                    <div class="caption-metric-pill">
+                      <small>Trial Expiration Alarm</small>
+                      <strong class="text-amber">Adobe 48h Auto-Rebill</strong>
                     </div>
-                    <button class="btn-demo-action red" onclick="switchView('app')">
-                      <i data-lucide="scale"></i> 1-Tap Dispute
-                    </button>
                   </div>
-
-                  <!-- Adobe Creative Cloud -->
-                  <div class="demo-sub-item alert-trial">
-                    <div class="demo-sub-vendor">
-                      <span class="demo-vendor-icon"><i data-lucide="layers"></i></span>
-                      <div>
-                        <strong>Adobe Creative Cloud</strong>
-                        <small>Creative Suite · Free Trial</small>
-                      </div>
-                    </div>
-                    <div class="demo-sub-cost">
-                      <strong>$54.99</strong>
-                      <small>Auto-rebill risk</small>
-                    </div>
-                    <div class="demo-sub-flag amber">
-                      <i data-lucide="clock"></i>
-                      <span>48h Trial Auto-Rebill</span>
-                    </div>
-                    <button class="btn-demo-action amber" onclick="switchView('app')">
-                      <i data-lucide="x-circle"></i> Auto-Cancel
+                  <div class="caption-actions-group">
+                    <button class="btn-caption-interactive" onclick="demoDisputeHero()">
+                      <i data-lucide="scale"></i>
+                      <span>1-Tap Dispute Notice</span>
                     </button>
-                  </div>
-
-                  <!-- Spotify Family -->
-                  <div class="demo-sub-item alert-overlap">
-                    <div class="demo-sub-vendor">
-                      <span class="demo-vendor-icon"><i data-lucide="music"></i></span>
-                      <div>
-                        <strong>Spotify Family Plan</strong>
-                        <small>Streaming Audio · Renews Nov 8</small>
-                      </div>
-                    </div>
-                    <div class="demo-sub-cost">
-                      <strong>$16.99</strong>
-                      <small>Redundant Tier</small>
-                    </div>
-                    <div class="demo-sub-flag blue">
-                      <i data-lucide="copy"></i>
-                      <span>Audio Overlap</span>
-                    </div>
-                    <button class="btn-demo-action blue" onclick="switchView('app')">
-                      <i data-lucide="arrow-right-left"></i> Consolidate
+                    <button class="btn-caption-launch" onclick="switchView('app'); switchTab('subscriptions')">
+                      <span>Audit Subscriptions</span>
+                      <i data-lucide="arrow-right"></i>
                     </button>
-                  </div>
-
-                  <!-- ChatGPT Plus -->
-                  <div class="demo-sub-item">
-                    <div class="demo-sub-vendor">
-                      <span class="demo-vendor-icon"><i data-lucide="sparkles"></i></span>
-                      <div>
-                        <strong>OpenAI ChatGPT Plus</strong>
-                        <small>AI &amp; Machine Learning · Renews Nov 12</small>
-                      </div>
-                    </div>
-                    <div class="demo-sub-cost">
-                      <strong>$20.00</strong>
-                      <small>Approved Baseline</small>
-                    </div>
-                    <div class="demo-sub-flag green">
-                      <i data-lucide="check-circle"></i>
-                      <span>Baseline Match</span>
-                    </div>
-                    <span class="demo-sub-safe-label">Verified OK</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Tab Panel 3: AI Copilot Coach (Screenshot 2) -->
+            <!-- Tab Panel 3: AI Copilot Coach (Direct Screenshot 2) -->
             <div class="hero-tab-panel" id="heroPanelCopilot" style="display: none;">
-              <div class="demo-copilot-container">
-                <div class="demo-copilot-topbar">
-                  <div class="demo-copilot-badge">
-                    <span class="demo-ai-dot"></span>
-                    <strong>PocketSentinel Spending Intelligence</strong>
+              <div class="hero-screenshot-frame">
+                <div class="screenshot-browser-bar">
+                  <div class="browser-dots">
+                    <span class="browser-dot red"></span>
+                    <span class="browser-dot yellow"></span>
+                    <span class="browser-dot green"></span>
                   </div>
-                  <div class="demo-mode-pills">
-                    <button class="demo-mode-pill active" onclick="setLandingPlaygroundMode('sentinel')">Sentinel</button>
-                    <button class="demo-mode-pill" onclick="setLandingPlaygroundMode('roast')">Roast</button>
-                    <button class="demo-mode-pill" onclick="setLandingPlaygroundMode('hype')">Hype</button>
+                  <div class="browser-url-pill">
+                    <i data-lucide="bot" style="width:12px;height:12px;color:#3b82f6;"></i>
+                    <span>pocketsentinel.app/copilot</span>
                   </div>
+                  <span class="browser-badge">Groq LLaMA-3.3-70B</span>
                 </div>
-
-                <!-- Chat Message Bubble -->
-                <div class="demo-chat-box">
-                  <div class="demo-chat-msg ai">
-                    <div class="demo-msg-header">
-                      <span class="demo-shield-icon"><i data-lucide="shield"></i></span>
-                      <strong>PocketSentinel AI</strong>
-                      <span class="demo-msg-time">&lt;350ms LPU Inference</span>
+                <div class="screenshot-img-container">
+                  <img src="assets/screenshot-copilot.png" alt="PocketSentinel AI Copilot Coach" class="hero-screenshot-img" onclick="switchView('app'); switchTab('safespend');" title="Click to open live AI Copilot in app">
+                </div>
+                <div class="screenshot-caption-bar">
+                  <div class="caption-metrics-group">
+                    <div class="caption-metric-pill">
+                      <small>Inference Engine</small>
+                      <strong>Groq LLaMA-3.3-70B</strong>
                     </div>
-                    <p class="demo-msg-text">
-                      "Alex, you have <strong>$482.35</strong> safe runway across 10 remaining cycle days ($48.23/day). A $65 sushi dinner tonight consumes 135% of today's pace, but Dining Out has $45 surplus. Spend with confidence; your rent and $500 reserve are 100% protected."
-                    </p>
+                    <div class="caption-metric-pill">
+                      <small>Coaching Personas</small>
+                      <strong class="text-blue">Sentinel · Roast · Hype</strong>
+                    </div>
+                    <div class="caption-metric-pill">
+                      <small>Edge Latency</small>
+                      <strong class="text-green">&lt;350ms Response</strong>
+                    </div>
                   </div>
-                </div>
-
-                <!-- Quick Prompt Buttons -->
-                <div class="demo-prompt-chips">
-                  <button class="btn-demo-chip" onclick="applyLandingPrompt('Can I afford a $65 sushi dinner tonight with 10 days left?')">
-                    Can I afford $65 dinner tonight?
-                  </button>
-                  <button class="btn-demo-chip" onclick="applyLandingPrompt('I overspent on groceries by $45. How do I balance my envelopes?')">
-                    Balance my $45 grocery spike
-                  </button>
-                  <button class="btn-demo-chip" onclick="applyLandingPrompt('Is buying a $1,200 smartphone worth it? Run a Life Energy check at $25/hr.')">
-                    $1,200 Phone in Life Energy hours
-                  </button>
+                  <div class="caption-actions-group">
+                    <button class="btn-caption-interactive" onclick="scrollToLandingSection('copilot-lab')">
+                      <i data-lucide="message-square"></i>
+                      <span>Try Copilot Lab ↓</span>
+                    </button>
+                    <button class="btn-caption-launch" onclick="switchView('app'); switchTab('safespend')">
+                      <span>Launch AI Coach</span>
+                      <i data-lucide="arrow-right"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -464,6 +349,10 @@
                 <strong class="text-amber">$0.00 Unassigned</strong>
               </div>
             </div>
+            <div class="bento-screenshot-wrap">
+              <img src="assets/screenshot-envelopes.png" alt="Zero-Based Digital Envelopes Preview" class="bento-screenshot-img" onclick="switchView('app'); switchTab('plan');" title="Open live Envelopes">
+              <span class="bento-screenshot-badge"><i data-lucide="layers"></i> Live Envelope Dashboard</span>
+            </div>
           </div>
 
           <!-- Bento 2 -->
@@ -496,6 +385,10 @@
               <i data-lucide="alert-triangle"></i>
               <span>+$2.50 Price Creep Detected (Netflix)</span>
             </div>
+            <div class="bento-screenshot-wrap">
+              <img src="assets/screenshot-subscriptions.png" alt="Subscription Sentinel Watchdog Preview" class="bento-screenshot-img" onclick="switchView('app'); switchTab('subscriptions');" title="Open Subscription Sentinel">
+              <span class="bento-screenshot-badge"><i data-lucide="shield-alert"></i> Live Subscription Ledger</span>
+            </div>
           </div>
 
           <!-- Bento 4 (Spans 2 Columns) -->
@@ -512,6 +405,10 @@
               <span class="bento-mode-chip"><strong>Sentinel:</strong> Objective Runway Math</span>
               <span class="bento-mode-chip"><strong>Roast:</strong> Tough-Love Accountability</span>
               <span class="bento-mode-chip"><strong>Hype:</strong> Guilt-Free Spending Celebration</span>
+            </div>
+            <div class="bento-screenshot-wrap">
+              <img src="assets/screenshot-copilot.png" alt="AI Spending Coach Preview" class="bento-screenshot-img" onclick="switchView('app'); switchTab('safespend');" title="Open AI Copilot">
+              <span class="bento-screenshot-badge"><i data-lucide="bot"></i> Live Copilot Interface</span>
             </div>
           </div>
 
@@ -645,36 +542,61 @@
     </section>
 
     <!-- CLEAN SAAS FOOTER -->
-    <footer class="saas-footer">
+    <footer class="saas-footer" id="footerSection">
       <div class="footer-container">
+        
+        <!-- Column 1: Brand & Sovereignty Manifesto -->
         <div class="footer-col-main">
-          <span class="footer-logo">PocketSentinel</span>
-          <p class="footer-tagline">Autonomous Household Financial Operating System. Real-time cash velocity, zero-based digital envelopes, and subscription watchdog.</p>
+          <div class="footer-logo-row">
+            <span class="footer-logo-icon"><i data-lucide="shield"></i></span>
+            <span class="footer-logo">PocketSentinel</span>
+          </div>
+          <p class="footer-tagline">
+            Autonomous household financial operating system. Engineered for zero overdrafts, real-time safe-to-spend velocity, digital envelopes, and proactive subscription defense.
+          </p>
+          <div class="footer-status-pill">
+            <span class="footer-status-dot"></span>
+            <span>Walrus Protocol Live · 100% Client-Side WebCrypto</span>
+          </div>
         </div>
+
+        <!-- Column 2: Platform Navigation -->
         <div class="footer-col-nav">
-          <span class="footer-heading">NAVIGATION</span>
-          <a href="#heroSection" onclick="switchView('landing')">Product Overview</a>
-          <a href="#features" onclick="scrollToLandingSection('features')">Features &amp; Envelopes</a>
-          <a href="#copilot-lab" onclick="scrollToLandingSection('copilot-lab')">Copilot Lab</a>
-          <a href="#app" onclick="switchView('app')">Launch Sentinel App</a>
+          <span class="footer-heading">PLATFORM</span>
+          <a href="#heroSection" onclick="switchView('landing')"><i data-lucide="chevron-right"></i> Product Overview</a>
+          <a href="#features" onclick="scrollToLandingSection('features')"><i data-lucide="chevron-right"></i> Digital Envelopes</a>
+          <a href="#features" onclick="scrollToLandingSection('features')"><i data-lucide="chevron-right"></i> Subscription Sentinel</a>
+          <a href="#copilot-lab" onclick="scrollToLandingSection('copilot-lab')"><i data-lucide="chevron-right"></i> Copilot AI Lab</a>
+          <a href="#app" onclick="switchView('app')"><i data-lucide="arrow-up-right"></i> Launch Web App</a>
         </div>
+
+        <!-- Column 3: Sovereignty & Architecture -->
         <div class="footer-col-nav">
-          <span class="footer-heading">SOVEREIGNTY &amp; ARCHITECTURE</span>
-          <a href="javascript:void(0)" onclick="openKeyVaultModal()">Export WebCrypto Keys</a>
-          <a href="https://github.com" target="_blank">MIT Open Source</a>
-          <a href="#sovereignty" onclick="scrollToLandingSection('sovereignty')">Zero-Knowledge Standard</a>
+          <span class="footer-heading">SOVEREIGNTY</span>
+          <a href="javascript:void(0)" onclick="openKeyVaultModal()"><i data-lucide="key"></i> Export WebCrypto Keys</a>
+          <a href="#sovereignty" onclick="scrollToLandingSection('sovereignty')"><i data-lucide="lock"></i> Zero-Knowledge Standard</a>
+          <a href="#sovereignty" onclick="scrollToLandingSection('sovereignty')"><i data-lucide="database"></i> Walrus SUI Decentralized Store</a>
+          <a href="https://github.com" target="_blank" rel="noopener"><i data-lucide="code"></i> MIT Open Source Code</a>
         </div>
+
+        <!-- Column 4: Legal & Sovereign Rights -->
         <div class="footer-col-nav">
           <span class="footer-heading">LEGAL &amp; POLICIES</span>
-          <a href="javascript:void(0)" onclick="openLegalPolicyModal('privacy')">Privacy Policy</a>
-          <a href="javascript:void(0)" onclick="openLegalPolicyModal('terms')">Terms of Service</a>
-          <a href="javascript:void(0)" onclick="openLegalPolicyModal('refund')">Refund Policy</a>
-          <a href="javascript:void(0)" onclick="openDeleteAccountModal()" style="color: #e11d48; font-weight: 700;">Delete My Account</a>
+          <a href="javascript:void(0)" onclick="openLegalPolicyModal('privacy')"><i data-lucide="file-text"></i> Privacy Policy</a>
+          <a href="javascript:void(0)" onclick="openLegalPolicyModal('terms')"><i data-lucide="file-check"></i> Terms of Service</a>
+          <a href="javascript:void(0)" onclick="openLegalPolicyModal('refund')"><i data-lucide="refresh-cw"></i> Refund Policy</a>
+          <a href="javascript:void(0)" onclick="openDeleteAccountModal()" class="danger-link"><i data-lucide="trash-2"></i> Delete My Account (Purge)</a>
         </div>
+
       </div>
+
+      <!-- Bottom Bar -->
       <div class="footer-bottom-row">
-        <span>© 2026 POCKETSENTINEL. ALL RIGHTS RESERVED. MIT OPEN SOURCE LICENSE.</span>
-        <span>ZERO UNENCRYPTED CLOUD TELEMETRY · 100% CLIENT-SIDE ENCRYPTION</span>
+        <span>&copy; 2026 POCKETSENTINEL. ALL RIGHTS RESERVED. LICENSED UNDER MIT OPEN SOURCE.</span>
+        <span>ZERO UNENCRYPTED CLOUD TELEMETRY · 0% NEGOTIATION RAKE · CLIENT-SIDE ZERO KNOWLEDGE</span>
+        <button class="footer-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+          <i data-lucide="arrow-up"></i> Back to Top
+        </button>
       </div>
     </footer>
 
