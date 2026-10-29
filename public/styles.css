@@ -13000,3 +13000,93 @@ body.dark-theme .line-btn-arrow {
 
 
 
+
+
+/* ================= RUNNING TICKER TAPE (FROM LEDGR REFERENCE) ================= */
+.running-ticker-tape {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #090C10;
+  color: #94A3B8;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  height: 32px;
+  overflow: hidden;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.ticker-track {
+  display: flex;
+  white-space: nowrap;
+  animation: tickerScroll 40s linear infinite;
+  gap: 24px;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticker-item .val {
+  color: #F59E0B;
+  font-weight: 700;
+}
+
+.ticker-sep {
+  color: #475569;
+}
+
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.mockup-image-frame {
+  background: #FAF9F5;
+  overflow: hidden;
+  position: relative;
+  border-top: 1px solid var(--border-hairline);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.mockup-image-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform var(--dur-fast);
+}
+
+.mockup-image-frame:hover img {
+  transform: scale(1.01);
+}
+
+.dark-mockup-frame {
+  background: #090C10;
+  overflow: hidden;
+  border-radius: var(--radius-subtle);
+  border: 1px solid var(--border-dark);
+  margin-top: 24px;
+}
+
+.dark-mockup-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform var(--dur-fast);
+}
+
+.dark-mockup-frame:hover img {
+  transform: scale(1.01);
+}
