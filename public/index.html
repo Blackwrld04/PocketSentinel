@@ -384,9 +384,385 @@
                 </div>
               </div>
 
-              <!-- Direct Screenshot of Subscriptions in Dark Card -->
-              <div class="dark-mockup-frame" onclick="switchView('app'); switchTab('subscriptions');" style="cursor: pointer;" title="Open live subscription watchdog">
-                <img src="assets/screenshot-subscriptions.png" alt="PocketSentinel Active Subscriptions Ledger">
+              <!-- Native Vector-Sharp Subscriptions Ledger Component (Zero Blur, Infinite DPI) -->
+              <div class="dark-ledger-preview-card" onclick="switchView('app'); switchTab('subscriptions');" style="cursor: pointer;" title="Click to open interactive subscriptions manager in app">
+                
+                <!-- Toolbar: Filter Pills & Search -->
+                <div class="dlp-toolbar">
+                  <div class="dlp-filter-pills">
+                    <span class="dlp-pill active">All (9)</span>
+                    <span class="dlp-pill">Streaming (2)</span>
+                    <span class="dlp-pill">AI &amp; Cloud (3)</span>
+                    <span class="dlp-pill">Dev Tools (2)</span>
+                    <span class="dlp-pill">Productivity (2)</span>
+                  </div>
+                  <div class="dlp-search-box">
+                    <i data-lucide="search"></i>
+                    <span class="dlp-search-placeholder">Filter merchant...</span>
+                  </div>
+                </div>
+
+                <!-- Table Container with Horizontal Scroll Safety -->
+                <div class="dlp-table-wrap">
+                  <table class="dlp-table">
+                    <thead>
+                      <tr>
+                        <th>Service &amp; Merchant</th>
+                        <th>Plan &amp; Category</th>
+                        <th>Monthly Cost</th>
+                        <th>Renewal Cadence</th>
+                        <th>Policy Baseline</th>
+                        <th>Sentinel Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      
+                      <!-- 1. Netflix -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/netflix.svg" class="merchant-mini-logo" alt="Netflix">
+                            <div class="sub-merchant-meta">
+                              <strong>Netflix Standard Tier</strong>
+                              <span>1080p 2-Screens Plan</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Streaming Video</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$17.99</strong>
+                          <small>$215.88 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Oct 20, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_01</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill alert">
+                            <i data-lucide="trending-up"></i>
+                            <span>+$2.50 HIKE FLAGGED</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn text-coral">
+                            <i data-lucide="scale"></i>
+                            <span>Dispute</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 2. Spotify -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/spotify.svg" class="merchant-mini-logo" alt="Spotify">
+                            <div class="sub-merchant-meta">
+                              <strong>Spotify Family Plan</strong>
+                              <span>Premium 6-Account Family</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Streaming Audio</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$16.99</strong>
+                          <small>$203.88 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Nov 8, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_02</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill blue">
+                            <i data-lucide="layers"></i>
+                            <span>AUDIO OVERLAP</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn text-blue">
+                            <i data-lucide="arrow-right-left"></i>
+                            <span>Consolidate</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 3. OpenAI ChatGPT Plus -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/openai.svg" class="merchant-mini-logo" alt="OpenAI">
+                            <div class="sub-merchant-meta">
+                              <strong>OpenAI ChatGPT Plus</strong>
+                              <span>GPT-4o &amp; Canvas Tier</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">AI &amp; Machine Learning</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$20.00</strong>
+                          <small>$240.00 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Nov 12, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_03</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill verified">
+                            <i data-lucide="check-circle-2"></i>
+                            <span>BASELINE MATCH</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn">
+                            <i data-lucide="shield-check"></i>
+                            <span>Policy</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 4. Amazon Web Services (AWS) -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/aws.svg" class="merchant-mini-logo" alt="AWS">
+                            <div class="sub-merchant-meta">
+                              <strong>Amazon Web Services (AWS)</strong>
+                              <span>EC2 &amp; S3 Cloud Hosting</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Cloud Compute</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$142.50</strong>
+                          <small>$1,710.00 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Oct 22, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_04</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill green">
+                            <i data-lucide="shield-check"></i>
+                            <span>CEILING $150 APPROVED</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn">
+                            <i data-lucide="shield-check"></i>
+                            <span>Policy</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 5. Figma Professional -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/figma.svg" class="merchant-mini-logo" alt="Figma">
+                            <div class="sub-merchant-meta">
+                              <strong>Figma Professional</strong>
+                              <span>UI/UX Design Seat</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Product Design</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$15.00</strong>
+                          <small>$180.00 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Nov 14, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_05</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill verified">
+                            <i data-lucide="check-circle-2"></i>
+                            <span>BASELINE MATCH</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn">
+                            <i data-lucide="shield-check"></i>
+                            <span>Policy</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 6. Supabase Pro Platform -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/supabase.svg" class="merchant-mini-logo" alt="Supabase">
+                            <div class="sub-merchant-meta">
+                              <strong>Supabase Pro Platform</strong>
+                              <span>Dedicated Compute &amp; Storage</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Managed PostgreSQL</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$25.00</strong>
+                          <small>$300.00 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Oct 21, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_06</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill verified">
+                            <i data-lucide="check-circle-2"></i>
+                            <span>BASELINE MATCH</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn">
+                            <i data-lucide="shield-check"></i>
+                            <span>Policy</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 7. Adobe Creative Cloud All Apps -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/adobe.svg" class="merchant-mini-logo" alt="Adobe">
+                            <div class="sub-merchant-meta">
+                              <strong>Adobe Creative Cloud All Apps</strong>
+                              <span>7-Day Free Trial Converting</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Creative Suite</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$54.99</strong>
+                          <small>$659.88 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Oct 25, 2026 (48h Left)</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_10</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill amber">
+                            <i data-lucide="clock"></i>
+                            <span>48H TRIAL AUTO-REBILL</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn text-amber">
+                            <i data-lucide="x-circle"></i>
+                            <span>Cancel</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 8. GitHub Copilot Individual -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/github.svg" class="merchant-mini-logo" alt="GitHub">
+                            <div class="sub-merchant-meta">
+                              <strong>GitHub Copilot Individual</strong>
+                              <span>AI Pair Programmer</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Developer Tools</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$10.00</strong>
+                          <small>$120.00 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Nov 1, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_08</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill verified">
+                            <i data-lucide="check-circle-2"></i>
+                            <span>BASELINE MATCH</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn">
+                            <i data-lucide="shield-check"></i>
+                            <span>Policy</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- 9. The New York Times -->
+                      <tr>
+                        <td>
+                          <div class="sub-merchant-cell">
+                            <img src="/assets/logos/nytimes.svg" class="merchant-mini-logo" alt="The New York Times">
+                            <div class="sub-merchant-meta">
+                              <strong>The New York Times</strong>
+                              <span>All Access Digital News</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dlp-category-text">Journalism &amp; Media</span>
+                        </td>
+                        <td class="sub-cost-cell">
+                          <strong>$4.00</strong>
+                          <small>$48.00 / yr</small>
+                        </td>
+                        <td class="sub-date-cell">
+                          <span>Oct 28, 2026</span>
+                        </td>
+                        <td>
+                          <strong class="dlp-mem-code">MEM_07</strong>
+                        </td>
+                        <td>
+                          <span class="dlp-status-pill purple">
+                            <i data-lucide="tag"></i>
+                            <span>PROMO ACTIVE</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dlp-action-btn">
+                            <i data-lucide="shield-check"></i>
+                            <span>Policy</span>
+                          </span>
+                        </td>
+                      </tr>
+
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

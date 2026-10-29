@@ -481,7 +481,11 @@ window.demoRebalanceGroceries = demoRebalanceGroceries;
 
 function handleHashNavigation() {
   const hash = window.location.hash.replace('#', '');
-  if (!hash || ['landing', 'heroSection', 'features', 'copilot-lab', 'sovereignty', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash)) {
+  const isLandingTarget = !hash || 
+    ['landing', 'heroSection', 'realitySection', 'visibilitySection', 'automationSection', 'ecosystemSection', 'copilotLabSection', 'demoSection', 'features', 'copilot-lab', 'sovereignty', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash) ||
+    Boolean(document.getElementById(hash) && document.getElementById(hash).closest('#landingView'));
+
+  if (isLandingTarget) {
     switchView('landing');
     if (hash && hash !== 'landing') {
       setTimeout(() => {
