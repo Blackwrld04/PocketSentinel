@@ -1132,7 +1132,10 @@
                 <span id="userAvatarText">AR</span>
               </div>
               <div class="personal-greeting-wrap">
-                <span class="greeting-time">Good Morning,</span>
+                <div class="greeting-time-date-row">
+                  <span class="greeting-time" id="userGreetingTime">Good Evening,</span>
+                  <span class="greeting-date-pill" id="userGreetingDate">Thu, Oct 29, 2026</span>
+                </div>
                 <h3 class="user-display-name" id="userDisplayName">Alex Rivera</h3>
               </div>
               <div class="wage-life-energy-pill" onclick="filterAppView('settings')" title="Configured Hourly Wage for Vicki Robin Life Energy Calculation">
@@ -2530,7 +2533,7 @@
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <div>
                       <h3 class="settings-card-title">Renewal Calendar</h3>
-                      <p class="settings-card-sub">Recurring debits across October 2026</p>
+                      <p class="settings-card-sub" id="calendarSubheadText">Recurring debits across <span id="calHeaderMonthName">October 2026</span></p>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
                       <div class="calendar-legend" id="calendarLegend" style="display:flex;">
@@ -2546,6 +2549,32 @@
 
               <!-- Full Calendar Body Wrap -->
               <div class="collapsible-card-body" id="calendarBodyCollapseWrap" style="display:block; margin-top:14px;">
+                <!-- Month Navigation & Interaction Toolbar -->
+                <div class="cal-nav-toolbar" id="calNavToolbar">
+                  <div class="cal-nav-month-group">
+                    <button class="cal-nav-btn" id="calPrevBtn" onclick="navigateCalendarMonth(-1)" title="Previous Month" aria-label="Previous Month">
+                      <i data-lucide="chevron-left"></i>
+                    </button>
+                    <div class="cal-nav-month-display">
+                      <span class="cal-nav-month-text" id="calCurrentMonthTitle">October 2026</span>
+                      <span class="cal-nav-month-meta" id="calMonthMetaText">9 scheduled recurring debits</span>
+                    </div>
+                    <button class="cal-nav-btn" id="calNextBtn" onclick="navigateCalendarMonth(1)" title="Next Month" aria-label="Next Month">
+                      <i data-lucide="chevron-right"></i>
+                    </button>
+                  </div>
+                  <div class="cal-nav-right-actions">
+                    <button class="cal-today-btn" id="calTodayBtn" onclick="goToTodayCalendar()" title="Jump to current date">
+                      <i data-lucide="calendar-check"></i>
+                      <span>Today</span>
+                    </button>
+                    <span class="cal-scroll-hint-btn" title="Scroll mouse wheel or swipe left or right to change month">
+                      <i data-lucide="mouse-pointer"></i>
+                      <span>Scrollable</span>
+                    </span>
+                  </div>
+                </div>
+
                 <div class="calendar-weekdays-row">
                   <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
                 </div>

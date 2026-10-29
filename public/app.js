@@ -220,8 +220,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Setup Drag-and-drop on hero box
   setupDropzone();
 
-  // Render initial Spend Calendar (October 2026)
+  // Render initial Spend Calendar & Dynamic Greeting
   renderSpendCalendar();
+  updateDynamicGreetingAndDate();
+  setInterval(updateDynamicGreetingAndDate, 30000);
 
   // Initialize Mobile Controllers, User Profile, OCR Scanner, and Wallets
   initMobileAppControllers();
@@ -934,51 +936,245 @@ async function loadSubscriptions() {
   }
 }
 
-/**
- * Spend Calendar Grid (Origin Style)
- * Renders October 2026 calendar days with subscription debits mapped
- */
+// ================= DYNAMIC SPEND CALENDAR & GREETING CONTROLLER =================
+state.calendarYear = state.calendarYear || new Date().getFullYear();
+state.calendarMonth = (state.calendarMonth !== undefined) ? state.calendarMonth : new Date().getMonth();
+state.selectedCalendarDay = state.selectedCalendarDay || null;
+
+function updateDynamicGreetingAndDate() {
+  const now = new Date();
+  const hour = now.getHours();
+  let greeting = 'Good Morning,';
+  if (hour >= 12 && hour < 17) {
+    greeting = 'Good Afternoon,';
+  } else if (hour >= 17 || hour < 5) {
+    greeting = 'Good Evening,';
+  }
+
+  const greetingEl = document.getElementById('userGreetingTime');
+  if (greetingEl) greetingEl.textContent = greeting;
+
+  const dateEl = document.getElementById('userGreetingDate');
+  if (dateEl) {
+    const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+    dateEl.textContent = now.toLocaleDateString('en-US', options);
+  }
+}
+window.updateDynamicGreetingAndDate = updateDynamicGreetingAndDate;
+
+function navigateCalendarMonth(delta) {
+  state.calendarMonth += delta;
+  if (state.calendarMonth > 11) {
+    state.calendarMonth = 0;
+    state.calendarYear += 1;
+  } else if (state.calendarMonth < 0) {
+    state.calendarMonth = 11;
+    state.calendarYear -= 1;
+  }
+  state.selectedCalendarDay = null;
+  const inspector = document.getElementById('calDayInspector');
+  if (inspector) inspector.style.display = 'none';
+  renderSpendCalendar();
+}
+window.navigateCalendarMonth = navigateCalendarMonth;
+
+function goToTodayCalendar() {
+  const now = new Date();
+  state.calendarYear = now.getFullYear();
+  state.calendarMonth = now.getMonth();
+  state.selectedCalendarDay = now.getDate();
+  renderSpendCalendar();
+  inspectCalendarDay(now.getDate());
+}
+window.goToTodayCalendar = goToTodayCalendar;
+
+function openQuickAddModalWithDate(dateStr) {
+  openQuickAddModal();
+  const dateInput = document.getElementById('tx-date');
+  if (dateInput && dateStr) {
+    dateInput.value = dateStr;
+  }
+}
+window.openQuickAddModalWithDate = openQuickAddModalWithDate;
+
+function getCalendarEventsForMonth(year, month) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const eventsByDay = {};
+
+  const baseCatalog = [
+    { id: 'MEM_09', merchant: 'GitHub Copilot', amount: 10.00, dayOfMonth: 1, status: 'NORMAL', category: 'Developer Productivity' },
+    { id: 'MEM_12', merchant: 'Apple iCloud+ 2TB', amount: 9.99, dayOfMonth: 5, status: 'NORMAL', category: 'Cloud Storage & Utility' },
+    { id: 'MEM_11', merchant: 'Spotify Family', amount: 16.99, dayOfMonth: 8, status: 'NORMAL', category: 'Streaming' },
+    { id: 'MEM_03', merchant: 'ChatGPT Plus', amount: 20.00, dayOfMonth: 12, status: 'NORMAL', category: 'AI & Cloud' },
+    { id: 'MEM_07', merchant: 'Figma Professional', amount: 15.00, dayOfMonth: 14, status: 'NORMAL', category: 'Design Tools' },
+    { id: 'MEM_02', merchant: 'Spotify Premium', amount: 10.99, dayOfMonth: 15, status: 'NORMAL', category: 'Streaming' },
+    { id: 'MEM_06', merchant: 'Adobe CC 7-Day Trial', amount: 54.99, dayOfMonth: 18, status: 'TRIAL_URGENT', tag: 'Trial Alert', category: 'Software' },
+    { id: 'MEM_10', merchant: 'DoorDash DashPass', amount: 9.99, dayOfMonth: 18, status: 'NORMAL', category: 'Food & Dining' },
+    { id: 'MEM_04', merchant: 'Amazon Web Services (AWS)', amount: 142.50, dayOfMonth: 19, status: 'SUPPRESSED', tag: 'Overridden', category: 'Infrastructure' },
+    { id: 'MEM_01', merchant: 'Netflix Standard', amount: 17.99, dayOfMonth: 20, status: 'PRICE_CREEP', tag: '+$2.50 Hike', category: 'Streaming' },
+    { id: 'MEM_08', merchant: 'Supabase Pro', amount: 25.00, dayOfMonth: 21, status: 'NORMAL', category: 'AI & Cloud' },
+    { id: 'MEM_13', merchant: 'The New York Times', amount: 4.00, dayOfMonth: 28, status: 'NORMAL', category: 'News & Media' }
+  ];
+
+  const activeSubs = (state.subscriptions && state.subscriptions.length > 0)
+    ? state.subscriptions
+    : baseCatalog;
+
+  activeSubs.forEach(sub => {
+    let day = sub.dayOfMonth || 15;
+    if (day > daysInMonth) day = daysInMonth;
+
+    let status = sub.status || 'NORMAL';
+    if (sub.hasHike || (sub.baselineAmount && sub.amount > sub.baselineAmount && !sub.overrideApproved)) {
+      status = 'PRICE_CREEP';
+    } else if (sub.isTrial || (sub.merchant && sub.merchant.toLowerCase().includes('adobe')) || (sub.merchant && sub.merchant.toLowerCase().includes('trial'))) {
+      status = 'TRIAL_URGENT';
+    } else if (sub.overrideApproved || sub.status === 'SUPPRESSED') {
+      status = 'SUPPRESSED';
+    }
+
+    if (!eventsByDay[day]) eventsByDay[day] = [];
+    eventsByDay[day].push({
+      merchant: sub.merchant || 'Subscription',
+      amount: Number(sub.amount || 0),
+      status: status,
+      tag: sub.tag || (status === 'PRICE_CREEP' ? '+$2.50 Hike' : status === 'TRIAL_URGENT' ? 'Trial Alert' : status === 'SUPPRESSED' ? 'Overridden' : ''),
+      id: sub.id || sub.walrusMemoryRef || 'MEM_01'
+    });
+  });
+
+  return eventsByDay;
+}
+
+let calendarScrollListenersAttached = false;
+function setupCalendarScrollListeners() {
+  if (calendarScrollListenersAttached) return;
+  const calCard = document.getElementById('spendCalendarCard');
+  if (!calCard) return;
+
+  calendarScrollListenersAttached = true;
+  let scrollTimeout = null;
+
+  calCard.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > 25) {
+      if (scrollTimeout) return;
+      scrollTimeout = setTimeout(() => { scrollTimeout = null; }, 320);
+      if (e.deltaY > 0) {
+        navigateCalendarMonth(1);
+      } else {
+        navigateCalendarMonth(-1);
+      }
+    }
+  }, { passive: true });
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  calCard.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches.length > 0) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  calCard.addEventListener('touchend', (e) => {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      const deltaY = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX < 0) {
+          navigateCalendarMonth(1);
+        } else {
+          navigateCalendarMonth(-1);
+        }
+      }
+    }
+  }, { passive: true });
+}
+
 function inspectCalendarDay(day, merchant, amount, status) {
   const inspector = document.getElementById('calDayInspector');
   if (!inspector) return;
 
-  if (!merchant || merchant === 'null') {
-    inspector.style.display = 'block';
-    inspector.innerHTML = `
-      <div class="cal-inspector-card">
-        <div class="cal-inspector-header">
-          <strong>October ${day}, 2026</strong>
-          <button class="btn-inspect-mini" onclick="document.getElementById('calDayInspector').style.display='none'">&times;</button>
-        </div>
-        <p style="margin:6px 0 0 0; font-size:12px; color:var(--text-muted);">No scheduled recurring debit on this day.</p>
-      </div>
-    `;
-    return;
+  state.selectedCalendarDay = day;
+
+  // Highlight selected cell in DOM
+  document.querySelectorAll('.calendar-days-grid .cal-day').forEach(el => {
+    el.classList.remove('selected-day');
+  });
+  const selectedEl = document.querySelector(`.calendar-days-grid .cal-day[data-day="${day}"]`);
+  if (selectedEl) selectedEl.classList.add('selected-day');
+
+  const year = state.calendarYear;
+  const month = state.calendarMonth;
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthName = monthNames[month];
+  const dateFormatted = `${monthName} ${day}, ${year}`;
+  const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  const eventsByDay = getCalendarEventsForMonth(year, month);
+  let dayEvents = eventsByDay[day] || [];
+
+  if (dayEvents.length === 0 && merchant && merchant !== 'null') {
+    dayEvents = [{ merchant, amount: Number(amount), status, tag: '', id: 'MEM_01' }];
   }
 
   inspector.style.display = 'block';
-  inspector.innerHTML = `
-    <div class="cal-inspector-card has-event">
-      <div class="cal-inspector-header">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span class="cal-dot ${status === 'PRICE_CREEP' ? 'red' : status === 'TRIAL_URGENT' ? 'amber' : 'green'}"></span>
-          <strong>October ${day}, 2026: ${merchant}</strong>
+
+  if (dayEvents.length === 0) {
+    inspector.innerHTML = `
+      <div class="cal-inspector-card">
+        <div class="cal-inspector-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i data-lucide="calendar" style="width:16px; height:16px; color:var(--text-muted);"></i>
+            <strong>${dateFormatted}</strong>
+          </div>
+          <button class="btn-inspect-mini" onclick="document.getElementById('calDayInspector').style.display='none'">&times;</button>
         </div>
-        <button class="btn-inspect-mini" onclick="document.getElementById('calDayInspector').style.display='none'">&times;</button>
-      </div>
-      <div class="cal-inspector-body">
-        <div>Scheduled Debit: <strong>$${Number(amount).toFixed(2)}</strong></div>
-        <div style="font-size:12px; color:var(--text-secondary); margin-top:3px;">
-          ${status === 'PRICE_CREEP' ? '🚨 Uncontractual price hike flagged (+2.50 vs baseline memory).' : status === 'TRIAL_URGENT' ? '⚠️ 7-Day Free Trial converting in 48 hours.' : '✅ Verified episodic baseline match.'}
+        <p style="margin:6px 0 10px 0; font-size:12px; color:var(--text-muted);">No scheduled recurring debit on this day.</p>
+        <div class="cal-inspector-actions">
+          <button class="btn-ghost-outline" onclick="openQuickAddModalWithDate('${dateStr}')">
+            <i data-lucide="plus-circle"></i> + Log Expense for ${monthName.slice(0, 3)} ${day}
+          </button>
         </div>
       </div>
-      <div class="cal-inspector-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-        ${status === 'TRIAL_URGENT' ? `<button class="btn-cancel-trial-danger" onclick="cancelTrialSubscription('${merchant}')"><i data-lucide='x-circle'></i> Cancel Trial Rebill</button>` : ''}
-        ${status === 'PRICE_CREEP' ? `<button class="btn-amber-card-action" onclick="openDisputeModalForRecord('${merchant}', 17.99, 15.49, 2.50, 'MEM_01')"><i data-lucide='scale'></i> 1-Tap Dispute</button>` : ''}
-        <button class="btn-ghost-outline" onclick="filterAppView('subscriptions')"><i data-lucide='list'></i> View in Ledger</button>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
+
+  let eventsHtml = '';
+  dayEvents.forEach(evt => {
+    const isCreep = evt.status === 'PRICE_CREEP';
+    const isTrial = evt.status === 'TRIAL_URGENT';
+    const isSuppressed = evt.status === 'SUPPRESSED';
+    const dotColor = isCreep ? 'red' : isTrial ? 'amber' : isSuppressed ? 'blue' : 'green';
+
+    eventsHtml += `
+      <div class="cal-inspector-card has-event" style="margin-bottom:8px;">
+        <div class="cal-inspector-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="cal-dot ${dotColor}"></span>
+            <strong>${dateFormatted}: ${evt.merchant}</strong>
+          </div>
+          <button class="btn-inspect-mini" onclick="document.getElementById('calDayInspector').style.display='none'">&times;</button>
+        </div>
+        <div class="cal-inspector-body">
+          <div>Scheduled Debit: <strong>$${Number(evt.amount).toFixed(2)}</strong></div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:3px;">
+            ${isCreep ? '🚨 Uncontractual price hike flagged (+2.50 vs baseline memory).' : isTrial ? '⚠️ 7-Day Free Trial converting in 48 hours.' : isSuppressed ? 'ℹ️ Auto-reconciled via memory baseline policy.' : '✅ Verified episodic baseline match.'}
+          </div>
+        </div>
+        <div class="cal-inspector-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          ${isTrial ? `<button class="btn-cancel-trial-danger" onclick="cancelTrialSubscription('${evt.merchant.replace(/'/g, "\\'")}')"><i data-lucide='x-circle'></i> Cancel Trial Rebill</button>` : ''}
+          ${isCreep ? `<button class="btn-amber-card-action" onclick="openDisputeModalForRecord('${evt.merchant.replace(/'/g, "\\'")}', 17.99, 15.49, 2.50, '${evt.id}')"><i data-lucide='scale'></i> 1-Tap Dispute</button>` : ''}
+          <button class="btn-ghost-outline" onclick="filterAppView('subscriptions')"><i data-lucide='list'></i> View in Ledger</button>
+          <button class="btn-ghost-outline" onclick="openQuickAddModalWithDate('${dateStr}')"><i data-lucide='plus-circle'></i> + Log Expense</button>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  });
+
+  inspector.innerHTML = eventsHtml;
   if (window.lucide) window.lucide.createIcons();
 }
 window.inspectCalendarDay = inspectCalendarDay;
@@ -987,60 +1183,112 @@ function renderSpendCalendar() {
   const grid = document.getElementById('calendarDaysGrid');
   if (!grid) return;
 
-  // Day schedules for October 2026
-  const debitEvents = {
-    1:  { merchant: 'GitHub Copilot', amount: 10.00, status: 'NORMAL' },
-    8:  { merchant: 'Spotify Family', amount: 16.99, status: 'NORMAL' },
-    12: { merchant: 'ChatGPT Plus', amount: 20.00, status: 'NORMAL' },
-    14: { merchant: 'Figma Professional', amount: 15.00, status: 'NORMAL' },
-    18: { merchant: 'Adobe CC 7-Day Trial', amount: 54.99, status: 'TRIAL_URGENT', tag: 'Trial Alert' },
-    20: { merchant: 'Netflix Standard', amount: 17.99, status: 'PRICE_CREEP', tag: '+$2.50 Hike' },
-    21: { merchant: 'Supabase Pro', amount: 25.00, status: 'NORMAL' },
-    22: { merchant: 'Amazon Web Services', amount: 142.50, status: 'SUPPRESSED', tag: 'Overridden' },
-    28: { merchant: 'The New York Times', amount: 4.00, status: 'NORMAL' }
-  };
+  if (state.calendarYear === undefined) state.calendarYear = new Date().getFullYear();
+  if (state.calendarMonth === undefined) state.calendarMonth = new Date().getMonth();
+
+  const year = state.calendarYear;
+  const month = state.calendarMonth;
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthName = monthNames[month];
+
+  // Update headers
+  const titleEl = document.getElementById('calCurrentMonthTitle');
+  if (titleEl) titleEl.textContent = `${monthName} ${year}`;
+
+  const headerMonthEl = document.getElementById('calHeaderMonthName');
+  if (headerMonthEl) headerMonthEl.textContent = `${monthName} ${year}`;
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sunday
+  const prevMonthDays = new Date(year, month, 0).getDate();
+
+  const now = new Date();
+  const isCurrentMonth = (now.getFullYear() === year && now.getMonth() === month);
+  const todayDate = now.getDate();
+
+  const eventsByDay = getCalendarEventsForMonth(year, month);
+
+  // Compute total monthly debits
+  let totalDebitsCount = 0;
+  let totalDebitsSum = 0;
+  Object.values(eventsByDay).forEach(evts => {
+    totalDebitsCount += evts.length;
+    evts.forEach(e => { totalDebitsSum += (e.amount || 0); });
+  });
+
+  const metaEl = document.getElementById('calMonthMetaText');
+  if (metaEl) {
+    metaEl.textContent = `${totalDebitsCount} scheduled debits ($${totalDebitsSum.toFixed(2)} total)`;
+  }
 
   let html = '';
 
-  // 4 offset empty days for October 2026 (Oct 1 is Thursday)
-  for (let empty = 27; empty <= 30; empty++) {
-    html += `<div class="cal-day cal-day-empty"><span class="cal-day-num muted">${empty}</span></div>`;
+  // Leading empty / trailing days of previous month
+  for (let i = 0; i < firstDayIndex; i++) {
+    const emptyDay = prevMonthDays - firstDayIndex + 1 + i;
+    html += `
+      <div class="cal-day cal-day-empty" onclick="navigateCalendarMonth(-1)" title="Previous Month (${monthNames[(month + 11) % 12]})">
+        <span class="cal-day-num muted">${emptyDay}</span>
+      </div>
+    `;
   }
 
-  // Days 1 through 31 for October
-  for (let day = 1; day <= 31; day++) {
-    const event = debitEvents[day];
+  // Days 1 through daysInMonth
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayEvents = eventsByDay[day] || [];
+    const isToday = isCurrentMonth && (day === todayDate);
+    const isSelected = (state.selectedCalendarDay === day);
+
     let dayClass = 'cal-day';
+    if (isToday) dayClass += ' is-today';
+    if (isSelected) dayClass += ' selected-day';
+
     let dotHtml = '';
     let pillHtml = '';
 
-    if (event) {
+    if (dayEvents.length > 0) {
       dayClass += ' has-debit';
-      if (event.status === 'PRICE_CREEP') {
+      const primaryEvt = dayEvents[0];
+      const hasCreep = dayEvents.some(e => e.status === 'PRICE_CREEP');
+      const hasTrial = dayEvents.some(e => e.status === 'TRIAL_URGENT');
+      const hasSuppressed = dayEvents.some(e => e.status === 'SUPPRESSED');
+
+      if (hasCreep) {
         dayClass += ' alert-creep';
         dotHtml = '<span class="cal-dot red"></span>';
-        pillHtml = `<div class="cal-pill red" title="${event.merchant} (+$2.50 price creep flagged)"><strong class="cal-pill-merchant">${event.merchant}</strong><span class="cal-pill-amt">$${event.amount.toFixed(2)}</span></div>`;
-      } else if (event.status === 'TRIAL_URGENT') {
+      } else if (hasTrial) {
         dayClass += ' alert-trial';
         dotHtml = '<span class="cal-dot amber"></span>';
-        pillHtml = `<div class="cal-pill amber" title="${event.merchant} (48h trial countdown)"><strong class="cal-pill-merchant">${event.merchant}</strong><span class="cal-pill-amt">$${event.amount.toFixed(2)}</span></div>`;
-      } else if (event.status === 'SUPPRESSED') {
+      } else if (hasSuppressed) {
         dayClass += ' reconciled';
         dotHtml = '<span class="cal-dot blue"></span>';
-        pillHtml = `<div class="cal-pill blue" title="${event.merchant} (Auto-reconciled via memory baseline policy)"><strong class="cal-pill-merchant">${event.merchant}</strong><span class="cal-pill-amt">$${event.amount.toFixed(2)}</span></div>`;
       } else {
         dayClass += ' verified';
         dotHtml = '<span class="cal-dot green"></span>';
-        pillHtml = `<div class="cal-pill green" title="${event.merchant}"><strong class="cal-pill-merchant">${event.merchant}</strong><span class="cal-pill-amt">$${event.amount.toFixed(2)}</span></div>`;
+      }
+
+      const pillClass = primaryEvt.status === 'PRICE_CREEP' ? 'red' : primaryEvt.status === 'TRIAL_URGENT' ? 'amber' : primaryEvt.status === 'SUPPRESSED' ? 'blue' : 'green';
+      pillHtml = `
+        <div class="cal-pill ${pillClass}" title="${primaryEvt.merchant} ($${primaryEvt.amount.toFixed(2)})">
+          <strong class="cal-pill-merchant">${primaryEvt.merchant}</strong>
+          <span class="cal-pill-amt">$${primaryEvt.amount.toFixed(2)}</span>
+        </div>
+      `;
+
+      if (dayEvents.length > 1) {
+        pillHtml += `<div class="cal-pill-count">+${dayEvents.length - 1} more</div>`;
       }
     }
 
-    const clickArgs = event ? `${day}, '${event.merchant.replace(/'/g, "\\'")}', ${event.amount}, '${event.status}'` : `${day}, null, null, null`;
+    const todayTag = isToday ? '<span class="cal-today-badge">TODAY</span>' : '';
 
     html += `
-      <div class="${dayClass}" onclick="inspectCalendarDay(${clickArgs})" style="cursor:pointer;">
+      <div class="${dayClass}" data-day="${day}" onclick="inspectCalendarDay(${day})" style="cursor:pointer;">
         <div class="cal-day-header">
-          <span class="cal-day-num">${day}</span>
+          <div style="display:flex; align-items:center;">
+            <span class="cal-day-num">${day}</span>
+            ${todayTag}
+          </div>
           ${dotHtml}
         </div>
         <div class="cal-day-content">
@@ -1050,8 +1298,25 @@ function renderSpendCalendar() {
     `;
   }
 
+  // Trailing empty days to complete the 7-column grid
+  const totalCells = firstDayIndex + daysInMonth;
+  const trailingDays = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= trailingDays; i++) {
+    html += `
+      <div class="cal-day cal-day-empty" onclick="navigateCalendarMonth(1)" title="Next Month (${monthNames[(month + 1) % 12]})">
+        <span class="cal-day-num muted">${i}</span>
+      </div>
+    `;
+  }
+
   grid.innerHTML = html;
+
+  // Setup wheel scroll & swipe gesture
+  setupCalendarScrollListeners();
+
+  if (window.lucide) window.lucide.createIcons();
 }
+window.renderSpendCalendar = renderSpendCalendar;
 
 // ================= COLLAPSIBLE SECTIONS CONTROLLER =================
 function syncCollapsibleSectionsOnView() {
@@ -4428,6 +4693,7 @@ function initReceiptOcrScanner() {
 window.initReceiptOcrScanner = initReceiptOcrScanner;
 
 function renderUserProfileUI() {
+  updateDynamicGreetingAndDate();
   const profile = state.userProfile;
   if (!profile) return;
 
