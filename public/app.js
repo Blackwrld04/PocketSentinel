@@ -482,7 +482,7 @@ window.demoRebalanceGroceries = demoRebalanceGroceries;
 function handleHashNavigation() {
   const hash = window.location.hash.replace('#', '');
   const isLandingTarget = !hash || 
-    ['landing', 'heroSection', 'realitySection', 'visibilitySection', 'automationSection', 'ecosystemSection', 'copilotLabSection', 'demoSection', 'features', 'copilot-lab', 'sovereignty', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash) ||
+    ['landing', 'heroSection', 'realitySection', 'visibilitySection', 'automationSection', 'ecosystemSection', 'copilotLabSection', 'demoSection', 'footerSection', 'features', 'copilot-lab', 'sovereignty', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash) ||
     Boolean(document.getElementById(hash) && document.getElementById(hash).closest('#landingView'));
 
   if (isLandingTarget) {
@@ -3574,7 +3574,7 @@ function setLandingPlaygroundMode(mode) {
 window.setLandingPlaygroundMode = setLandingPlaygroundMode;
 
 function applyLandingPrompt(promptText) {
-  const input = document.getElementById('landingCopilotInput') || document.getElementById('landingPlaygroundInput');
+  const input = document.getElementById('landingPlaygroundInput');
   if (input) {
     input.value = promptText;
   }
@@ -3583,20 +3583,15 @@ function applyLandingPrompt(promptText) {
 window.applyLandingPrompt = applyLandingPrompt;
 
 async function runLandingPlayground() {
-  const input = document.getElementById('landingCopilotInput') || document.getElementById('landingPlaygroundInput');
-  const output = document.getElementById('landingCopilotOutput') || document.getElementById('landingPlaygroundOutput');
-  const btn = document.querySelector('.btn-playground-submit') || document.getElementById('btnLandingPlaygroundSubmit');
+  const input = document.getElementById('landingPlaygroundInput');
+  const output = document.getElementById('landingPlaygroundOutput');
+  const btn = document.getElementById('btnLandingPlaygroundSubmit');
   const query = input ? input.value.trim() : '';
 
   if (!query) return;
 
   if (output) {
-    output.innerHTML = `
-      <div style="padding: 32px 24px; text-align: center; color: #94A3B8; font-family: var(--font-mono); font-size: 13px;">
-        <span class="status-pulse-dot" style="display:inline-block; margin-right: 8px;"></span>
-        Synthesizing behavioral financial reasoning via Groq LPU (&lt;340ms)...
-      </div>
-    `;
+    output.innerHTML = '<span style="color:#94A3B8; font-style:italic;">Consulting PocketSentinel AI financial copilot (&lt;350ms inference)...</span>';
   }
   if (btn) {
     btn.disabled = true;
@@ -3617,34 +3612,7 @@ async function runLandingPlayground() {
     const data = await res.json();
     if (data.success && data.reply) {
       if (output) {
-        output.innerHTML = `
-          <div class="copilot-verdict-banner">
-            <div class="verdict-tag safe">
-              <i data-lucide="check-circle-2"></i>
-              <strong>COPILOT SYNTHESIS COMPLETE</strong>
-            </div>
-            <span class="verdict-mode-pill">${landingPlaygroundMode.toUpperCase()} MODE // ZERO CLOUD RETENTION</span>
-          </div>
-          <div class="copilot-reasoning-narrative">
-            <div class="narrative-agent-line">
-              <span class="agent-avatar-glyph">⚡</span>
-              <div class="narrative-text" style="width: 100%;">
-                ${formatMarkdown(data.reply)}
-              </div>
-            </div>
-          </div>
-          <div class="copilot-terminal-footer">
-            <div class="terminal-quick-actions">
-              <button class="copilot-hud-action-btn" onclick="applyLandingPrompt('Can I afford a $65 sushi dinner tonight with 10 days left?')">
-                <i data-lucide="check"></i> <span>Verify $65 Dinner</span>
-              </button>
-              <button class="copilot-hud-action-btn" onclick="applyLandingPrompt('I overspent on dining out by $45. How do I balance my envelopes?')">
-                <i data-lucide="refresh-cw"></i> <span>Rebalance Deficit</span>
-              </button>
-            </div>
-            <span class="terminal-telemetry-mono">GROQ LPU // 750 T/s INFERENCE</span>
-          </div>
-        `;
+        output.innerHTML = formatMarkdown(data.reply);
       }
     } else {
       throw new Error(data.error || 'Inference engine unavailable');
@@ -3652,59 +3620,9 @@ async function runLandingPlayground() {
   } catch (err) {
     console.warn('[PLAYGROUND] Fallback used:', err.message);
     if (output) {
-      output.innerHTML = `
-        <div class="copilot-verdict-banner">
-          <div class="verdict-tag safe">
-            <i data-lucide="check-circle-2"></i>
-            <strong>SAFE TO SPEND APPROVED</strong>
-          </div>
-          <span class="verdict-mode-pill">${landingPlaygroundMode.toUpperCase()} MODE · ZERO DEFICIT</span>
-        </div>
-        <div class="copilot-hud-grid">
-          <div class="copilot-hud-card">
-            <span class="hud-label">SAFE RUNWAY</span>
-            <strong class="hud-val text-mint">$482.35</strong>
-            <span class="hud-sub">10 cycle days remaining</span>
-          </div>
-          <div class="copilot-hud-card">
-            <span class="hud-label">DAILY VELOCITY</span>
-            <strong class="hud-val">$48.23<small>/day</small></strong>
-            <span class="hud-sub">Recommended burn limit</span>
-          </div>
-          <div class="copilot-hud-card">
-            <span class="hud-label">DISCRETIONARY SURPLUS</span>
-            <strong class="hud-val text-blue">+$130.00</strong>
-            <span class="hud-sub">Dinner absorbed safely</span>
-          </div>
-          <div class="copilot-hud-card">
-            <span class="hud-label">EMERGENCY BUFFER</span>
-            <strong class="hud-val text-amber">$500.00</strong>
-            <span class="hud-sub">100% Protected (untouched)</span>
-          </div>
-        </div>
-        <div class="copilot-reasoning-narrative">
-          <div class="narrative-agent-line">
-            <span class="agent-avatar-glyph">⚡</span>
-            <p class="narrative-text">
-              "Alex, you have <strong class="text-mint">$482.35</strong> in safe cash runway across 10 remaining cycle days (<strong class="text-mono">$48.23/day</strong>). A <strong class="text-amber">$65.00 dinner</strong> tonight is completely safe because your <strong class="text-blue">Discretionary Fun</strong> envelope currently holds a <strong class="text-mint">+$130.00</strong> surplus. All fixed subscriptions ($301.46) and your $500 buffer remain untouched."
-            </p>
-          </div>
-        </div>
-        <div class="copilot-terminal-footer">
-          <div class="terminal-quick-actions">
-            <button class="copilot-hud-action-btn active" onclick="applyLandingPrompt('Can I afford a $65 sushi dinner tonight with 10 days left?')">
-              <i data-lucide="check"></i> <span>Verify $65 Dinner</span>
-            </button>
-            <button class="copilot-hud-action-btn" onclick="applyLandingPrompt('I overspent on dining out by $45. How do I balance my envelopes?')">
-              <i data-lucide="refresh-cw"></i> <span>Rebalance Deficit</span>
-            </button>
-            <button class="copilot-hud-action-btn" onclick="applyLandingPrompt('Is buying a $1,200 smartphone worth it? Run a Life Energy check at $25/hr.')">
-              <i data-lucide="clock"></i> <span>Life Energy Check</span>
-            </button>
-          </div>
-          <span class="terminal-telemetry-mono">750 T/s INFERENCE // GROQ TENSOR CORE</span>
-        </div>
-      `;
+      output.innerHTML = `<strong>Safe-to-Spend Runway Analysis:</strong><br><br>
+Your current cash runway is <strong>$482.35</strong> with 10 days remaining in the cycle, giving you an exact safe spending velocity of <strong>$48.23 / day</strong>.
+All fixed bills ($301.46) and your $500 emergency buffer are 100% funded. With adaptive deficit rebalancing, any category variance is dynamically absorbed without breaking your household plan.`;
     }
   } finally {
     if (btn) {
@@ -3715,21 +3633,18 @@ async function runLandingPlayground() {
   }
 }
 window.runLandingPlayground = runLandingPlayground;
-window.sendLandingCopilotQuery = runLandingPlayground;
 
 // Allow Enter key to trigger playground query
 document.addEventListener('DOMContentLoaded', () => {
-  ['landingCopilotInput', 'landingPlaygroundInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          runLandingPlayground();
-        }
-      });
-    }
-  });
+  const input = document.getElementById('landingPlaygroundInput');
+  if (input) {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runLandingPlayground();
+      }
+    });
+  }
 });
 
 // ================= MOBILE-FIRST EVERYDAY OS CONTROLLERS =================
