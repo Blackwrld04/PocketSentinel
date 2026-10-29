@@ -16,12 +16,12 @@
   
   <link rel="stylesheet" href="/styles.css?v=2.7">
 </head>
-<body class="saas-theme in-app-view">
+<body class="saas-theme in-landing-view">
 
   <!-- ================= TOP GLOBAL NAVIGATION ================= -->
   <header class="site-header" id="siteHeader">
     <!-- Marketing Topbar (Visible in landing mode) -->
-    <div class="header-container marketing-header-bar" id="marketingHeaderBar" style="display: none;">
+    <div class="header-container marketing-header-bar" id="marketingHeaderBar">
       <div class="header-left">
         <a href="#landing" class="brand-logo" id="brandLogo" onclick="switchView('landing')">
           <span class="logo-text">PocketSentinel</span>
@@ -47,9 +47,9 @@
 
 
     <!-- App Topbar (Default active view) -->
-    <div class="header-container app-header-bar" id="appHeaderBar" style="display: flex; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 20px !important; box-sizing: border-box !important; justify-content: space-between !important; align-items: center !important;">
+    <div class="header-container app-header-bar" id="appHeaderBar" style="display: none; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 20px !important; box-sizing: border-box !important; justify-content: space-between !important; align-items: center !important;">
       <div class="header-left">
-        <a href="#app" class="brand-logo" onclick="filterAppView('all')">
+        <a href="javascript:void(0)" class="brand-logo" onclick="filterAppView('all')">
           <span class="logo-text">PocketSentinel</span>
         </a>
       </div>
@@ -66,6 +66,10 @@
       </div>
 
       <div class="header-right">
+        <button class="btn-landing-back" onclick="switchView('landing')" title="Back to Landing Page">
+          <i data-lucide="arrow-left"></i>
+          <span>Landing Page</span>
+        </button>
 
         <div class="header-user-profile" onclick="filterAppView('settings')" title="User Profile & Wage Settings">
           <div class="header-user-avatar" id="headerUserAvatar">AR</div>
@@ -81,7 +85,7 @@
 
   <!-- ================= VIEW 2: CORE SENTINEL DASHBOARD APP (LEDGR AESTHETIC) ================= -->
     <!-- ================= VIEW 1: MARKETING SAAS LANDING PAGE ================= -->
-  <main class="view-panel" id="viewLanding" style="display: none;">
+  <main class="view-panel active" id="viewLanding" style="display: block;">
 
     <!-- ================= [01] HERO SECTION (MATCHING TURN 2 IMAGE) ================= -->
     <section class="saas-hero-section" id="heroSection">
@@ -352,7 +356,7 @@
             <p class="dark-subhead">
               Every coffee. Every grocery run. Every subscription renewal. Live in one clear view, not a confusing bank statement at the end of the month.
             </p>
-            <button class="btn-dark-white" onclick="switchView('app'); switchTab('subscriptions');">
+            <button class="btn-dark-white" onclick="handleLaunchAppClick();">
               <span>EXPLORE LEDGER</span>
               <span class="icon-circle">⊙</span>
             </button>
@@ -985,7 +989,7 @@
               <li><a href="#automationSection" onclick="scrollToLandingSection('automationSection', event)">Automation Pipeline</a></li>
               <li><a href="#ecosystemSection" onclick="scrollToLandingSection('ecosystemSection', event)">Security &amp; Ecosystem</a></li>
               <li><a href="#copilotLabSection" onclick="scrollToLandingSection('copilotLabSection', event)">AI Copilot Lab</a></li>
-              <li><a href="#app" onclick="switchView('app')">Interactive Dashboard</a></li>
+              <li><a href="javascript:void(0)" onclick="handleLaunchAppClick()">Interactive Dashboard</a></li>
             </ul>
           </div>
 
@@ -1016,7 +1020,7 @@
             </p>
             <div class="footer-subscribe-box">
               <input type="email" class="input-subscribe" placeholder="YOUR EMAIL ADDRESS" id="footerSubscribeEmail">
-              <button class="btn-subscribe" onclick="switchView('app')">SUBSCRIBE</button>
+              <button class="btn-subscribe" onclick="handleLaunchAppClick()">SUBSCRIBE</button>
             </div>
           </div>
 
@@ -1033,7 +1037,7 @@
 
   </main>
 
-  <main class="view-panel active" id="viewApp">
+  <main class="view-panel" id="viewApp" style="display: none;">
     <div class="app-shell-layout">
       
       <!-- Left Sidebar -->

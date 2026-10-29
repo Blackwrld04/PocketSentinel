@@ -15,7 +15,7 @@
 
 // Global State
 const state = {
-  currentView: 'app',
+  currentView: 'landing',
   activeFilter: 'all',
   activeMobileTab: 'home',
   memories: [],
@@ -204,9 +204,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.lucide.createIcons();
   }
 
-  // Handle URL hash routing immediately so the user lands on the requested subview
-  handleHashNavigation();
-  window.addEventListener('hashchange', handleHashNavigation);
+  // Handle URL hash routing with initialLoad flag to always begin at landing on reload
+  handleHashNavigation(true);
+  window.addEventListener('hashchange', () => handleHashNavigation(false));
 
   // Initialize WebCrypto Vault with default session key
   await initWebCryptoVault();
@@ -257,6 +257,12 @@ function switchView(viewId) {
   const appHeader = document.getElementById('appHeaderBar');
 
   if (viewId === 'landing') {
+    if (window.history && window.history.replaceState && window.location.hash) {
+      const h = window.location.hash.replace('#', '');
+      if (['app', 'wallets', 'plan', 'safespend', 'envelopes', 'receipts', 'settings', 'subscriptions', 'alerts', 'trials', 'disputes', 'transactions', 'all'].includes(h)) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
     document.body.classList.remove('in-app-view');
     document.body.classList.add('in-landing-view');
     if (landingView) {
@@ -546,19 +552,26 @@ function demoRebalanceGroceries() {
 }
 window.demoRebalanceGroceries = demoRebalanceGroceries;
 
-function handleHashNavigation() {
+function handleHashNavigation(isInitialLoad = false) {
   const hash = window.location.hash.replace('#', '');
   const isLandingTarget = !hash || 
     ['landing', 'heroSection', 'realitySection', 'visibilitySection', 'automationSection', 'ecosystemSection', 'copilotLabSection', 'demoSection', 'footerSection', 'features', 'copilot-lab', 'sovereignty', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash) ||
     Boolean(document.getElementById(hash) && document.getElementById(hash).closest('#viewLanding'));
 
-  if (isLandingTarget) {
+  // On page refresh or initial load, always begin on landing page as requested
+  if (isInitialLoad || isLandingTarget || state.currentView === 'landing') {
+    if (['app', 'wallets', 'plan', 'safespend', 'envelopes', 'receipts', 'settings', 'subscriptions', 'alerts', 'trials', 'disputes', 'transactions', 'all'].includes(hash)) {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
     switchView('landing');
-    if (hash && hash !== 'landing') {
+    if (hash && hash !== 'landing' && isLandingTarget) {
       scrollToLandingSection(hash);
     }
     return;
   }
+
   switchView('app');
   if (['wallets', 'plan', 'safespend', 'envelopes', 'receipts', 'settings', 'subscriptions', 'alerts', 'trials', 'disputes', 'transactions'].includes(hash)) {
     if (typeof filterAppView === 'function') {

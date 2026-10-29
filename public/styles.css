@@ -15483,3 +15483,38 @@ body.dark-theme .provision-status-text {
   box-shadow: 4px 4px 0px #141413;
 }
 
+.btn-landing-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  border: 1.5px solid #141413;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #FFFFFF;
+  color: #141413;
+  box-shadow: 2px 2px 0px #141413;
+  transition: all 0.15s ease;
+  margin-right: 8px;
+}
+
+.btn-landing-back:hover {
+  background: #F3F4F6;
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px #141413;
+}
+
+body.dark-theme .btn-landing-back {
+  background: #181d24;
+  color: #F3F4F6;
+  border-color: #374151;
+  box-shadow: 2px 2px 0px #0b0d11;
+}
+
+body.dark-theme .btn-landing-back:hover {
+  background: #232c3b;
+}
+
