@@ -929,20 +929,25 @@ async function reseedMemories() {
 // ================= ACTIVE SUBSCRIPTIONS & SPEND CALENDAR =================
 async function loadSubscriptions() {
   try {
-    const res = await fetch('/api/subscriptions');
-    const data = await res.json();
-    state.subscriptions = data.activeSubscriptions || [];
-    state.trials = data.trials || [];
-
-    // Update KPI Run Rate
-    const kpiRate = document.getElementById('kpiMonthlyRunRate');
-    if (kpiRate && data.totalMonthlyRunRate) {
-      kpiRate.textContent = `$${data.totalMonthlyRunRate}`;
+    const saved = localStorage.getItem('recall_user_subscriptions');
+    if (saved) {
+      try {
+        state.subscriptions = JSON.parse(saved);
+      } catch (e) {
+        state.subscriptions = [];
+      }
+    } else {
+      const res = await fetch('/api/subscriptions');
+      const data = await res.json();
+      state.subscriptions = data.activeSubscriptions || [];
+      state.trials = data.trials || [];
     }
 
-    const kpiPreserved = document.getElementById('kpiPreservedLeakage');
-    if (kpiPreserved && data.totalDrainPreventedYearly) {
-      kpiPreserved.textContent = `$${data.totalDrainPreventedYearly}`;
+    if (typeof recalculateAllFinancialMetrics === 'function') {
+      recalculateAllFinancialMetrics();
+    }
+    if (typeof renderSpendCalendar === 'function') {
+      renderSpendCalendar();
     }
   } catch (err) {
     console.error('Failed to load subscriptions:', err);
@@ -1029,18 +1034,32 @@ function getCalendarEventsForMonth(year, month) {
     { id: 'MEM_13', merchant: 'The New York Times', amount: 4.00, dayOfMonth: 28, status: 'NORMAL', category: 'News & Media' }
   ];
 
-  const activeSubs = (state.subscriptions && state.subscriptions.length > 0)
-    ? state.subscriptions
-    : baseCatalog;
+  let activeSubs = [];
+  const savedSubs = localStorage.getItem('recall_user_subscriptions');
+  const user = state.userProfile?.signedIn || localStorage.getItem('recall_user_signed_in') === 'true';
+
+  if (savedSubs) {
+    try {
+      activeSubs = JSON.parse(savedSubs);
+    } catch (e) {
+      activeSubs = state.subscriptions || [];
+    }
+  } else if (state.subscriptions && (user || state.subscriptions.length > 0)) {
+    activeSubs = state.subscriptions;
+  } else if (user) {
+    activeSubs = [];
+  } else {
+    activeSubs = baseCatalog;
+  }
 
   activeSubs.forEach(sub => {
-    let day = sub.dayOfMonth || 15;
+    let day = sub.dayOfMonth || sub.renewalDay || sub.day || 15;
     if (day > daysInMonth) day = daysInMonth;
 
     let status = sub.status || 'NORMAL';
     if (sub.hasHike || (sub.baselineAmount && sub.amount > sub.baselineAmount && !sub.overrideApproved)) {
       status = 'PRICE_CREEP';
-    } else if (sub.isTrial || (sub.merchant && sub.merchant.toLowerCase().includes('adobe')) || (sub.merchant && sub.merchant.toLowerCase().includes('trial'))) {
+    } else if (sub.isTrial || (sub.merchant && sub.merchant.toLowerCase().includes('trial'))) {
       status = 'TRIAL_URGENT';
     } else if (sub.overrideApproved || sub.status === 'SUPPRESSED') {
       status = 'SUPPRESSED';
@@ -1048,8 +1067,8 @@ function getCalendarEventsForMonth(year, month) {
 
     if (!eventsByDay[day]) eventsByDay[day] = [];
     eventsByDay[day].push({
-      merchant: sub.merchant || 'Subscription',
-      amount: Number(sub.amount || 0),
+      merchant: sub.merchant || sub.name || 'Subscription',
+      amount: Number(sub.amount !== undefined ? sub.amount : (sub.cost !== undefined ? sub.cost : 0)),
       status: status,
       tag: sub.tag || (status === 'PRICE_CREEP' ? '+$2.50 Hike' : status === 'TRIAL_URGENT' ? 'Trial Alert' : status === 'SUPPRESSED' ? 'Overridden' : ''),
       id: sub.id || sub.walrusMemoryRef || 'MEM_01'
@@ -2269,20 +2288,89 @@ const masterSubscriptionsList = [
 let activeSubCategory = 'all';
 let activeSubSearch = '';
 
+function getActiveSubscriptionsList() {
+  const saved = localStorage.getItem('recall_user_subscriptions');
+  const user = state.userProfile?.signedIn || localStorage.getItem('recall_user_signed_in') === 'true';
+
+  let list = null;
+  if (saved) {
+    try {
+      list = JSON.parse(saved);
+    } catch (e) {
+      list = null;
+    }
+  } else if (state.subscriptions && (user || state.subscriptions.length > 0)) {
+    list = state.subscriptions;
+  }
+
+  if (list && Array.isArray(list)) {
+    return list.map((s, idx) => {
+      const amt = Number(s.cost !== undefined ? s.cost : (s.amount !== undefined ? s.amount : 0));
+      const base = Number(s.baseline !== undefined ? s.baseline : amt);
+      const isTrial = Boolean(s.isTrial || s.status === 'TRIAL' || s.status === 'TRIAL_URGENT');
+      const isCreep = Boolean(s.hasHike || s.status === 'CREEP_FLAG' || s.status === 'PRICE_CREEP' || (amt > base && !s.overrideApproved));
+      const isOverride = Boolean(s.overrideApproved || s.status === 'OVERRIDE' || s.status === 'SUPPRESSED');
+
+      let statusBadge = s.statusBadge;
+      if (!statusBadge) {
+        if (isTrial) {
+          statusBadge = '<span class="status-badge alert" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A;"><i data-lucide="clock"></i> 48h Trial Alert</span>';
+        } else if (isCreep) {
+          statusBadge = '<span class="status-badge alert"><i data-lucide="trending-up"></i> Price Hike Flagged</span>';
+        } else if (isOverride) {
+          statusBadge = '<span class="status-badge suppressed"><i data-lucide="shield-check"></i> Approved Limit</span>';
+        } else {
+          statusBadge = '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Verified Active</span>';
+        }
+      }
+
+      return {
+        id: s.id || `sub_${idx + 1}`,
+        merchant: s.merchant || s.name || 'Subscription',
+        plan: s.plan || s.name || 'Standard Tier',
+        logo: s.logo || '/assets/logos/generic.svg',
+        category: (s.category || 'tools').toLowerCase(),
+        categoryLabel: s.categoryLabel || s.category || 'Utility',
+        cost: amt,
+        baseline: base,
+        delta: Number(s.delta || (amt - base)),
+        renewalDay: Number(s.renewalDay || s.dayOfMonth || s.day || 15),
+        renewalText: s.renewalText || `Day ${s.renewalDay || s.dayOfMonth || s.day || 15} of month`,
+        memory: s.memory || `MEM_${String(idx + 1).padStart(2, '0')}`,
+        status: isTrial ? 'TRIAL' : isCreep ? 'CREEP_FLAG' : isOverride ? 'OVERRIDE' : 'VERIFIED',
+        statusBadge: statusBadge
+      };
+    });
+  }
+
+  return masterSubscriptionsList;
+}
+window.getActiveSubscriptionsList = getActiveSubscriptionsList;
+
 function renderSubscriptionsLedger() {
   const container = document.getElementById('subscriptionsContainer');
   if (!container) return;
 
-  const filtered = masterSubscriptionsList.filter(item => {
+  const sourceList = getActiveSubscriptionsList();
+  const filtered = sourceList.filter(item => {
     const matchesCat = activeSubCategory === 'all' || item.category === activeSubCategory;
     const matchesQuery = !activeSubSearch || 
       item.merchant.toLowerCase().includes(activeSubSearch.toLowerCase()) || 
-      item.memory.toLowerCase().includes(activeSubSearch.toLowerCase());
+      (item.memory && item.memory.toLowerCase().includes(activeSubSearch.toLowerCase()));
     return matchesCat && matchesQuery;
   });
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding: 48px; color: var(--text-muted);">No subscriptions matched your search or category filter.</div>`;
+    container.innerHTML = `
+      <div style="text-align:center; padding: 48px; color: var(--text-muted);">
+        <div style="font-weight:600; margin-bottom:6px;">No subscriptions configured</div>
+        <p style="font-size:13px; max-width:380px; margin:0 auto 16px auto;">You currently have no recurring services active. Click below to configure your subscriptions and spend calendar.</p>
+        <button class="btn-primary-compact" onclick="openConfigureSubscriptionsModal()" style="display:inline-flex; align-items:center; gap:6px;">
+          <i data-lucide="sliders-horizontal" style="width:14px; height:14px;"></i> Configure Subscriptions
+        </button>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
@@ -4849,6 +4937,9 @@ function renderWalletsUI() {
   const totalEl = document.getElementById('totalNetLiquidityDisplay');
   if (totalEl) totalEl.textContent = `${cur}${totalLiquidity.toFixed(2)}`;
 
+  const headerNet = document.getElementById('headerNetLiquidity');
+  if (headerNet) headerNet.textContent = `${cur}${totalLiquidity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
   const checking = state.wallets.find(w => w.id === 'checking');
   const babylon = state.wallets.find(w => w.id === 'babylon');
   const cash = state.wallets.find(w => w.id === 'cash');
@@ -4870,41 +4961,66 @@ function renderPlanSubscriptionsLedger() {
   const container = document.getElementById('planSubsLedgerList');
   if (!container) return;
 
-  const subs = state.subscriptions.length > 0 ? state.subscriptions : [
-    { merchant: 'Netflix Standard', amount: 17.99, baselineAmount: 15.49, dayOfMonth: 20, walrusMemoryRef: 'MEM_01', hasHike: true },
-    { merchant: 'Spotify Premium', amount: 10.99, baselineAmount: 10.99, dayOfMonth: 15, walrusMemoryRef: 'MEM_02' },
-    { merchant: 'OpenAI (ChatGPT Plus)', amount: 20.00, baselineAmount: 20.00, dayOfMonth: 14, walrusMemoryRef: 'MEM_03' },
-    { merchant: 'Amazon Web Services (AWS)', amount: 142.50, baselineAmount: 64.00, dayOfMonth: 19, walrusMemoryRef: 'MEM_04', overrideApproved: true },
-    { merchant: 'Equinox Fitness Club', amount: 0.00, baselineAmount: 240.00, dayOfMonth: 1, walrusMemoryRef: 'MEM_05', frozen: true },
-    { merchant: 'Adobe Creative Cloud', amount: 54.99, baselineAmount: 0.00, dayOfMonth: 23, walrusMemoryRef: 'MEM_06', isTrial: true },
-    { merchant: 'GitHub Copilot', amount: 10.00, baselineAmount: 10.00, dayOfMonth: 28, walrusMemoryRef: 'MEM_09' },
-    { merchant: 'DoorDash DashPass', amount: 9.99, baselineAmount: 9.99, dayOfMonth: 18, walrusMemoryRef: 'MEM_10' },
-    { merchant: 'Apple iCloud+ 2TB', amount: 9.99, baselineAmount: 9.99, dayOfMonth: 5, walrusMemoryRef: 'MEM_12' }
-  ];
+  const saved = localStorage.getItem('recall_user_subscriptions');
+  const user = state.userProfile?.signedIn || localStorage.getItem('recall_user_signed_in') === 'true';
+
+  let subs = [];
+  if (saved) {
+    try {
+      subs = JSON.parse(saved);
+    } catch (e) {
+      subs = state.subscriptions || [];
+    }
+  } else if (state.subscriptions && (user || state.subscriptions.length > 0)) {
+    subs = state.subscriptions;
+  } else if (user) {
+    subs = [];
+  } else {
+    subs = [
+      { merchant: 'Netflix Standard', amount: 17.99, baselineAmount: 15.49, dayOfMonth: 20, walrusMemoryRef: 'MEM_01', hasHike: true },
+      { merchant: 'Spotify Premium', amount: 10.99, baselineAmount: 10.99, dayOfMonth: 15, walrusMemoryRef: 'MEM_02' },
+      { merchant: 'OpenAI (ChatGPT Plus)', amount: 20.00, baselineAmount: 20.00, dayOfMonth: 14, walrusMemoryRef: 'MEM_03' },
+      { merchant: 'Amazon Web Services (AWS)', amount: 142.50, baselineAmount: 64.00, dayOfMonth: 19, walrusMemoryRef: 'MEM_04', overrideApproved: true },
+      { merchant: 'Equinox Fitness Club', amount: 0.00, baselineAmount: 240.00, dayOfMonth: 1, walrusMemoryRef: 'MEM_05', frozen: true },
+      { merchant: 'Adobe Creative Cloud', amount: 54.99, baselineAmount: 0.00, dayOfMonth: 23, walrusMemoryRef: 'MEM_06', isTrial: true },
+      { merchant: 'GitHub Copilot', amount: 10.00, baselineAmount: 10.00, dayOfMonth: 28, walrusMemoryRef: 'MEM_09' },
+      { merchant: 'DoorDash DashPass', amount: 9.99, baselineAmount: 9.99, dayOfMonth: 18, walrusMemoryRef: 'MEM_10' },
+      { merchant: 'Apple iCloud+ 2TB', amount: 9.99, baselineAmount: 9.99, dayOfMonth: 5, walrusMemoryRef: 'MEM_12' }
+    ];
+  }
+
+  if (subs.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding: 24px; color: var(--text-muted); font-size:13px;">
+        No recurring subscriptions configured. Use "Configure Subscriptions" to set up your fixed debits.
+      </div>
+    `;
+    return;
+  }
 
   container.innerHTML = subs.map(s => {
     const isHike = s.hasHike || (s.baselineAmount && s.amount > s.baselineAmount && !s.overrideApproved);
-    const isTrial = s.isTrial || (s.merchant && s.merchant.toLowerCase().includes('adobe'));
+    const isTrial = s.isTrial || (s.merchant && s.merchant.toLowerCase().includes('adobe')) || (s.merchant && s.merchant.toLowerCase().includes('trial'));
 
     return `
       <div class="sub-ledger-item ${isHike ? 'hike' : ''} ${isTrial ? 'trial' : ''}">
         <div class="sub-item-left">
-          <div class="merchant-avatar">${s.merchant.charAt(0)}</div>
+          <div class="merchant-avatar">${(s.merchant || 'S').charAt(0)}</div>
           <div>
-            <strong>${s.merchant}</strong>
+            <strong>${s.merchant || 'Subscription'}</strong>
             <div class="sub-item-meta">
-              <span>Renews ${s.dayOfMonth || 15}th</span>
+              <span>Renews ${s.dayOfMonth || s.renewalDay || 15}th</span>
               ${isHike && s.baselineAmount !== undefined ? `<span>· Baseline $${s.baselineAmount.toFixed(2)}</span>` : ''}
             </div>
           </div>
         </div>
         <div class="sub-item-right">
           <div class="sub-item-amt">
-            <span class="amt-val">$${(s.amount || 0).toFixed(2)} / mo</span>
+            <span class="amt-val">$${Number(s.amount !== undefined ? s.amount : (s.cost !== undefined ? s.cost : 0)).toFixed(2)} / mo</span>
             ${isHike ? '<span class="tag-hike">+$2.50 Hike</span>' : ''}
             ${isTrial ? '<span class="tag-trial">48h Alert</span>' : ''}
           </div>
-          ${isHike ? `<button class="btn-mini-dispute" onclick="openDisputeModalForRecord('${s.merchant}', ${s.amount}, ${s.baselineAmount}, 2.50, '${s.walrusMemoryRef}')">Dispute</button>` : ''}
+          ${isHike ? `<button class="btn-mini-dispute" onclick="openDisputeModalForRecord('${s.merchant}', ${s.amount}, ${s.baselineAmount}, 2.50, '${s.walrusMemoryRef || 'MEM_01'}')">Dispute</button>` : ''}
           ${isTrial ? `<button class="btn-mini-cancel" onclick="openDisputeModalForTrial()">Cancel</button>` : ''}
         </div>
       </div>
@@ -5387,6 +5503,19 @@ function switchLegalModalTab(tabName) {
 window.switchLegalModalTab = switchLegalModalTab;
 
 // ================= AUTHENTICATION & MULTI-STEP ONBOARDING CONTROLLER =================
+// ================= AUTHENTICATION, ONBOARDING & SUBSCRIPTIONS CONFIG =================
+const defaultSubscriptionsCatalog = [
+  { id: 'sub_netflix', merchant: 'Netflix Standard', amount: 15.49, dayOfMonth: 20, category: 'Streaming', defaultChecked: true },
+  { id: 'sub_spotify', merchant: 'Spotify Premium', amount: 10.99, dayOfMonth: 15, category: 'Streaming', defaultChecked: true },
+  { id: 'sub_chatgpt', merchant: 'OpenAI ChatGPT Plus', amount: 20.00, dayOfMonth: 14, category: 'AI & Cloud', defaultChecked: true },
+  { id: 'sub_icloud', merchant: 'Apple iCloud+ 2TB', amount: 9.99, dayOfMonth: 5, category: 'General', defaultChecked: false },
+  { id: 'sub_prime', merchant: 'Amazon Prime', amount: 14.99, dayOfMonth: 18, category: 'General', defaultChecked: false },
+  { id: 'sub_youtube', merchant: 'YouTube Premium', amount: 13.99, dayOfMonth: 22, category: 'Streaming', defaultChecked: false },
+  { id: 'sub_copilot', merchant: 'GitHub Copilot', amount: 10.00, dayOfMonth: 28, category: 'Developer Productivity', defaultChecked: false },
+  { id: 'sub_gym', merchant: 'Equinox / Fitness Gym', amount: 45.00, dayOfMonth: 1, category: 'Fitness & Health', defaultChecked: false },
+  { id: 'sub_adobe', merchant: 'Adobe Creative Cloud', amount: 54.99, dayOfMonth: 18, category: 'Software', isTrial: true, defaultChecked: false }
+];
+
 const onboardDraft = {
   step: 1,
   email: '',
@@ -5394,8 +5523,11 @@ const onboardDraft = {
   currency: '$',
   hourlyWage: 25.00,
   inflow: 4850.00,
+  checking: 2430.00,
+  reserve: 500.00,
   cycleDays: 10,
-  focus: 'subscriptions'
+  focus: 'subscriptions',
+  subscriptions: []
 };
 
 function handleLaunchAppClick() {
@@ -5413,13 +5545,14 @@ function openOnboardingModal(step = 1) {
   if (!modal) return;
   modal.style.display = 'flex';
 
-  // Preload draft with any existing values
   const savedEmail = localStorage.getItem('recall_user_email') || 'alex.rivera@gmail.com';
   const savedName = localStorage.getItem('recall_user_name') || state.userProfile?.name || 'Alex Rivera';
   const savedCurrency = localStorage.getItem('recall_currency') || state.userProfile?.currency || '$';
   const savedInflow = parseFloat(localStorage.getItem('recall_inflow')) || state.userProfile?.inflow || 4850.00;
   const savedWage = parseFloat(localStorage.getItem('recall_hourly_wage')) || state.userProfile?.hourlyWage || 25.00;
-  const savedDays = parseInt(localStorage.getItem('recall_cycle_days')) || state.userProfile?.cycleDays || 10;
+  const savedDays = parseInt(localStorage.getItem('recall_cycle_days'), 10) || state.userProfile?.cycleDays || 10;
+  const savedChecking = parseFloat(localStorage.getItem('recall_user_checking')) || 2430.00;
+  const savedReserve = parseFloat(localStorage.getItem('recall_user_reserve')) || 500.00;
 
   onboardDraft.email = savedEmail;
   onboardDraft.name = savedName;
@@ -5427,12 +5560,27 @@ function openOnboardingModal(step = 1) {
   onboardDraft.inflow = savedInflow;
   onboardDraft.hourlyWage = savedWage;
   onboardDraft.cycleDays = savedDays;
+  onboardDraft.checking = savedChecking;
+  onboardDraft.reserve = savedReserve;
+
+  if (!onboardDraft.subscriptions || onboardDraft.subscriptions.length === 0) {
+    onboardDraft.subscriptions = defaultSubscriptionsCatalog.map(s => ({
+      ...s,
+      active: Boolean(s.defaultChecked)
+    }));
+  }
 
   const emailInput = document.getElementById('authEmailInput');
   if (emailInput && !emailInput.value) emailInput.value = savedEmail;
 
   const nameInput = document.getElementById('onboardNameInput');
   if (nameInput) nameInput.value = savedName;
+
+  const checkingInput = document.getElementById('onboardCheckingInput');
+  if (checkingInput) checkingInput.value = savedChecking.toFixed(2);
+
+  const reserveInput = document.getElementById('onboardReserveInput');
+  if (reserveInput) reserveInput.value = savedReserve.toFixed(2);
 
   selectOnboardCurrency(savedCurrency);
   selectOnboardCycle(savedDays);
@@ -5499,7 +5647,6 @@ function submitAuthStep1() {
   }
   onboardDraft.email = email;
 
-  // Infer a name suggestion if not already custom
   const username = email.split('@')[0];
   const formattedName = username
     .split(/[\._\-]/)
@@ -5519,8 +5666,20 @@ function submitAuthStep1() {
 window.submitAuthStep1 = submitAuthStep1;
 
 function goToOnboardStep(step) {
+  // Automatically harvest values from inputs into onboardDraft
+  const nameInput = document.getElementById('onboardNameInput');
+  if (nameInput && nameInput.value.trim()) onboardDraft.name = nameInput.value.trim();
+  const wageInput = document.getElementById('onboardWageInput');
+  if (wageInput && !isNaN(parseFloat(wageInput.value))) onboardDraft.hourlyWage = parseFloat(wageInput.value);
+  const inflowInput = document.getElementById('onboardInflowInput');
+  if (inflowInput && !isNaN(parseFloat(inflowInput.value))) onboardDraft.inflow = parseFloat(inflowInput.value);
+  const checkingInput = document.getElementById('onboardCheckingInput');
+  if (checkingInput && !isNaN(parseFloat(checkingInput.value))) onboardDraft.checking = parseFloat(checkingInput.value);
+  const reserveInput = document.getElementById('onboardReserveInput');
+  if (reserveInput && !isNaN(parseFloat(reserveInput.value))) onboardDraft.reserve = parseFloat(reserveInput.value);
+
   onboardDraft.step = step;
-  const steps = [1, 2, 3, 4];
+  const steps = [1, 2, 3, 4, 5];
   steps.forEach(s => {
     const el = document.getElementById(`onboardStep${s}`);
     if (el) {
@@ -5536,18 +5695,23 @@ function goToOnboardStep(step) {
 
   const fill = document.getElementById('onboardProgressFill');
   if (fill) {
-    fill.style.width = `${step * 25}%`;
+    fill.style.width = `${step * 20}%`;
   }
 
   const badge = document.getElementById('onboardStepBadge');
   if (badge) {
     const titles = {
-      1: 'Step 1 of 4 · Sign In',
-      2: 'Step 2 of 4 · Identity',
-      3: 'Step 3 of 4 · Baseline',
-      4: 'Step 4 of 4 · Provisioning'
+      1: 'Step 1 of 5 · Sign In',
+      2: 'Step 2 of 5 · Identity',
+      3: 'Step 3 of 5 · Baseline',
+      4: 'Step 4 of 5 · Subscriptions',
+      5: 'Step 5 of 5 · Provisioning'
     };
-    badge.textContent = titles[step] || `Step ${step} of 4`;
+    badge.textContent = titles[step] || `Step ${step} of 5`;
+  }
+
+  if (step === 4) {
+    renderOnboardSubsList();
   }
 
   if (window.lucide) {
@@ -5572,6 +5736,10 @@ function selectOnboardCurrency(symbol) {
   if (wagePrefix) wagePrefix.textContent = symbol;
   const inflowPrefix = document.getElementById('onboardInflowPrefix');
   if (inflowPrefix) inflowPrefix.textContent = symbol;
+  const checkingPrefix = document.getElementById('onboardCheckingPrefix');
+  if (checkingPrefix) checkingPrefix.textContent = symbol;
+  const reservePrefix = document.getElementById('onboardReservePrefix');
+  if (reservePrefix) reservePrefix.textContent = symbol;
 }
 window.selectOnboardCurrency = selectOnboardCurrency;
 
@@ -5628,10 +5796,170 @@ function submitAuthStep3() {
   const inflow = inflowInput ? parseFloat(inflowInput.value) : 4850.00;
   onboardDraft.inflow = (!isNaN(inflow) && inflow > 0) ? inflow : 4850.00;
 
+  const checkingInput = document.getElementById('onboardCheckingInput');
+  const checking = checkingInput ? parseFloat(checkingInput.value) : 2430.00;
+  onboardDraft.checking = (!isNaN(checking) && checking >= 0) ? checking : 2430.00;
+
+  const reserveInput = document.getElementById('onboardReserveInput');
+  const reserve = reserveInput ? parseFloat(reserveInput.value) : 500.00;
+  onboardDraft.reserve = (!isNaN(reserve) && reserve >= 0) ? reserve : 500.00;
+
   goToOnboardStep(4);
-  startVaultProvisioningAnimation();
 }
 window.submitAuthStep3 = submitAuthStep3;
+
+// ================= ONBOARDING STEP 4: SUBSCRIPTIONS HELPERS =================
+function renderOnboardSubsList() {
+  const container = document.getElementById('onboardSubsList');
+  if (!container) return;
+
+  const cur = onboardDraft.currency || '$';
+
+  container.innerHTML = (onboardDraft.subscriptions || []).map((sub) => {
+    const initials = sub.merchant.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `
+      <div class="onboard-sub-row ${sub.active ? 'active' : ''}" id="onboardSubRow_${sub.id}">
+        <div class="onboard-sub-left">
+          <input type="checkbox" class="onboard-sub-check" ${sub.active ? 'checked' : ''} onchange="onboardToggleSub('${sub.id}')">
+          <div class="onboard-sub-avatar">${initials}</div>
+          <div class="onboard-sub-info">
+            <span class="onboard-sub-name">${sub.merchant}</span>
+            <span class="onboard-sub-cat">${sub.category}</span>
+          </div>
+        </div>
+        <div class="onboard-sub-controls">
+          <span style="font-family: var(--font-mono); font-size: 11px;">${cur}</span>
+          <input type="number" class="onboard-sub-amt-input" value="${Number(sub.amount || 0).toFixed(2)}" step="0.5" onchange="onboardUpdateSubAmount('${sub.id}', this.value)" title="Monthly fee">
+          <span class="onboard-sub-day-label">Day</span>
+          <input type="number" class="onboard-sub-day-input" value="${sub.dayOfMonth || 15}" min="1" max="31" onchange="onboardUpdateSubDay('${sub.id}', this.value)" title="Renewal day of month (1-31)">
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  updateOnboardSubsSummary();
+}
+window.renderOnboardSubsList = renderOnboardSubsList;
+
+function onboardToggleSub(subId) {
+  const sub = (onboardDraft.subscriptions || []).find(s => s.id === subId);
+  if (sub) {
+    sub.active = !sub.active;
+    const row = document.getElementById(`onboardSubRow_${subId}`);
+    if (row) {
+      if (sub.active) row.classList.add('active');
+      else row.classList.remove('active');
+    }
+  }
+  updateOnboardSubsSummary();
+}
+window.onboardToggleSub = onboardToggleSub;
+
+function onboardUpdateSubAmount(subId, val) {
+  const sub = (onboardDraft.subscriptions || []).find(s => s.id === subId);
+  if (sub) {
+    const num = parseFloat(val);
+    sub.amount = (!isNaN(num) && num >= 0) ? num : 0;
+  }
+  updateOnboardSubsSummary();
+}
+window.onboardUpdateSubAmount = onboardUpdateSubAmount;
+
+function onboardUpdateSubDay(subId, val) {
+  const sub = (onboardDraft.subscriptions || []).find(s => s.id === subId);
+  if (sub) {
+    const day = parseInt(val, 10);
+    sub.dayOfMonth = (!isNaN(day) && day >= 1 && day <= 31) ? day : 15;
+  }
+}
+window.onboardUpdateSubDay = onboardUpdateSubDay;
+
+function updateOnboardSubsSummary() {
+  const cur = onboardDraft.currency || '$';
+  const activeSubs = (onboardDraft.subscriptions || []).filter(s => s.active);
+  const totalSum = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+  const textEl = document.getElementById('onboardSubsSummaryText');
+  if (textEl) {
+    textEl.textContent = `${activeSubs.length} subscriptions selected · ${cur}${totalSum.toFixed(2)} / month`;
+  }
+}
+
+function onboardQuickSelectSubs(preset) {
+  const chips = ['chipPresetEssentials', 'chipPresetAll', 'chipPresetNone'];
+  chips.forEach(c => {
+    const el = document.getElementById(c);
+    if (el) el.classList.remove('active');
+  });
+
+  const activeChipMap = {
+    essentials: 'chipPresetEssentials',
+    all: 'chipPresetAll',
+    none: 'chipPresetNone'
+  };
+  const activeEl = document.getElementById(activeChipMap[preset]);
+  if (activeEl) activeEl.classList.add('active');
+
+  (onboardDraft.subscriptions || []).forEach(s => {
+    if (preset === 'essentials') {
+      s.active = ['sub_netflix', 'sub_spotify', 'sub_chatgpt'].includes(s.id);
+    } else if (preset === 'all') {
+      s.active = true;
+    } else if (preset === 'none') {
+      s.active = false;
+    }
+  });
+
+  renderOnboardSubsList();
+}
+window.onboardQuickSelectSubs = onboardQuickSelectSubs;
+
+function toggleOnboardCustomSubForm() {
+  const form = document.getElementById('onboardCustomSubForm');
+  if (form) {
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+}
+window.toggleOnboardCustomSubForm = toggleOnboardCustomSubForm;
+
+function onboardAddCustomSub() {
+  const nameEl = document.getElementById('customSubName');
+  const amtEl = document.getElementById('customSubAmount');
+  const dayEl = document.getElementById('customSubDay');
+
+  const name = nameEl ? nameEl.value.trim() : '';
+  const amt = amtEl ? parseFloat(amtEl.value) : 10.00;
+  const day = dayEl ? parseInt(dayEl.value, 10) : 15;
+
+  if (!name) {
+    showToast('Please enter an app or service name.', 'amber');
+    return;
+  }
+
+  const newSub = {
+    id: `sub_custom_${Date.now()}`,
+    merchant: name,
+    amount: (!isNaN(amt) && amt > 0) ? amt : 10.00,
+    dayOfMonth: (!isNaN(day) && day >= 1 && day <= 31) ? day : 15,
+    category: 'General',
+    active: true
+  };
+
+  onboardDraft.subscriptions.push(newSub);
+  if (nameEl) nameEl.value = '';
+  if (amtEl) amtEl.value = '';
+  if (dayEl) dayEl.value = '';
+
+  toggleOnboardCustomSubForm();
+  renderOnboardSubsList();
+  showToast(`Added ${name} to your subscriptions.`, 'success');
+}
+window.onboardAddCustomSub = onboardAddCustomSub;
+
+function submitAuthStep4() {
+  goToOnboardStep(5);
+  startVaultProvisioningAnimation();
+}
+window.submitAuthStep4 = submitAuthStep4;
 
 function startVaultProvisioningAnimation() {
   const line1 = document.getElementById('termLine1');
@@ -5642,29 +5970,32 @@ function startVaultProvisioningAnimation() {
   const status = document.getElementById('provisionStatusText');
   const btn = document.getElementById('btnLaunchWorkspace');
 
-  if (bar) bar.style.width = '25%';
-  if (status) status.textContent = 'Generating 256-bit AES-GCM vault key (25%)...';
+  const activeCount = (onboardDraft.subscriptions || []).filter(s => s.active).length;
+
+  if (bar) bar.style.width = '20%';
+  if (status) status.textContent = 'Generating 256-bit AES-GCM vault key (20%)...';
 
   setTimeout(() => {
     if (line1) line1.innerHTML = `<span class="term-status success">✓</span> W3C WebCrypto 256-bit AES-GCM Master Key generated.`;
     if (line2) line2.style.display = 'flex';
-    if (bar) bar.style.width = '55%';
-    if (status) status.textContent = `Allocating zero-knowledge container for ${onboardDraft.email} (55%)...`;
-  }, 350);
+    if (bar) bar.style.width = '45%';
+    if (status) status.textContent = `Allocating zero-knowledge container for ${onboardDraft.email} (45%)...`;
+  }, 300);
 
   setTimeout(() => {
     if (line2) line2.innerHTML = `<span class="term-status success">✓</span> Local zero-knowledge encrypted vault allocated.`;
     if (line3) line3.style.display = 'flex';
-    if (bar) bar.style.width = '80%';
-    if (status) status.textContent = 'Syncing baseline verified memories to Walrus Protocol on Sui (80%)...';
-  }, 750);
+    if (line3) line3.innerHTML = `<span class="term-status pending">●</span> Configuring spend calendar with ${activeCount} active subscriptions...`;
+    if (bar) bar.style.width = '70%';
+    if (status) status.textContent = `Configuring spend calendar with ${activeCount} active subscriptions (70%)...`;
+  }, 650);
 
   setTimeout(() => {
-    if (line3) line3.innerHTML = `<span class="term-status success">✓</span> Walrus Protocol memory store synchronized on Sui Mainnet.`;
+    if (line3) line3.innerHTML = `<span class="term-status success">✓</span> Spend calendar synchronized with ${activeCount} subscriptions.`;
     if (line4) line4.style.display = 'flex';
-    if (bar) bar.style.width = '95%';
-    if (status) status.textContent = `Calibrating AI Spending Copilot for ${onboardDraft.name} (95%)...`;
-  }, 1150);
+    if (bar) bar.style.width = '90%';
+    if (status) status.textContent = `Calibrating AI Spending Copilot for ${onboardDraft.name} (90%)...`;
+  }, 1050);
 
   setTimeout(() => {
     if (line4) line4.innerHTML = `<span class="term-status success">✓</span> AI Spending Copilot calibrated and armed.`;
@@ -5672,16 +6003,126 @@ function startVaultProvisioningAnimation() {
     if (status) status.textContent = 'Vault Encrypted & Active (100%) · Ready for Launch!';
     if (btn) btn.style.display = 'flex';
 
-    // Auto-launch after quick moment
     setTimeout(() => {
       finishOnboardingAndLaunch();
-    }, 1200);
-  }, 1550);
+    }, 1100);
+  }, 1450);
 }
 window.startVaultProvisioningAnimation = startVaultProvisioningAnimation;
 
+// Central Reactive Financial Calculator
+function recalculateAllFinancialMetrics() {
+  const cur = state.userProfile?.currency || '$';
+  const inflow = Number(state.userProfile?.inflow || 4850.00);
+  const cycleDays = Number(state.userProfile?.cycleDays || 10);
+  const reserve = Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : 500.00);
+
+  const activeSubs = state.subscriptions || [];
+  const fixedBillsSum = activeSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+  const fixedBillsCount = activeSubs.length;
+
+  const variableSpent = (state.auditResults || []).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+  const safeSpendRemaining = Math.max(0, inflow - fixedBillsSum - reserve - variableSpent);
+  const dailyVelocity = cycleDays > 0 ? (safeSpendRemaining / cycleDays) : safeSpendRemaining;
+
+  const fixedPct = inflow > 0 ? ((fixedBillsSum / inflow) * 100) : 0;
+  const reservePct = inflow > 0 ? ((reserve / inflow) * 100) : 0;
+  const variablePct = inflow > 0 ? ((variableSpent / inflow) * 100) : 0;
+  const safePct = Math.max(0, 100 - fixedPct - reservePct - variablePct);
+
+  const totalLiquidity = (state.wallets || []).reduce((sum, w) => sum + Number(w.balance || 0), 0);
+
+  state.userProfile.safeSpend = Number(safeSpendRemaining.toFixed(2));
+  state.userProfile.dailyVelocity = Number(dailyVelocity.toFixed(2));
+
+  // 1. Header elements
+  const elHeaderNet = document.getElementById('headerNetLiquidity');
+  if (elHeaderNet) elHeaderNet.textContent = `${cur}${totalLiquidity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+  const elHeaderSafe = document.getElementById('headerSafeSpend');
+  if (elHeaderSafe) elHeaderSafe.textContent = `${cur}${safeSpendRemaining.toFixed(2)}`;
+
+  // 2. Wallets page
+  const elTotalNet = document.getElementById('totalNetLiquidityDisplay');
+  if (elTotalNet) elTotalNet.textContent = `${cur}${totalLiquidity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+  // 3. Overview Monthly Cash Flow & Runway Distribution
+  const elInflowBadge = document.getElementById('overviewInflowBadgeVal');
+  if (elInflowBadge) elInflowBadge.textContent = `${cur}${inflow.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+  const elFixedVal = document.getElementById('overviewFixedBillsVal');
+  if (elFixedVal) elFixedVal.textContent = `${cur}${fixedBillsSum.toFixed(2)}`;
+
+  const elFixedSub = document.getElementById('overviewFixedBillsSub');
+  if (elFixedSub) elFixedSub.textContent = `${fixedBillsCount} recurring bills`;
+
+  const elFixedPct = document.getElementById('overviewFixedBillsPct');
+  if (elFixedPct) elFixedPct.textContent = `${fixedPct.toFixed(1)}%`;
+
+  const elReserveVal = document.getElementById('overviewReserveVal');
+  if (elReserveVal) elReserveVal.textContent = `${cur}${reserve.toFixed(2)}`;
+
+  const elReservePct = document.getElementById('overviewReservePct');
+  if (elReservePct) elReservePct.textContent = `${reservePct.toFixed(1)}%`;
+
+  const elVarVal = document.getElementById('overviewVariableVal');
+  if (elVarVal) elVarVal.textContent = `${cur}${variableSpent.toFixed(2)}`;
+
+  const elVarPct = document.getElementById('overviewVariablePct');
+  if (elVarPct) elVarPct.textContent = `${variablePct.toFixed(1)}%`;
+
+  const elSafeVal = document.getElementById('overviewSafeSpendVal');
+  if (elSafeVal) elSafeVal.textContent = `${cur}${safeSpendRemaining.toFixed(2)}`;
+
+  const elSafePct = document.getElementById('overviewSafeSpendPct');
+  if (elSafePct) elSafePct.textContent = `${safePct.toFixed(1)}%`;
+
+  const elDaily = document.getElementById('overviewDailyAllowance');
+  if (elDaily) elDaily.textContent = `${cur}${dailyVelocity.toFixed(2)} / day`;
+
+  const elDaysLeft = document.getElementById('overviewCycleDaysLeft');
+  if (elDaysLeft) elDaysLeft.textContent = `${cycleDays}`;
+
+  // Segments
+  const segSubs = document.getElementById('cfSegSubs');
+  if (segSubs) segSubs.style.width = `${fixedPct.toFixed(1)}%`;
+
+  const segSav = document.getElementById('cfSegSavings');
+  if (segSav) segSav.style.width = `${reservePct.toFixed(1)}%`;
+
+  const segSpent = document.getElementById('cfSegSpent');
+  if (segSpent) segSpent.style.width = `${variablePct.toFixed(1)}%`;
+
+  const segSafe = document.getElementById('cfSegSafespend');
+  if (segSafe) segSafe.style.width = `${safePct.toFixed(1)}%`;
+
+  // 4. Subscriptions stats strip
+  const elActiveCount = document.getElementById('subsActiveCountVal');
+  if (elActiveCount) elActiveCount.textContent = `${fixedBillsCount} Services`;
+
+  const elRunRate = document.getElementById('settingsMonthlyRunRate');
+  if (elRunRate) elRunRate.innerHTML = `${cur}${fixedBillsSum.toFixed(2)}<small>/mo</small>`;
+
+  const elTabLabel = document.getElementById('subsActiveTabLabel');
+  if (elTabLabel) elTabLabel.textContent = `Active Subscriptions (${fixedBillsCount})`;
+
+  const elKpiRunRate = document.getElementById('kpiMonthlyRunRate');
+  if (elKpiRunRate) elKpiRunRate.textContent = `${cur}${fixedBillsSum.toFixed(2)}`;
+
+  // 5. Calendar header subtext
+  const elCalMeta = document.getElementById('calMonthMetaText');
+  if (elCalMeta) elCalMeta.textContent = `${fixedBillsCount} scheduled recurring debits (${cur}${fixedBillsSum.toFixed(2)} total)`;
+
+  // 6. Sidebar live badges
+  const sideWallets = document.getElementById('sidebarWalletsBadge');
+  if (sideWallets) sideWallets.textContent = `${cur}${Math.round(totalLiquidity).toLocaleString()}`;
+
+  const sideSubs = document.getElementById('sidebarSubCount');
+  if (sideSubs) sideSubs.textContent = `${fixedBillsCount}`;
+}
+window.recalculateAllFinancialMetrics = recalculateAllFinancialMetrics;
+
 function finishOnboardingAndLaunch() {
-  // Commit to state.userProfile
   state.userProfile.signedIn = true;
   state.userProfile.email = onboardDraft.email || 'alex.rivera@gmail.com';
   state.userProfile.name = onboardDraft.name || 'Alex Rivera';
@@ -5689,13 +6130,43 @@ function finishOnboardingAndLaunch() {
   state.userProfile.inflow = onboardDraft.inflow || 4850.00;
   state.userProfile.hourlyWage = onboardDraft.hourlyWage || 25.00;
   state.userProfile.cycleDays = onboardDraft.cycleDays || 10;
+  state.userProfile.reserve = onboardDraft.reserve !== undefined ? onboardDraft.reserve : 500.00;
 
-  // Safe spend computation
-  const calculatedSafe = Number((state.userProfile.inflow * 0.10).toFixed(2));
-  state.userProfile.safeSpend = calculatedSafe > 0 ? calculatedSafe : 482.35;
-  state.userProfile.dailyVelocity = Number((state.userProfile.safeSpend / state.userProfile.cycleDays).toFixed(2));
+  const userSubs = (onboardDraft.subscriptions || [])
+    .filter(s => s.active)
+    .map((s, idx) => ({
+      id: s.id || `sub_user_${idx + 1}`,
+      merchant: s.merchant,
+      plan: s.merchant,
+      amount: Number(s.amount || 0),
+      cost: Number(s.amount || 0),
+      baseline: Number(s.amount || 0),
+      delta: 0,
+      dayOfMonth: Number(s.dayOfMonth || 15),
+      renewalDay: Number(s.dayOfMonth || 15),
+      renewalText: `Day ${s.dayOfMonth || 15} of month`,
+      category: s.category || 'Subscription',
+      categoryLabel: s.category || 'Subscription',
+      logo: s.logo || '/assets/logos/generic.svg',
+      memory: `MEM_${String(idx + 1).padStart(2, '0')}`,
+      isTrial: Boolean(s.isTrial),
+      status: s.isTrial ? 'TRIAL_URGENT' : 'NORMAL',
+      statusBadge: s.isTrial
+        ? '<span class="status-badge alert" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A;"><i data-lucide="clock"></i> 48h Trial Alert</span>'
+        : '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Verified Active</span>'
+    }));
 
-  // Persist to localStorage
+  state.subscriptions = userSubs;
+  localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
+
+  const checkingBal = onboardDraft.checking !== undefined ? onboardDraft.checking : 2430.00;
+  const reserveBal = onboardDraft.reserve !== undefined ? onboardDraft.reserve : 500.00;
+
+  const checkingWallet = state.wallets.find(w => w.id === 'checking');
+  if (checkingWallet) checkingWallet.balance = checkingBal;
+  const reserveWallet = state.wallets.find(w => w.id === 'babylon');
+  if (reserveWallet) reserveWallet.balance = reserveBal;
+
   localStorage.setItem('recall_user_signed_in', 'true');
   localStorage.setItem('recall_user_email', state.userProfile.email);
   localStorage.setItem('recall_user_name', state.userProfile.name);
@@ -5703,9 +6174,17 @@ function finishOnboardingAndLaunch() {
   localStorage.setItem('recall_inflow', String(state.userProfile.inflow));
   localStorage.setItem('recall_hourly_wage', String(state.userProfile.hourlyWage));
   localStorage.setItem('recall_cycle_days', String(state.userProfile.cycleDays));
+  localStorage.setItem('recall_user_checking', String(checkingBal));
+  localStorage.setItem('recall_user_reserve', String(reserveBal));
+
+  recalculateAllFinancialMetrics();
 
   closeOnboardingModal();
   renderUserProfileUI();
+  renderWalletsUI();
+  renderSpendCalendar();
+  renderSubscriptionsLedger();
+  renderPlanSubscriptionsLedger();
   if (typeof renderCustomEnvelopes === 'function') renderCustomEnvelopes();
   if (typeof syncCategoryDropdowns === 'function') syncCategoryDropdowns();
   if (typeof loadUserProfileToSettings === 'function') loadUserProfileToSettings();
@@ -5722,6 +6201,159 @@ function signOutUser() {
   switchView('landing');
 }
 window.signOutUser = signOutUser;
+
+// ================= IN-APP CONFIGURE SUBSCRIPTIONS MODAL LOGIC =================
+function openConfigureSubscriptionsModal() {
+  const modal = document.getElementById('configureSubscriptionsModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  renderConfigureSubscriptionsModalUI();
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.openConfigureSubscriptionsModal = openConfigureSubscriptionsModal;
+
+function closeConfigureSubscriptionsModal() {
+  const modal = document.getElementById('configureSubscriptionsModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeConfigureSubscriptionsModal = closeConfigureSubscriptionsModal;
+
+function renderConfigureSubscriptionsModalUI() {
+  const listEl = document.getElementById('configSubsItemsList');
+  if (!listEl) return;
+
+  const cur = state.userProfile?.currency || '$';
+  const subs = state.subscriptions || [];
+  const total = subs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+
+  const statText = document.getElementById('configModalStatText');
+  if (statText) {
+    statText.textContent = `${subs.length} Active Subscriptions · ${cur}${total.toFixed(2)} / month`;
+  }
+
+  if (subs.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center; padding: 28px; color: #9CA3AF;">No active subscriptions. Click "+ Add Custom App" above to add your recurring services.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = subs.map((s) => {
+    return `
+      <div class="config-sub-item-row" id="configRow_${s.id}">
+        <div class="config-sub-item-left">
+          <span style="font-size:18px;">📱</span>
+          <div>
+            <div class="config-sub-item-name">${s.merchant}</div>
+            <div class="config-sub-item-meta">${s.category || 'General'}</div>
+          </div>
+        </div>
+        <div class="config-sub-item-controls">
+          <div class="config-cost-wrap">
+            <span>${cur}</span>
+            <input type="number" class="config-input-cost" value="${Number(s.amount || 0).toFixed(2)}" step="0.5" onchange="updateConfigSubAmount('${s.id}', this.value)" title="Monthly fee">
+          </div>
+          <div class="config-day-wrap">
+            <span>Day</span>
+            <input type="number" class="config-input-day" value="${s.dayOfMonth || 15}" min="1" max="31" onchange="updateConfigSubDay('${s.id}', this.value)" title="Renewal day of month (1-31)">
+          </div>
+          <button type="button" class="btn-delete-sub-mini" onclick="deleteConfigSubItem('${s.id}')" title="Remove subscription">
+            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) window.lucide.createIcons();
+}
+window.renderConfigureSubscriptionsModalUI = renderConfigureSubscriptionsModalUI;
+
+function toggleConfigAddForm() {
+  const form = document.getElementById('configAddFormWrap');
+  if (form) {
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+}
+window.toggleConfigAddForm = toggleConfigAddForm;
+
+function addNewSubscriptionFromModal() {
+  const nameEl = document.getElementById('configNewMerchant');
+  const amtEl = document.getElementById('configNewAmount');
+  const dayEl = document.getElementById('configNewDay');
+  const catEl = document.getElementById('configNewCategory');
+
+  const name = nameEl ? nameEl.value.trim() : '';
+  const amt = amtEl ? parseFloat(amtEl.value) : 10.00;
+  const day = dayEl ? parseInt(dayEl.value, 10) : 15;
+  const cat = catEl ? catEl.value : 'General';
+
+  if (!name) {
+    showToast('Please enter a service name.', 'amber');
+    return;
+  }
+
+  const newSub = {
+    id: `sub_cfg_${Date.now()}`,
+    merchant: name,
+    amount: (!isNaN(amt) && amt > 0) ? amt : 10.00,
+    dayOfMonth: (!isNaN(day) && day >= 1 && day <= 31) ? day : 15,
+    category: cat,
+    status: 'NORMAL'
+  };
+
+  state.subscriptions.push(newSub);
+  if (nameEl) nameEl.value = '';
+  if (amtEl) amtEl.value = '';
+  if (dayEl) dayEl.value = '';
+
+  toggleConfigAddForm();
+  renderConfigureSubscriptionsModalUI();
+  showToast(`Added ${name} to subscriptions.`, 'success');
+}
+window.addNewSubscriptionFromModal = addNewSubscriptionFromModal;
+
+function updateConfigSubAmount(subId, val) {
+  const sub = (state.subscriptions || []).find(s => s.id === subId);
+  if (sub) {
+    const num = parseFloat(val);
+    sub.amount = (!isNaN(num) && num >= 0) ? num : 0;
+  }
+  const cur = state.userProfile?.currency || '$';
+  const total = (state.subscriptions || []).reduce((acc, s) => acc + Number(s.amount || 0), 0);
+  const statText = document.getElementById('configModalStatText');
+  if (statText) {
+    statText.textContent = `${state.subscriptions.length} Active Subscriptions · ${cur}${total.toFixed(2)} / month`;
+  }
+}
+window.updateConfigSubAmount = updateConfigSubAmount;
+
+function updateConfigSubDay(subId, val) {
+  const sub = (state.subscriptions || []).find(s => s.id === subId);
+  if (sub) {
+    const day = parseInt(val, 10);
+    sub.dayOfMonth = (!isNaN(day) && day >= 1 && day <= 31) ? day : 15;
+  }
+}
+window.updateConfigSubDay = updateConfigSubDay;
+
+function deleteConfigSubItem(subId) {
+  state.subscriptions = (state.subscriptions || []).filter(s => s.id !== subId);
+  renderConfigureSubscriptionsModalUI();
+}
+window.deleteConfigSubItem = deleteConfigSubItem;
+
+function saveConfigureSubscriptionsAndSync() {
+  localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
+  recalculateAllFinancialMetrics();
+  renderSpendCalendar();
+  renderSubscriptionsLedger();
+  renderPlanSubscriptionsLedger();
+  closeConfigureSubscriptionsModal();
+  showToast('Subscriptions and Spend Calendar updated successfully!', 'success');
+}
+window.saveConfigureSubscriptionsAndSync = saveConfigureSubscriptionsAndSync;
+
 
 
 

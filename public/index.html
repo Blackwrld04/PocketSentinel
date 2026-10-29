@@ -1068,7 +1068,7 @@
           <button class="sidebar-item" id="sideBtnWallets" onclick="filterAppView('wallets')">
             <i data-lucide="wallet"></i>
             <span>3. Wallets &amp; Vaults</span>
-            <span class="sidebar-counter-green">$2,695</span>
+            <span class="sidebar-counter-green" id="sidebarWalletsBadge">$2,695</span>
           </button>
           <button class="sidebar-item" id="sideBtnPlan" onclick="filterAppView('plan')">
             <i data-lucide="layers"></i>
@@ -1162,56 +1162,56 @@
                 <p>October income allocation</p>
               </div>
               <div class="cashflow-inflow-badge">
-                <i data-lucide="wallet"></i> Inflow: <strong>$4,850.00</strong>
+                <i data-lucide="wallet"></i> Inflow: <strong id="overviewInflowBadgeVal">$4,850.00</strong>
               </div>
             </div>
 
             <!-- Single Proportional Progress Bar -->
             <div class="cashflow-bar-container">
-              <div class="cashflow-bar" title="Fixed Bills 6.2%, Babylon Reserve 10.3%, Variable Spent 73.5%, Safe-to-Spend 10.0%">
-                <div class="cf-seg subs" style="width: 6.2%;" title="Fixed Subscriptions: $301.46 (6.2%)"></div>
-                <div class="cf-seg savings" style="width: 10.3%;" title="Babylon Reserve: $500.00 (10.3%)"></div>
-                <div class="cf-seg spent" style="width: 73.5%;" title="Variable Expenses: $3,566.19 (73.5%)"></div>
-                <div class="cf-seg safespend" style="width: 10.0%;" title="Safe-to-Spend Runway: $482.35 (10.0%)"></div>
+              <div class="cashflow-bar" id="overviewCashflowBar" title="Fixed Bills, Reserve, Variable Spent, and Safe-to-Spend">
+                <div class="cf-seg subs" id="cfSegSubs" style="width: 6.2%;" title="Fixed Subscriptions"></div>
+                <div class="cf-seg savings" id="cfSegSavings" style="width: 10.3%;" title="Locked Reserve"></div>
+                <div class="cf-seg spent" id="cfSegSpent" style="width: 73.5%;" title="Variable Expenses"></div>
+                <div class="cf-seg safespend" id="cfSegSafespend" style="width: 10.0%;" title="Safe-to-Spend Runway"></div>
               </div>
             </div>
 
             <!-- 4 Plain-English Breakdown Cards With Icons -->
             <div class="cashflow-metrics-grid">
-              <div class="cf-metric-card" onclick="filterAppView('plan')" style="cursor:pointer;" title="View all 9 recurring subscriptions">
+              <div class="cf-metric-card" onclick="filterAppView('plan')" style="cursor:pointer;" title="View all recurring subscriptions">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="repeat" class="text-coral"></i> Fixed Bills</span>
-                  <span class="cf-metric-pct">6.2%</span>
+                  <span class="cf-metric-pct" id="overviewFixedBillsPct">6.2%</span>
                 </div>
-                <div class="cf-metric-val">$301.46</div>
-                <div class="cf-metric-sub">9 recurring bills</div>
+                <div class="cf-metric-val" id="overviewFixedBillsVal">$301.46</div>
+                <div class="cf-metric-sub" id="overviewFixedBillsSub">9 recurring bills</div>
               </div>
 
               <div class="cf-metric-card" onclick="filterAppView('wallets')" style="cursor:pointer;" title="View emergency buffer vault">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="piggy-bank" class="text-blue"></i> Reserve</span>
-                  <span class="cf-metric-pct">10.3%</span>
+                  <span class="cf-metric-pct" id="overviewReservePct">10.3%</span>
                 </div>
-                <div class="cf-metric-val">$500.00</div>
-                <div class="cf-metric-sub">Locked savings</div>
+                <div class="cf-metric-val" id="overviewReserveVal">$500.00</div>
+                <div class="cf-metric-sub" id="overviewReserveSub">Locked savings</div>
               </div>
 
               <div class="cf-metric-card" title="Statement debits processed this month">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="shopping-bag" class="text-neutral"></i> Variable Spent</span>
-                  <span class="cf-metric-pct">73.5%</span>
+                  <span class="cf-metric-pct" id="overviewVariablePct">73.5%</span>
                 </div>
-                <div class="cf-metric-val">$3,566.19</div>
-                <div class="cf-metric-sub">Living expenses</div>
+                <div class="cf-metric-val" id="overviewVariableVal">$3,566.19</div>
+                <div class="cf-metric-sub" id="overviewVariableSub">Living expenses</div>
               </div>
 
               <div class="cf-metric-card safespend-card" onclick="filterAppView('safespend')" style="cursor:pointer;" title="Click to test a purchase against your safe cash">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="shield-check" class="text-green"></i> Safe-to-Spend</span>
-                  <span class="cf-metric-pct text-green font-bold">10.0%</span>
+                  <span class="cf-metric-pct text-green font-bold" id="overviewSafeSpendPct">10.0%</span>
                 </div>
                 <div class="cf-metric-val text-green" id="overviewSafeSpendVal">$482.35</div>
-                <div class="cf-metric-sub"><strong id="overviewDailyAllowance">$48.23 / day</strong> · 10 days left</div>
+                <div class="cf-metric-sub"><strong id="overviewDailyAllowance">$48.23 / day</strong> · <span id="overviewCycleDaysLeft">10</span> days left</div>
               </div>
             </div>
           </div>
@@ -2435,10 +2435,14 @@
                 <p class="subview-subtitle">Renewal cadence calendar, trial alerts, and memory baselines</p>
               </div>
             </div>
-            <div class="subview-actions-cluster">
-              <button class="btn-amber-card-action" onclick="openNewSubscriptionModal()">
+            <div class="subview-actions-cluster" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-amber-card-action" onclick="openConfigureSubscriptionsModal()" title="Configure Subscriptions & Calendar">
+                <i data-lucide="sliders"></i>
+                <span>Configure Subscriptions &amp; Calendar</span>
+              </button>
+              <button class="btn-ghost-action-lg" onclick="openNewSubscriptionModal()" title="Add Custom Subscription" style="display:inline-flex; align-items:center; gap:6px; padding:7px 12px; font-size:12px; font-weight:700; border:1.5px solid #141413; border-radius:8px; background:#fff; cursor:pointer;">
                 <i data-lucide="plus-circle"></i>
-                <span>+ Add Subscription</span>
+                <span>+ Add</span>
               </button>
             </div>
           </div>
@@ -2447,7 +2451,7 @@
           <div class="subview-stats-strip subscription-metrics-strip">
             <div class="strip-stat-box">
               <span class="strip-label">Active Subscriptions</span>
-              <strong class="strip-val">9 Services</strong>
+              <strong class="strip-val" id="subsActiveCountVal">9 Services</strong>
             </div>
             <div class="strip-stat-box">
               <span class="strip-label">Monthly Fixed Run Rate</span>
@@ -2467,7 +2471,7 @@
           <div class="subtabs-segmented-bar" id="subsSubTabsBar">
             <button class="subtab-segmented-btn active" id="subTabBtnLedger" onclick="switchSubsSubTab('ledger')">
               <i data-lucide="list"></i>
-              <span>Active Subscriptions (9)</span>
+              <span id="subsActiveTabLabel">Active Subscriptions (9)</span>
             </button>
             <button class="subtab-segmented-btn" id="subTabBtnCalendar" onclick="switchSubsSubTab('calendar')">
               <i data-lucide="calendar"></i>
@@ -2537,7 +2541,11 @@
                       <h3 class="settings-card-title">Renewal Calendar</h3>
                       <p class="settings-card-sub" id="calendarSubheadText">Recurring debits across <span id="calHeaderMonthName">October 2026</span></p>
                     </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                      <button class="btn-amber-sm" onclick="openConfigureSubscriptionsModal()" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; font-size:12px; font-weight:700; border:1.5px solid #141413; border-radius:6px; background:#f59e0b; color:#141413; cursor:pointer;" title="Choose apps and configure renewal calendar dates">
+                        <i data-lucide="sliders" style="width:13px; height:13px;"></i>
+                        <span>Configure Calendar Apps</span>
+                      </button>
                       <div class="calendar-legend" id="calendarLegend" style="display:flex;">
                         <span class="legend-item"><span class="legend-dot green"></span> Verified</span>
                         <span class="legend-item"><span class="legend-dot red"></span> Price Creep</span>
@@ -4144,7 +4152,7 @@
           <div class="onboard-logo-icon">🛡️</div>
           <div>
             <span class="onboard-brand-name">PocketSentinel</span>
-            <span class="onboard-step-pill" id="onboardStepBadge">Step 1 of 4 · Sign In</span>
+            <span class="onboard-step-pill" id="onboardStepBadge">Step 1 of 5 · Sign In</span>
           </div>
         </div>
         <button type="button" class="onboard-close-btn" onclick="closeOnboardingModal()" title="Close">&times;</button>
@@ -4251,8 +4259,8 @@
         <!-- STEP 3: FINANCIAL BASELINE & PRIORITIES -->
         <div class="onboard-step" id="onboardStep3" style="display: none;">
           <div class="onboard-step-heading">
-            <h3 class="onboard-title">Define your monthly runway</h3>
-            <p class="onboard-subtitle">Allocate your income target into protected digital envelopes.</p>
+            <h3 class="onboard-title">Define your financial baseline</h3>
+            <p class="onboard-subtitle">Allocate your monthly income target and initial account balances.</p>
           </div>
 
           <div class="auth-form-wrap">
@@ -4263,7 +4271,24 @@
               <span class="onboard-suffix-tag">/ mo</span>
             </div>
 
-            <label class="onboard-label">PAY CYCLE REMAINING</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+              <div>
+                <label class="onboard-label" for="onboardCheckingInput">PRIMARY CHECKING</label>
+                <div class="onboard-input-box">
+                  <span class="onboard-prefix-symbol" id="onboardCheckingPrefix">$</span>
+                  <input type="number" id="onboardCheckingInput" class="onboard-text-input" placeholder="2430.00" value="2430.00" step="50" min="0">
+                </div>
+              </div>
+              <div>
+                <label class="onboard-label" for="onboardReserveInput">SAVINGS RESERVE</label>
+                <div class="onboard-input-box">
+                  <span class="onboard-prefix-symbol" id="onboardReservePrefix">$</span>
+                  <input type="number" id="onboardReserveInput" class="onboard-text-input" placeholder="500.00" value="500.00" step="25" min="0">
+                </div>
+              </div>
+            </div>
+
+            <label class="onboard-label" style="margin-top: 12px;">PAY CYCLE REMAINING</label>
             <div class="cycle-pills-row" id="onboardCycleRow">
               <button type="button" class="cycle-pill active" data-days="10" onclick="selectOnboardCycle(10)">
                 <strong>10 Days</strong> (Mid-Cycle)
@@ -4306,13 +4331,59 @@
 
             <div class="onboard-btn-row">
               <button type="button" class="btn-onboard-back" onclick="goToOnboardStep(2)">← Back</button>
-              <button type="button" class="btn-onboard-action" onclick="submitAuthStep3()">Initialize Vault →</button>
+              <button type="button" class="btn-onboard-action" onclick="submitAuthStep3()">Next: Subscriptions →</button>
             </div>
           </div>
         </div>
 
-        <!-- STEP 4: CRYPTOGRAPHIC VAULT PROVISIONING -->
+        <!-- STEP 4: ACTIVE SUBSCRIPTIONS & SPEND CALENDAR CONFIGURATION -->
         <div class="onboard-step" id="onboardStep4" style="display: none;">
+          <div class="onboard-step-heading">
+            <h3 class="onboard-title">Which apps do you pay for?</h3>
+            <p class="onboard-subtitle">Choose your active subscriptions and customize renewal days to power your live spend calendar.</p>
+          </div>
+
+          <div class="auth-form-wrap">
+            <div class="onboard-subs-quick-row">
+              <button type="button" class="btn-sub-quick-chip active" id="chipPresetEssentials" onclick="onboardQuickSelectSubs('essentials')">Top 3 Essentials</button>
+              <button type="button" class="btn-sub-quick-chip" id="chipPresetAll" onclick="onboardQuickSelectSubs('all')">Select All</button>
+              <button type="button" class="btn-sub-quick-chip" id="chipPresetNone" onclick="onboardQuickSelectSubs('none')">Start Clean (0 Apps)</button>
+            </div>
+
+            <div class="onboard-subs-list" id="onboardSubsList">
+              <!-- Dynamically populated by renderOnboardSubsList() -->
+            </div>
+
+            <!-- Custom App Add Toggle -->
+            <div class="onboard-custom-sub-section">
+              <button type="button" class="btn-add-custom-toggle" onclick="toggleOnboardCustomSubForm()">
+                <i data-lucide="plus-circle"></i> <span>+ Add Custom App or Bill</span>
+              </button>
+              <div class="custom-sub-inline-form" id="onboardCustomSubForm" style="display: none;">
+                <div class="custom-form-grid">
+                  <input type="text" id="customSubName" placeholder="App Name (e.g. Planet Fitness)" class="onboard-text-input-sm">
+                  <input type="number" id="customSubAmount" placeholder="Price ($/mo)" step="0.5" class="onboard-text-input-sm">
+                  <input type="number" id="customSubDay" placeholder="Billing Day (1-31)" min="1" max="31" class="onboard-text-input-sm">
+                  <button type="button" class="btn-mini-add-sub" onclick="onboardAddCustomSub()">Add App</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Summary Bar -->
+            <div class="onboard-subs-summary-bar">
+              <i data-lucide="calendar"></i>
+              <strong id="onboardSubsSummaryText">3 subscriptions selected · $46.48 / month</strong>
+            </div>
+
+            <div class="onboard-btn-row">
+              <button type="button" class="btn-onboard-back" onclick="goToOnboardStep(3)">← Back</button>
+              <button type="button" class="btn-onboard-action" onclick="submitAuthStep4()">Initialize Vault →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: CRYPTOGRAPHIC VAULT PROVISIONING -->
+        <div class="onboard-step" id="onboardStep5" style="display: none;">
           <div class="onboard-step-heading">
             <h3 class="onboard-title">Provisioning Sovereign Vault</h3>
             <p class="onboard-subtitle">Generating client-side keys and decentralized memory ledger...</p>
@@ -4333,9 +4404,9 @@
 
             <!-- Provisioning Progress Bar -->
             <div class="provision-bar-wrap">
-              <div class="provision-bar-fill" id="provisionBarFill" style="width: 15%;"></div>
+              <div class="provision-bar-fill" id="provisionBarFill" style="width: 20%;"></div>
             </div>
-            <div class="provision-status-text" id="provisionStatusText">Initializing cryptographic primitives (15%)...</div>
+            <div class="provision-status-text" id="provisionStatusText">Initializing cryptographic primitives (20%)...</div>
 
             <button type="button" class="btn-onboard-success" id="btnLaunchWorkspace" onclick="finishOnboardingAndLaunch()" style="display: none; margin-top: 18px;">
               <span>ENTER POCKETSENTINEL WORKSPACE →</span>
@@ -4343,6 +4414,67 @@
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= IN-APP CONFIGURE SUBSCRIPTIONS & CALENDAR MODAL ================= -->
+  <div class="modal-backdrop" id="configureSubscriptionsModal" style="display:none; z-index: 10050;">
+    <div class="modal-card config-subs-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon" style="background:#fef3c7; color:#d97706; padding:8px; border-radius:8px; display:inline-flex;"><i data-lucide="sliders"></i></span>
+          <div>
+            <h3>Configure Subscriptions &amp; Spend Calendar</h3>
+            <p>Select active apps, adjust monthly rates, and set renewal calendar dates</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeConfigureSubscriptionsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body config-subs-modal-body">
+        <div class="config-subs-quick-bar">
+          <div class="config-stat-pill" id="configModalStat">
+            <i data-lucide="calendar"></i>
+            <span id="configModalStatText">Loading subscriptions...</span>
+          </div>
+          <button type="button" class="btn-ghost-sm" onclick="toggleConfigAddForm()">
+            <i data-lucide="plus"></i> <span>+ Add Custom App</span>
+          </button>
+        </div>
+
+        <!-- Add Form Collapsible -->
+        <div class="config-add-form-wrap" id="configAddFormWrap" style="display: none;">
+          <div class="config-add-grid">
+            <input type="text" id="configNewMerchant" class="text-input" placeholder="Service Name (e.g. YouTube Premium)">
+            <input type="number" id="configNewAmount" class="text-input" placeholder="Price ($/mo)" step="0.5">
+            <input type="number" id="configNewDay" class="text-input" placeholder="Billing Day (1-31)" min="1" max="31">
+            <select id="configNewCategory" class="settings-select">
+              <option value="Streaming">Streaming Video / Music</option>
+              <option value="AI & Cloud">AI &amp; Cloud</option>
+              <option value="Developer Productivity">Developer Productivity</option>
+              <option value="Software">Software &amp; Design</option>
+              <option value="Fitness & Health">Fitness &amp; Health</option>
+              <option value="General">General Utility</option>
+            </select>
+            <button type="button" class="btn-amber-sm" onclick="addNewSubscriptionFromModal()">Add Service</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Subscriptions Config List -->
+        <div class="config-subs-items-list" id="configSubsItemsList">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span class="config-modal-note"><i data-lucide="shield-check"></i> Automatically updates calendar, runway velocity, and envelopes.</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-ghost" onclick="closeConfigureSubscriptionsModal()">Cancel</button>
+          <button class="btn-amber-cta" onclick="saveConfigureSubscriptionsAndSync()">
+            <i data-lucide="check"></i> <span>Save &amp; Sync Calendar</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
