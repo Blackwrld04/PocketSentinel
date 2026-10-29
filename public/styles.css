@@ -125,7 +125,7 @@ body.saas-theme {
 .header-nav {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: clamp(14px, 1.8vw, 24px);
 }
 
 .nav-link {
@@ -2364,6 +2364,9 @@ body.saas-theme {
   align-items: center;
   justify-content: center;
   transition: all var(--dur-fast);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .eco-tile:hover {
@@ -2699,6 +2702,17 @@ body.saas-theme {
 
 .demo-disclaimer strong {
   color: var(--text-primary);
+}
+
+.saas-hero-section,
+.saas-reality-section,
+.saas-dark-section,
+.saas-automation-section,
+.saas-ecosystem-section,
+.saas-playground-section,
+.saas-demo-card-section,
+.saas-dark-footer {
+  scroll-margin-top: 76px;
 }
 
 /* ================= DARK FOOTER WITH GIANT WATERMARK (MATCHING IMAGE 6) ================= */

@@ -29,19 +29,16 @@
       </div>
 
       <nav class="header-nav" id="headerNav">
-        <a href="#heroSection" class="nav-link active" id="tabLandingBtn" onclick="switchView('landing')">Overview</a>
-        <a href="#features" class="nav-link" onclick="scrollToLandingSection('features')">Features</a>
-        <a href="#copilot-lab" class="nav-link" onclick="scrollToLandingSection('copilot-lab')">Copilot Lab</a>
-        <a href="#sovereignty" class="nav-link" onclick="scrollToLandingSection('sovereignty')">Security</a>
+        <a href="#heroSection" class="nav-link active" id="tabLandingBtn" onclick="scrollToLandingSection('heroSection', event)">Overview</a>
+        <a href="#realitySection" class="nav-link" onclick="scrollToLandingSection('realitySection', event)">The Reality</a>
+        <a href="#visibilitySection" class="nav-link" onclick="scrollToLandingSection('visibilitySection', event)">Live Visibility</a>
+        <a href="#automationSection" class="nav-link" onclick="scrollToLandingSection('automationSection', event)">Automation</a>
+        <a href="#ecosystemSection" class="nav-link" onclick="scrollToLandingSection('ecosystemSection', event)">Security</a>
+        <a href="#copilotLabSection" class="nav-link" onclick="scrollToLandingSection('copilotLabSection', event)">Copilot Lab</a>
         <button class="nav-link app-link" id="tabAppBtn" onclick="switchView('app')">Open App</button>
       </nav>
 
       <div class="header-right">
-        <div class="sovereign-badge-pill" title="Private Client-Side WebCrypto AES-256-GCM Active">
-          <i data-lucide="shield-check" class="text-green"></i>
-          <span>Zero-Knowledge Secure</span>
-        </div>
-
         <button class="btn-amber-cta" id="headerLaunchBtn" onclick="switchView('app')">
           <span>LAUNCH APP</span>
           <span class="cta-arrow">→</span>
@@ -849,53 +846,53 @@
 
         <div class="ecosystem-grid">
           
-          <div class="eco-tile">
+          <a class="eco-tile" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API" target="_blank" rel="noopener" title="W3C WebCrypto API Standard">
             <div class="eco-logo-box"><span class="eco-logo-mark">WC</span></div>
             <span class="eco-name">WebCrypto</span>
-            <span class="eco-tag">PRIVATE VAULT</span>
-          </div>
+            <span class="eco-tag">PRIVATE VAULT ↗</span>
+          </a>
 
-          <div class="eco-tile">
+          <a class="eco-tile" href="https://docs.walrus.site" target="_blank" rel="noopener" title="Mysten Labs Walrus Decentralized Protocol">
             <div class="eco-logo-box"><span class="eco-logo-mark">WL</span></div>
             <span class="eco-name">Walrus</span>
-            <span class="eco-tag">SECURE STORAGE</span>
-          </div>
+            <span class="eco-tag">SECURE STORAGE ↗</span>
+          </a>
 
-          <div class="eco-tile">
+          <a class="eco-tile" href="https://groq.com" target="_blank" rel="noopener" title="Groq Ultra-Fast LPU Inference Engine">
             <div class="eco-logo-box"><span class="eco-logo-mark">GQ</span></div>
             <span class="eco-name">Groq LPU</span>
-            <span class="eco-tag">FAST COPILOT</span>
-          </div>
+            <span class="eco-tag">FAST COPILOT ↗</span>
+          </a>
 
-          <div class="eco-tile">
+          <a class="eco-tile" href="https://tatum.io" target="_blank" rel="noopener" title="Tatum Web3 & Card Ledger Gateway">
             <div class="eco-logo-box"><span class="eco-logo-mark">TT</span></div>
             <span class="eco-name">Tatum</span>
-            <span class="eco-tag">BANK &amp; CARD SYNC</span>
-          </div>
+            <span class="eco-tag">BANK &amp; CARD SYNC ↗</span>
+          </a>
 
-          <div class="eco-tile">
+          <a class="eco-tile" href="https://ai.google.dev" target="_blank" rel="noopener" title="Google Gemini Vision Receipt Extraction">
             <div class="eco-logo-box"><span class="eco-logo-mark">GM</span></div>
             <span class="eco-name">Gemini</span>
-            <span class="eco-tag">RECEIPT SCANNER</span>
-          </div>
+            <span class="eco-tag">RECEIPT SCANNER ↗</span>
+          </a>
 
-          <div class="eco-tile">
+          <a class="eco-tile" href="https://stripe.com" target="_blank" rel="noopener" title="Stripe Secure Card Infrastructure">
             <div class="eco-logo-box"><span class="eco-logo-mark">ST</span></div>
             <span class="eco-name">Stripe</span>
-            <span class="eco-tag">SECURE CARDS</span>
-          </div>
+            <span class="eco-tag">SECURE CARDS ↗</span>
+          </a>
 
-          <div class="eco-tile">
+          <a class="eco-tile" href="#realitySection" onclick="scrollToLandingSection('realitySection', event)" title="Sovereign Savings Buffer & Emergency Reserve">
             <div class="eco-logo-box"><span class="eco-logo-mark">BC</span></div>
             <span class="eco-name">Savings Buffer</span>
             <span class="eco-tag">EMERGENCY FUND</span>
-          </div>
+          </a>
 
-          <div class="eco-tile">
+          <a class="eco-tile" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" title="MIT Open Source License">
             <div class="eco-logo-box"><span class="eco-logo-mark">MIT</span></div>
             <span class="eco-name">Open Source</span>
-            <span class="eco-tag">100% AUDITABLE</span>
-          </div>
+            <span class="eco-tag">100% AUDITABLE ↗</span>
+          </a>
 
         </div>
 
@@ -940,13 +937,6 @@
         </div>
 
         <div class="playground-output-box">
-          <div class="output-meta-bar">
-            <div class="output-meta-left">
-              <span class="output-badge-groq">GROQ LPU</span>
-              <span id="playgroundStatusText">Model: LLaMA-3.3-70B · Latency: ~340ms · Status: Ready</span>
-            </div>
-            <span style="font-family:var(--font-mono); font-size:11px; color:#64748B;">ZERO CLOUD RETENTION</span>
-          </div>
           <div class="output-content-area" id="landingCopilotOutput">
             "Alex, you have $482.35 safe runway across 10 remaining cycle days ($48.23/day). A $65 dinner tonight is safe because your Discretionary Fun envelope holds a +$130.00 surplus. Tap above to ask a live question!"
           </div>
@@ -991,11 +981,12 @@
           <div class="dark-footer-col">
             <span class="col-heading-mono">PLATFORM</span>
             <ul class="col-links">
-              <li><a href="#heroSection" onclick="switchView('landing')">Product Overview</a></li>
-              <li><a href="#realitySection" onclick="scrollToLandingSection('realitySection')">The Reality</a></li>
-              <li><a href="#visibilitySection" onclick="scrollToLandingSection('visibilitySection')">Live Visibility</a></li>
-              <li><a href="#automationSection" onclick="scrollToLandingSection('automationSection')">Automation Pipeline</a></li>
-              <li><a href="#ecosystemSection" onclick="scrollToLandingSection('ecosystemSection')">Ecosystem</a></li>
+              <li><a href="#heroSection" onclick="scrollToLandingSection('heroSection', event)">Product Overview</a></li>
+              <li><a href="#realitySection" onclick="scrollToLandingSection('realitySection', event)">The Reality</a></li>
+              <li><a href="#visibilitySection" onclick="scrollToLandingSection('visibilitySection', event)">Live Visibility</a></li>
+              <li><a href="#automationSection" onclick="scrollToLandingSection('automationSection', event)">Automation Pipeline</a></li>
+              <li><a href="#ecosystemSection" onclick="scrollToLandingSection('ecosystemSection', event)">Security &amp; Ecosystem</a></li>
+              <li><a href="#copilotLabSection" onclick="scrollToLandingSection('copilotLabSection', event)">AI Copilot Lab</a></li>
               <li><a href="#app" onclick="switchView('app')">Launch Core App</a></li>
             </ul>
           </div>
@@ -1004,9 +995,10 @@
             <span class="col-heading-mono">SOVEREIGNTY</span>
             <ul class="col-links">
               <li><a href="javascript:void(0)" onclick="openKeyVaultModal()">Export WebCrypto Keys</a></li>
-              <li><a href="#ecosystemSection" onclick="scrollToLandingSection('ecosystemSection')">Zero-Knowledge Standard</a></li>
-              <li><a href="#ecosystemSection" onclick="scrollToLandingSection('ecosystemSection')">Walrus SUI Protocol</a></li>
-              <li><a href="https://github.com" target="_blank" rel="noopener">MIT Open Source Code</a></li>
+              <li><a href="https://www.w3.org/TR/WebCryptoAPI/" target="_blank" rel="noopener">W3C WebCrypto Standard ↗</a></li>
+              <li><a href="https://docs.walrus.site" target="_blank" rel="noopener">Walrus Protocol Docs ↗</a></li>
+              <li><a href="https://suiscan.xyz/mainnet" target="_blank" rel="noopener">Sui Mainnet Explorer ↗</a></li>
+              <li><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT Open Source License ↗</a></li>
             </ul>
           </div>
 

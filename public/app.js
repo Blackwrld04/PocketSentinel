@@ -236,10 +236,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   syncCategoryDropdowns();
   setupReceiptOcrDropzone();
 
-  // Sync initial collapsible sections state
   if (typeof syncCollapsibleSectionsOnView === 'function') {
     syncCollapsibleSectionsOnView();
   }
+  initLandingScrollSpy();
 
   console.log('[SENTINEL] PocketSentinel Sentinel ready.');
 });
@@ -312,18 +312,83 @@ function scrollToSection(id) {
 }
 window.scrollToSection = scrollToSection;
 
-function scrollToLandingSection(id) {
+function updateActiveLandingNav(targetId) {
+  const navLinks = document.querySelectorAll('#headerNav .nav-link:not(.app-link)');
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href') || '';
+    const cleanHref = href.replace('#', '');
+    if (cleanHref === targetId) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+window.updateActiveLandingNav = updateActiveLandingNav;
+
+function scrollToLandingSection(id, event) {
+  if (event && event.preventDefault) {
+    event.preventDefault();
+  }
   if (state.currentView !== 'landing') {
     switchView('landing');
   }
+
+  const aliasMap = {
+    'overview': 'heroSection',
+    'hero': 'heroSection',
+    'heroSection': 'heroSection',
+    'reality': 'realitySection',
+    'realitySection': 'realitySection',
+    'features': 'visibilitySection',
+    'visibility': 'visibilitySection',
+    'visibilitySection': 'visibilitySection',
+    'automation': 'automationSection',
+    'automationSection': 'automationSection',
+    'pipeline': 'automationSection',
+    'security': 'ecosystemSection',
+    'sovereignty': 'ecosystemSection',
+    'ecosystem': 'ecosystemSection',
+    'ecosystemSection': 'ecosystemSection',
+    'copilot': 'copilotLabSection',
+    'copilot-lab': 'copilotLabSection',
+    'copilotLab': 'copilotLabSection',
+    'copilotLabSection': 'copilotLabSection',
+    'demo': 'demoSection',
+    'demoSection': 'demoSection',
+    'footer': 'footerSection',
+    'footerSection': 'footerSection'
+  };
+
+  const targetId = aliasMap[id] || id;
+
   setTimeout(() => {
-    const el = document.getElementById(id);
+    const el = document.getElementById(targetId);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
+      updateActiveLandingNav(targetId);
+      try {
+        history.pushState(null, '', '#' + targetId);
+      } catch (e) {}
     }
-  }, 100);
+  }, 40);
 }
 window.scrollToLandingSection = scrollToLandingSection;
+
+function initLandingScrollSpy() {
+  const sections = ['heroSection', 'realitySection', 'visibilitySection', 'automationSection', 'ecosystemSection', 'copilotLabSection'];
+  window.addEventListener('scroll', () => {
+    if (state.currentView !== 'landing') return;
+    const scrollPos = window.scrollY + 120;
+    for (let i = sections.length - 1; i >= 0; i--) {
+      const el = document.getElementById(sections[i]);
+      if (el && el.offsetTop <= scrollPos) {
+        updateActiveLandingNav(sections[i]);
+        break;
+      }
+    }
+  }, { passive: true });
+}
 
 function switchLandingHeroTab(tabId) {
   const tabs = [
@@ -483,15 +548,12 @@ function handleHashNavigation() {
   const hash = window.location.hash.replace('#', '');
   const isLandingTarget = !hash || 
     ['landing', 'heroSection', 'realitySection', 'visibilitySection', 'automationSection', 'ecosystemSection', 'copilotLabSection', 'demoSection', 'footerSection', 'features', 'copilot-lab', 'sovereignty', 'playground', 'paradigms', 'literature', 'comparison', 'reality', 'ecosystem'].includes(hash) ||
-    Boolean(document.getElementById(hash) && document.getElementById(hash).closest('#landingView'));
+    Boolean(document.getElementById(hash) && document.getElementById(hash).closest('#viewLanding'));
 
   if (isLandingTarget) {
     switchView('landing');
     if (hash && hash !== 'landing') {
-      setTimeout(() => {
-        const el = document.getElementById(hash);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      scrollToLandingSection(hash);
     }
     return;
   }
