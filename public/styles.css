@@ -2732,13 +2732,13 @@ body.saas-theme {
   bottom: 0;
   transform: none;
   font-family: var(--font-sans);
-  font-size: clamp(120px, 15vw, 240px);
+  font-size: clamp(90px, 12.8vw, 215px);
   font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 0.82;
   color: transparent;
-  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.075);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.015) 100%);
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.38);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.10) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   pointer-events: none;
@@ -2847,12 +2847,13 @@ body.saas-theme {
   align-items: center;
   font-family: var(--font-mono);
   font-size: 11px;
-  color: #64748B;
+  color: #94A3B8;
   letter-spacing: 0.04em;
 }
 
 .cert-text {
-  color: #64748B;
+  color: #94A3B8;
+  font-weight: 600;
 }
 
 .link-book-demo {
