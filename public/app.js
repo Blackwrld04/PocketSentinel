@@ -265,6 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     syncCollapsibleSectionsOnView();
   }
   initLandingScrollSpy();
+  initLandingLedgerPreview();
 
   console.log('[SENTINEL] PocketSentinel Sentinel ready.');
 });
@@ -420,6 +421,72 @@ function initLandingScrollSpy() {
     }
   }, { passive: true });
 }
+
+function initLandingLedgerPreview() {
+  const pills = document.querySelectorAll('.dlp-filter-pills .dlp-pill');
+  const rows = document.querySelectorAll('.dlp-table tbody tr');
+  const searchInput = document.getElementById('dlpSearchInput');
+  const actionBtns = document.querySelectorAll('.dlp-table .dlp-action-btn');
+
+  if (!rows.length) return;
+
+  let activeFilter = 'all';
+  let activeSearch = '';
+
+  function applyFilters() {
+    rows.forEach(tr => {
+      const merchantCell = tr.children[0] ? tr.children[0].textContent.toLowerCase() : '';
+      const catCell = tr.children[1] ? tr.children[1].textContent.toLowerCase() : '';
+      const textToSearch = merchantCell + ' ' + catCell;
+
+      let matchesPill = true;
+      if (activeFilter === 'streaming') {
+        matchesPill = catCell.includes('streaming');
+      } else if (activeFilter === 'ai') {
+        matchesPill = catCell.includes('ai') || catCell.includes('cloud') || catCell.includes('postgres') || merchantCell.includes('chatgpt') || merchantCell.includes('aws') || merchantCell.includes('supabase');
+      } else if (activeFilter === 'dev') {
+        matchesPill = catCell.includes('developer') || catCell.includes('design') || merchantCell.includes('github') || merchantCell.includes('figma');
+      } else if (activeFilter === 'prod') {
+        matchesPill = catCell.includes('creative') || catCell.includes('journalism') || merchantCell.includes('adobe') || merchantCell.includes('times');
+      }
+
+      const matchesSearch = !activeSearch || textToSearch.includes(activeSearch);
+      const isVisible = Boolean(matchesPill && matchesSearch);
+      tr.classList.toggle('dlp-row-hidden', !isVisible);
+      tr.style.display = isVisible ? '' : 'none';
+    });
+  }
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const label = pill.textContent.toLowerCase();
+      if (label.includes('streaming')) activeFilter = 'streaming';
+      else if (label.includes('ai')) activeFilter = 'ai';
+      else if (label.includes('dev')) activeFilter = 'dev';
+      else if (label.includes('prod')) activeFilter = 'prod';
+      else activeFilter = 'all';
+      applyFilters();
+    });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      activeSearch = (e.target.value || '').trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  actionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (typeof handleLaunchAppClick === 'function') {
+        handleLaunchAppClick();
+      }
+    });
+  });
+}
+window.initLandingLedgerPreview = initLandingLedgerPreview;
 
 function switchLandingHeroTab(tabId) {
   const tabs = [
