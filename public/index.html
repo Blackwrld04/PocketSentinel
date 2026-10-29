@@ -91,50 +91,210 @@
     <section class="saas-hero-section" id="heroSection">
       <div class="hero-inner-container">
         
-        <!-- Top Hero Briefing Row: Headline on Left, Subhead & CTAs on Right -->
-        <div class="hero-briefing-row">
-          <div class="hero-headline-col">
-            <span class="section-eyebrow" style="margin-bottom: 16px;">[01] HOUSEHOLD INTELLIGENCE</span>
-            <h1 class="saas-hero-headline">
-              Every dollar<br>
-              your household spends.<br>
-              <span class="text-amber">Visible.</span>
-            </h1>
+        <!-- Left Hero Column -->
+        <div class="hero-left-col">
+          <span class="section-eyebrow" style="margin-bottom: 16px;">[01] HOUSEHOLD INTELLIGENCE</span>
+
+          <h1 class="saas-hero-headline">
+            Every dollar<br>
+            your household spends.<br>
+            <span class="text-amber">Visible.</span>
+          </h1>
+
+          <p class="saas-hero-subhead">
+            PocketSentinel gives households real-time visibility into cash flow: zero-based digital envelopes, automated subscription defense, and private spending guidance before the month closes.
+          </p>
+
+          <div class="hero-cta-group">
+            <button class="btn-hero-dark" onclick="switchView('app')">
+              <i data-lucide="shield-check"></i>
+              <span>LAUNCH APP FREE</span>
+              <span class="cta-arrow">→</span>
+            </button>
+            <button class="btn-hero-ghost" onclick="scrollToLandingSection('visibilitySection')">
+              <span>SEE IT LIVE</span>
+              <span class="icon-circle">⊙</span>
+            </button>
           </div>
 
-          <div class="hero-actions-col">
-            <p class="saas-hero-subhead">
-              PocketSentinel gives households real-time visibility into cash flow: zero-based digital envelopes, automated subscription defense, and private spending guidance before the month closes.
-            </p>
-
-            <div class="hero-cta-group">
-              <button class="btn-hero-dark" onclick="switchView('app')">
-                <i data-lucide="shield-check"></i>
-                <span>LAUNCH APP FREE</span>
-                <span class="cta-arrow">→</span>
-              </button>
-              <button class="btn-hero-ghost" onclick="scrollToLandingSection('visibilitySection')">
-                <span>SEE IT LIVE</span>
-                <span class="icon-circle">⊙</span>
-              </button>
+          <div class="hero-social-proof">
+            <div class="swatch-cluster">
+              <span class="swatch s-dark"></span>
+              <span class="swatch s-gray"></span>
+              <span class="swatch s-amber"></span>
             </div>
-
-            <div class="hero-social-proof">
-              <div class="swatch-cluster">
-                <span class="swatch s-dark"></span>
-                <span class="swatch s-gray"></span>
-                <span class="swatch s-amber"></span>
-              </div>
-              <span class="proof-text-mono">
-                100% CLIENT-SIDE ENCRYPTION. <strong>$0 NEGOTIATION RAKE</strong>. WALRUS SUI MAINNET.
-              </span>
-            </div>
+            <span class="proof-text-mono">
+              100% CLIENT-SIDE ENCRYPTION. <strong>$0 NEGOTIATION RAKE</strong>. WALRUS SUI MAINNET.
+            </span>
           </div>
         </div>
 
-        <!-- Grand Showcase: Full-Width, High-Def Screenshot (Visible for everybody, non-clickable) -->
-        <div class="hero-showcase-wrapper hero-showcase-grand">
-          <img src="assets/screenshot-envelopes.png" alt="PocketSentinel Digital Envelopes Workspace" class="hero-standalone-screenshot" draggable="false">
+        <!-- Right Hero Column: Replicated Live Native Workspace (100% Vector-Sharp, Never Blurry) -->
+        <div class="hero-right-col">
+          <div class="hero-live-preview-window">
+            
+            <!-- Top Telemetry Header -->
+            <div class="hlw-top-bar">
+              <div class="hlw-brand">
+                <span class="hlw-brand-name">PocketSentinel</span>
+                <span class="hlw-runtime-pill">● LIVE ENGINE</span>
+              </div>
+              <div class="hlw-metrics">
+                <span class="hlw-pill"><i data-lucide="wallet"></i> Net Liquidity: <strong>$2,695.00</strong></span>
+                <span class="hlw-pill highlight"><i data-lucide="gauge"></i> Safe-to-Spend: <strong class="text-mint">$482.35</strong></span>
+                <span class="hlw-user-badge">AR Alex Rivera</span>
+              </div>
+            </div>
+
+            <!-- Workspace Plan & Envelopes Area -->
+            <div class="hlw-body">
+              
+              <div class="hlw-section-heading">
+                <div>
+                  <h3 class="hlw-title">Plan &amp; Envelopes</h3>
+                  <p class="hlw-sub">Category budgets, deficit rebalancing, and spending cadence</p>
+                </div>
+                <div class="hlw-actions">
+                  <span class="hlw-btn-amber"><i data-lucide="refresh-cw"></i> Rebalance Deficit</span>
+                  <span class="hlw-btn-ghost"><i data-lucide="plus"></i> Add Category</span>
+                </div>
+              </div>
+
+              <!-- Digital Envelopes Summary Pool -->
+              <div class="hlw-pool-card">
+                <div class="hlw-pool-top">
+                  <span class="hlw-pool-title"><i data-lucide="mail"></i> Digital Envelopes · $4,850.00 assigned</span>
+                  <span class="hlw-status-tag green">✓ Balanced</span>
+                </div>
+                <div class="hlw-flow-row">
+                  <div class="hlw-flow-step"><span>Inflow:</span> <strong>$4,850.00</strong></div>
+                  <div class="hlw-flow-arrow">→</div>
+                  <div class="hlw-flow-step"><span>Allocated:</span> <strong>$4,850.00</strong></div>
+                  <div class="hlw-flow-arrow">→</div>
+                  <div class="hlw-flow-step text-mint"><span>Unassigned:</span> <strong>$0.00 (Balanced)</strong></div>
+                </div>
+              </div>
+
+              <!-- Envelope Cards (6-Pack) -->
+              <div class="hlw-envelopes-grid">
+                
+                <!-- 1. Groceries -->
+                <div class="hlw-card">
+                  <div class="hlw-card-header">
+                    <div>
+                      <strong class="hlw-card-name"><i data-lucide="shopping-cart"></i> Groceries</strong>
+                      <span class="hlw-card-target">Target: $600.00 / mo</span>
+                    </div>
+                    <span class="hlw-badge green">+$104.80 Left</span>
+                  </div>
+                  <div class="hlw-bar-track"><div class="hlw-bar-fill green" style="width: 82%;"></div></div>
+                  <div class="hlw-card-footer">
+                    <span>Spent: $495.20</span>
+                    <span>Allocated: $600.00</span>
+                  </div>
+                </div>
+
+                <!-- 2. Dining Out (Deficit) -->
+                <div class="hlw-card hlw-card-alert">
+                  <div class="hlw-card-header">
+                    <div>
+                      <strong class="hlw-card-name"><i data-lucide="utensils"></i> Dining Out</strong>
+                      <span class="hlw-card-target">Target: $350.00 / mo</span>
+                    </div>
+                    <span class="hlw-badge red">-$45.00 Deficit</span>
+                  </div>
+                  <div class="hlw-bar-track"><div class="hlw-bar-fill red" style="width: 100%;"></div></div>
+                  <div class="hlw-card-footer">
+                    <span>Spent: $395.00</span>
+                    <span>Allocated: $350.00</span>
+                  </div>
+                  <div class="hlw-card-warning">
+                    <span>⚠️ Overspent by $45.00</span>
+                    <span class="hlw-btn-mini">Rebalance from Fun</span>
+                  </div>
+                </div>
+
+                <!-- 3. Discretionary Fun -->
+                <div class="hlw-card">
+                  <div class="hlw-card-header">
+                    <div>
+                      <strong class="hlw-card-name"><i data-lucide="ticket"></i> Discretionary Fun</strong>
+                      <span class="hlw-card-target">Target: $250.00 / mo</span>
+                    </div>
+                    <span class="hlw-badge blue">+$130.00 Surplus</span>
+                  </div>
+                  <div class="hlw-bar-track"><div class="hlw-bar-fill blue" style="width: 48%;"></div></div>
+                  <div class="hlw-card-footer">
+                    <span>Spent: $120.00</span>
+                    <span>Allocated: $250.00</span>
+                  </div>
+                </div>
+
+                <!-- 4. Transport & Fuel -->
+                <div class="hlw-card">
+                  <div class="hlw-card-header">
+                    <div>
+                      <strong class="hlw-card-name"><i data-lucide="fuel"></i> Transport &amp; Fuel</strong>
+                      <span class="hlw-card-target">Target: $250.00 / mo</span>
+                    </div>
+                    <span class="hlw-badge green">+$65.80 Left</span>
+                  </div>
+                  <div class="hlw-bar-track"><div class="hlw-bar-fill green" style="width: 74%;"></div></div>
+                  <div class="hlw-card-footer">
+                    <span>Spent: $184.20</span>
+                    <span>Allocated: $250.00</span>
+                  </div>
+                </div>
+
+                <!-- 5. Utilities & Internet -->
+                <div class="hlw-card">
+                  <div class="hlw-card-header">
+                    <div>
+                      <strong class="hlw-card-name"><i data-lucide="zap"></i> Utilities &amp; Internet</strong>
+                      <span class="hlw-card-target">Target: $150.00 / mo</span>
+                    </div>
+                    <span class="hlw-badge green">+$10.00 Left</span>
+                  </div>
+                  <div class="hlw-bar-track"><div class="hlw-bar-fill green" style="width: 93%;"></div></div>
+                  <div class="hlw-card-footer">
+                    <span>Spent: $140.00</span>
+                    <span>Allocated: $150.00</span>
+                  </div>
+                </div>
+
+                <!-- 6. 10% Emergency Reserve -->
+                <div class="hlw-card">
+                  <div class="hlw-card-header">
+                    <div>
+                      <strong class="hlw-card-name"><i data-lucide="shield"></i> 10% Emergency Reserve</strong>
+                      <span class="hlw-card-target">Locked savings buffer</span>
+                    </div>
+                    <span class="hlw-badge dark"><i data-lucide="lock" style="width:11px;height:11px;"></i> $500.00</span>
+                  </div>
+                  <div class="hlw-bar-track"><div class="hlw-bar-fill gold" style="width: 100%;"></div></div>
+                  <div class="hlw-card-footer">
+                    <span>Spent: $0.00</span>
+                    <span>Target: $500.00</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Manage Subscriptions Strip -->
+              <div class="hlw-sub-strip">
+                <div class="hlw-sub-left">
+                  <span class="hlw-sub-icon"><i data-lucide="calendar"></i></span>
+                  <div>
+                    <strong>Manage Subscriptions &amp; Spend Calendar</strong>
+                    <span class="hlw-sub-meta">9 recurring services, 48-hour trial alerts, and renewal cadence calendar</span>
+                  </div>
+                </div>
+                <span class="hlw-btn-sub"><i data-lucide="sliders"></i> Open Manage Subscriptions</span>
+              </div>
+
+            </div>
+
+          </div>
         </div>
 
       </div>
