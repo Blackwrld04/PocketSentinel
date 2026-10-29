@@ -66,9 +66,9 @@
       </div>
 
       <div class="header-right">
-        <button class="btn-landing-back" onclick="switchView('landing')" title="Back to Landing Page">
+        <button class="btn-landing-back" onclick="switchView('landing')" title="Back to Landing Page" aria-label="Back to Landing Page">
           <i data-lucide="arrow-left"></i>
-          <span>Landing Page</span>
+          <span class="landing-back-text">Landing</span>
         </button>
 
         <div class="header-user-profile" onclick="filterAppView('settings')" title="User Profile & Wage Settings">
@@ -4188,7 +4188,7 @@
             <label class="onboard-label" for="authEmailInput">GMAIL OR WORK EMAIL</label>
             <div class="onboard-input-box">
               <i data-lucide="mail" class="onboard-field-icon"></i>
-              <input type="email" id="authEmailInput" class="onboard-text-input" placeholder="name@gmail.com" value="alex.rivera@gmail.com" required autocomplete="email">
+              <input type="email" id="authEmailInput" class="onboard-text-input" placeholder="name@gmail.com" value="" required autocomplete="email">
             </div>
 
             <div class="auth-pill-suggestions">
@@ -4218,7 +4218,7 @@
             <label class="onboard-label" for="onboardNameInput">YOUR FULL NAME</label>
             <div class="onboard-input-box">
               <i data-lucide="user" class="onboard-field-icon"></i>
-              <input type="text" id="onboardNameInput" class="onboard-text-input" placeholder="e.g. Alex Rivera" value="Alex Rivera" required>
+              <input type="text" id="onboardNameInput" class="onboard-text-input" placeholder="e.g. Alex Rivera" value="" required>
             </div>
 
             <label class="onboard-label">PRIMARY CURRENCY</label>

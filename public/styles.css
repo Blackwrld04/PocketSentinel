@@ -9588,6 +9588,26 @@ body.dark-theme .alert-radar-info p {
   .header-right .btn-back-marketing {
     display: none !important;
   }
+  .header-right .btn-landing-back {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    margin-right: 4px !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 1px 1px 0px #141413 !important;
+    flex-shrink: 0 !important;
+  }
+  .header-right .btn-landing-back .landing-back-text {
+    display: none !important;
+  }
+  .header-right .btn-landing-back i,
+  .header-right .btn-landing-back svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
   .header-right .header-user-profile {
     padding: 2px !important;
     background: transparent !important;
@@ -15486,9 +15506,10 @@ body.dark-theme .provision-status-text {
 .btn-landing-back {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  font-size: 11.5px;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 9px;
+  font-size: 11px;
   font-weight: 700;
   font-family: var(--font-mono);
   border: 1.5px solid #141413;
@@ -15496,22 +15517,31 @@ body.dark-theme .provision-status-text {
   cursor: pointer;
   background: #FFFFFF;
   color: #141413;
-  box-shadow: 2px 2px 0px #141413;
+  box-shadow: 1.5px 1.5px 0px #141413;
   transition: all 0.15s ease;
-  margin-right: 8px;
+  margin-right: 6px;
+  height: 28px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.btn-landing-back i,
+.btn-landing-back svg {
+  width: 13px;
+  height: 13px;
 }
 
 .btn-landing-back:hover {
   background: #F3F4F6;
   transform: translateY(-1px);
-  box-shadow: 3px 3px 0px #141413;
+  box-shadow: 2px 2px 0px #141413;
 }
 
 body.dark-theme .btn-landing-back {
   background: #181d24;
   color: #F3F4F6;
   border-color: #374151;
-  box-shadow: 2px 2px 0px #0b0d11;
+  box-shadow: 1.5px 1.5px 0px #0b0d11;
 }
 
 body.dark-theme .btn-landing-back:hover {

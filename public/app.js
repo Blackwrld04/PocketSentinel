@@ -196,6 +196,29 @@ window.toggleTheme = toggleTheme;
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[SENTINEL] PocketSentinel Sentinel initializing...');
   
+  // Clean slate data reset to support fresh new user login
+  const CLEAN_SLATE_KEY = 'recall_fresh_user_v6';
+  if (!localStorage.getItem(CLEAN_SLATE_KEY)) {
+    console.log('[RESET] Wiping stored data for clean new user onboarding...');
+    const savedTheme = localStorage.getItem('recallramp-theme');
+    localStorage.clear();
+    sessionStorage.clear();
+    if (savedTheme) localStorage.setItem('recallramp-theme', savedTheme);
+    localStorage.setItem(CLEAN_SLATE_KEY, 'true');
+
+    state.userProfile = {
+      name: '',
+      currency: '$',
+      inflow: 4850.00,
+      hourlyWage: 25.00,
+      cycleDays: 10,
+      safeSpend: 482.35,
+      dailyVelocity: 48.23,
+      signedIn: false
+    };
+    state.subscriptions = [];
+  }
+
   // Initialize light/dark theme preference
   initTheme();
 
@@ -5545,12 +5568,12 @@ function openOnboardingModal(step = 1) {
   if (!modal) return;
   modal.style.display = 'flex';
 
-  const savedEmail = localStorage.getItem('recall_user_email') || 'alex.rivera@gmail.com';
-  const savedName = localStorage.getItem('recall_user_name') || state.userProfile?.name || 'Alex Rivera';
+  const savedEmail = localStorage.getItem('recall_user_email') || '';
+  const savedName = localStorage.getItem('recall_user_name') || '';
   const savedCurrency = localStorage.getItem('recall_currency') || state.userProfile?.currency || '$';
-  const savedInflow = parseFloat(localStorage.getItem('recall_inflow')) || state.userProfile?.inflow || 4850.00;
-  const savedWage = parseFloat(localStorage.getItem('recall_hourly_wage')) || state.userProfile?.hourlyWage || 25.00;
-  const savedDays = parseInt(localStorage.getItem('recall_cycle_days'), 10) || state.userProfile?.cycleDays || 10;
+  const savedInflow = parseFloat(localStorage.getItem('recall_inflow')) || 4850.00;
+  const savedWage = parseFloat(localStorage.getItem('recall_hourly_wage')) || 25.00;
+  const savedDays = parseInt(localStorage.getItem('recall_cycle_days'), 10) || 10;
   const savedChecking = parseFloat(localStorage.getItem('recall_user_checking')) || 2430.00;
   const savedReserve = parseFloat(localStorage.getItem('recall_user_reserve')) || 500.00;
 
@@ -5571,7 +5594,7 @@ function openOnboardingModal(step = 1) {
   }
 
   const emailInput = document.getElementById('authEmailInput');
-  if (emailInput && !emailInput.value) emailInput.value = savedEmail;
+  if (emailInput) emailInput.value = savedEmail;
 
   const nameInput = document.getElementById('onboardNameInput');
   if (nameInput) nameInput.value = savedName;
@@ -6196,11 +6219,37 @@ window.finishOnboardingAndLaunch = finishOnboardingAndLaunch;
 
 function signOutUser() {
   localStorage.removeItem('recall_user_signed_in');
+  localStorage.removeItem('recall_user_email');
+  localStorage.removeItem('recall_user_name');
+  localStorage.removeItem('recall_currency');
+  localStorage.removeItem('recall_inflow');
+  localStorage.removeItem('recall_hourly_wage');
+  localStorage.removeItem('recall_cycle_days');
+  localStorage.removeItem('recall_user_checking');
+  localStorage.removeItem('recall_user_reserve');
+  localStorage.removeItem('recall_user_subscriptions');
+  sessionStorage.clear();
+
   state.userProfile.signedIn = false;
-  showToast('Signed out of personal vault. Ready for new sign in.', 'info');
+  state.subscriptions = [];
+
+  onboardDraft.email = '';
+  onboardDraft.name = '';
+  onboardDraft.inflow = 4850.00;
+  onboardDraft.checking = 2430.00;
+  onboardDraft.reserve = 500.00;
+  onboardDraft.cycleDays = 10;
+  onboardDraft.subscriptions = [];
+
+  showToast('Signed out of personal vault. Ready for new user setup.', 'info');
   switchView('landing');
 }
 window.signOutUser = signOutUser;
+
+function clearUserData() {
+  signOutUser();
+}
+window.clearUserData = clearUserData;
 
 // ================= IN-APP CONFIGURE SUBSCRIPTIONS MODAL LOGIC =================
 function openConfigureSubscriptionsModal() {
