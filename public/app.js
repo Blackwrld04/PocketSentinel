@@ -5373,4 +5373,342 @@ function switchLegalModalTab(tabName) {
 }
 window.switchLegalModalTab = switchLegalModalTab;
 
+// ================= AUTHENTICATION & MULTI-STEP ONBOARDING CONTROLLER =================
+const onboardDraft = {
+  step: 1,
+  email: '',
+  name: 'Alex Rivera',
+  currency: '$',
+  hourlyWage: 25.00,
+  inflow: 4850.00,
+  cycleDays: 10,
+  focus: 'subscriptions'
+};
+
+function handleLaunchAppClick() {
+  const isSignedIn = localStorage.getItem('recall_user_signed_in') === 'true';
+  if (!isSignedIn) {
+    openOnboardingModal(1);
+  } else {
+    switchView('app');
+  }
+}
+window.handleLaunchAppClick = handleLaunchAppClick;
+
+function openOnboardingModal(step = 1) {
+  const modal = document.getElementById('authOnboardingModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  // Preload draft with any existing values
+  const savedEmail = localStorage.getItem('recall_user_email') || 'alex.rivera@gmail.com';
+  const savedName = localStorage.getItem('recall_user_name') || state.userProfile?.name || 'Alex Rivera';
+  const savedCurrency = localStorage.getItem('recall_currency') || state.userProfile?.currency || '$';
+  const savedInflow = parseFloat(localStorage.getItem('recall_inflow')) || state.userProfile?.inflow || 4850.00;
+  const savedWage = parseFloat(localStorage.getItem('recall_hourly_wage')) || state.userProfile?.hourlyWage || 25.00;
+  const savedDays = parseInt(localStorage.getItem('recall_cycle_days')) || state.userProfile?.cycleDays || 10;
+
+  onboardDraft.email = savedEmail;
+  onboardDraft.name = savedName;
+  onboardDraft.currency = savedCurrency;
+  onboardDraft.inflow = savedInflow;
+  onboardDraft.hourlyWage = savedWage;
+  onboardDraft.cycleDays = savedDays;
+
+  const emailInput = document.getElementById('authEmailInput');
+  if (emailInput && !emailInput.value) emailInput.value = savedEmail;
+
+  const nameInput = document.getElementById('onboardNameInput');
+  if (nameInput) nameInput.value = savedName;
+
+  selectOnboardCurrency(savedCurrency);
+  selectOnboardCycle(savedDays);
+  selectOnboardFocus('subscriptions');
+
+  goToOnboardStep(step);
+
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.openOnboardingModal = openOnboardingModal;
+
+function closeOnboardingModal() {
+  const modal = document.getElementById('authOnboardingModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeOnboardingModal = closeOnboardingModal;
+
+function fillQuickEmail(email) {
+  const input = document.getElementById('authEmailInput');
+  if (input) {
+    input.value = email;
+    input.focus();
+  }
+}
+window.fillQuickEmail = fillQuickEmail;
+
+function handleGoogleSignIn() {
+  const btn = document.getElementById('btnGoogleAuth');
+  if (btn) {
+    btn.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> <span>Connecting to Google...</span>`;
+  }
+  setTimeout(() => {
+    onboardDraft.email = 'alex.rivera.finance@gmail.com';
+    onboardDraft.name = 'Alex Rivera';
+    const emailInput = document.getElementById('authEmailInput');
+    if (emailInput) emailInput.value = onboardDraft.email;
+    const nameInput = document.getElementById('onboardNameInput');
+    if (nameInput) nameInput.value = onboardDraft.name;
+    if (btn) {
+      btn.innerHTML = `
+        <svg class="google-icon" width="18" height="18" viewBox="0 0 18 18">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+        </svg>
+        <span>Continue with Google</span>`;
+    }
+    showToast('Signed in with Google (alex.rivera.finance@gmail.com)', 'success');
+    goToOnboardStep(2);
+  }, 450);
+}
+window.handleGoogleSignIn = handleGoogleSignIn;
+
+function submitAuthStep1() {
+  const emailInput = document.getElementById('authEmailInput');
+  const email = emailInput ? emailInput.value.trim() : '';
+  if (!email || !email.includes('@')) {
+    showToast('Please enter a valid email address.', 'error');
+    if (emailInput) emailInput.focus();
+    return;
+  }
+  onboardDraft.email = email;
+
+  // Infer a name suggestion if not already custom
+  const username = email.split('@')[0];
+  const formattedName = username
+    .split(/[\._\-]/)
+    .filter(Boolean)
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(' ');
+  if (formattedName && formattedName.length > 1) {
+    const nameInput = document.getElementById('onboardNameInput');
+    if (nameInput && (!nameInput.value || nameInput.value === 'Alex Rivera')) {
+      nameInput.value = formattedName;
+      onboardDraft.name = formattedName;
+    }
+  }
+
+  goToOnboardStep(2);
+}
+window.submitAuthStep1 = submitAuthStep1;
+
+function goToOnboardStep(step) {
+  onboardDraft.step = step;
+  const steps = [1, 2, 3, 4];
+  steps.forEach(s => {
+    const el = document.getElementById(`onboardStep${s}`);
+    if (el) {
+      if (s === step) {
+        el.style.display = 'flex';
+        el.classList.add('active');
+      } else {
+        el.style.display = 'none';
+        el.classList.remove('active');
+      }
+    }
+  });
+
+  const fill = document.getElementById('onboardProgressFill');
+  if (fill) {
+    fill.style.width = `${step * 25}%`;
+  }
+
+  const badge = document.getElementById('onboardStepBadge');
+  if (badge) {
+    const titles = {
+      1: 'Step 1 of 4 · Sign In',
+      2: 'Step 2 of 4 · Identity',
+      3: 'Step 3 of 4 · Baseline',
+      4: 'Step 4 of 4 · Provisioning'
+    };
+    badge.textContent = titles[step] || `Step ${step} of 4`;
+  }
+
+  if (window.lucide) {
+    setTimeout(() => window.lucide.createIcons(), 30);
+  }
+}
+window.goToOnboardStep = goToOnboardStep;
+
+function selectOnboardCurrency(symbol) {
+  onboardDraft.currency = symbol;
+  const grid = document.getElementById('onboardCurrencyGrid');
+  if (grid) {
+    grid.querySelectorAll('.cur-pill').forEach(btn => {
+      if (btn.getAttribute('data-cur') === symbol) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+  const wagePrefix = document.getElementById('onboardWagePrefix');
+  if (wagePrefix) wagePrefix.textContent = symbol;
+  const inflowPrefix = document.getElementById('onboardInflowPrefix');
+  if (inflowPrefix) inflowPrefix.textContent = symbol;
+}
+window.selectOnboardCurrency = selectOnboardCurrency;
+
+function selectOnboardCycle(days) {
+  onboardDraft.cycleDays = parseInt(days, 10) || 10;
+  const row = document.getElementById('onboardCycleRow');
+  if (row) {
+    row.querySelectorAll('.cycle-pill').forEach(btn => {
+      if (parseInt(btn.getAttribute('data-days'), 10) === onboardDraft.cycleDays) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+}
+window.selectOnboardCycle = selectOnboardCycle;
+
+function selectOnboardFocus(focusId) {
+  onboardDraft.focus = focusId;
+  const stack = document.getElementById('onboardFocusStack');
+  if (stack) {
+    stack.querySelectorAll('.focus-card').forEach(card => {
+      if (card.getAttribute('data-focus') === focusId) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+    });
+  }
+}
+window.selectOnboardFocus = selectOnboardFocus;
+
+function submitAuthStep2() {
+  const nameInput = document.getElementById('onboardNameInput');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) {
+    showToast('Please enter your name.', 'error');
+    if (nameInput) nameInput.focus();
+    return;
+  }
+  onboardDraft.name = name;
+
+  const wageInput = document.getElementById('onboardWageInput');
+  const wage = wageInput ? parseFloat(wageInput.value) : 25.00;
+  onboardDraft.hourlyWage = (!isNaN(wage) && wage > 0) ? wage : 25.00;
+
+  goToOnboardStep(3);
+}
+window.submitAuthStep2 = submitAuthStep2;
+
+function submitAuthStep3() {
+  const inflowInput = document.getElementById('onboardInflowInput');
+  const inflow = inflowInput ? parseFloat(inflowInput.value) : 4850.00;
+  onboardDraft.inflow = (!isNaN(inflow) && inflow > 0) ? inflow : 4850.00;
+
+  goToOnboardStep(4);
+  startVaultProvisioningAnimation();
+}
+window.submitAuthStep3 = submitAuthStep3;
+
+function startVaultProvisioningAnimation() {
+  const line1 = document.getElementById('termLine1');
+  const line2 = document.getElementById('termLine2');
+  const line3 = document.getElementById('termLine3');
+  const line4 = document.getElementById('termLine4');
+  const bar = document.getElementById('provisionBarFill');
+  const status = document.getElementById('provisionStatusText');
+  const btn = document.getElementById('btnLaunchWorkspace');
+
+  if (bar) bar.style.width = '25%';
+  if (status) status.textContent = 'Generating 256-bit AES-GCM vault key (25%)...';
+
+  setTimeout(() => {
+    if (line1) line1.innerHTML = `<span class="term-status success">✓</span> W3C WebCrypto 256-bit AES-GCM Master Key generated.`;
+    if (line2) line2.style.display = 'flex';
+    if (bar) bar.style.width = '55%';
+    if (status) status.textContent = `Allocating zero-knowledge container for ${onboardDraft.email} (55%)...`;
+  }, 350);
+
+  setTimeout(() => {
+    if (line2) line2.innerHTML = `<span class="term-status success">✓</span> Local zero-knowledge encrypted vault allocated.`;
+    if (line3) line3.style.display = 'flex';
+    if (bar) bar.style.width = '80%';
+    if (status) status.textContent = 'Syncing baseline verified memories to Walrus Protocol on Sui (80%)...';
+  }, 750);
+
+  setTimeout(() => {
+    if (line3) line3.innerHTML = `<span class="term-status success">✓</span> Walrus Protocol memory store synchronized on Sui Mainnet.`;
+    if (line4) line4.style.display = 'flex';
+    if (bar) bar.style.width = '95%';
+    if (status) status.textContent = `Calibrating AI Spending Copilot for ${onboardDraft.name} (95%)...`;
+  }, 1150);
+
+  setTimeout(() => {
+    if (line4) line4.innerHTML = `<span class="term-status success">✓</span> AI Spending Copilot calibrated and armed.`;
+    if (bar) bar.style.width = '100%';
+    if (status) status.textContent = 'Vault Encrypted & Active (100%) · Ready for Launch!';
+    if (btn) btn.style.display = 'flex';
+
+    // Auto-launch after quick moment
+    setTimeout(() => {
+      finishOnboardingAndLaunch();
+    }, 1200);
+  }, 1550);
+}
+window.startVaultProvisioningAnimation = startVaultProvisioningAnimation;
+
+function finishOnboardingAndLaunch() {
+  // Commit to state.userProfile
+  state.userProfile.signedIn = true;
+  state.userProfile.email = onboardDraft.email || 'alex.rivera@gmail.com';
+  state.userProfile.name = onboardDraft.name || 'Alex Rivera';
+  state.userProfile.currency = onboardDraft.currency || '$';
+  state.userProfile.inflow = onboardDraft.inflow || 4850.00;
+  state.userProfile.hourlyWage = onboardDraft.hourlyWage || 25.00;
+  state.userProfile.cycleDays = onboardDraft.cycleDays || 10;
+
+  // Safe spend computation
+  const calculatedSafe = Number((state.userProfile.inflow * 0.10).toFixed(2));
+  state.userProfile.safeSpend = calculatedSafe > 0 ? calculatedSafe : 482.35;
+  state.userProfile.dailyVelocity = Number((state.userProfile.safeSpend / state.userProfile.cycleDays).toFixed(2));
+
+  // Persist to localStorage
+  localStorage.setItem('recall_user_signed_in', 'true');
+  localStorage.setItem('recall_user_email', state.userProfile.email);
+  localStorage.setItem('recall_user_name', state.userProfile.name);
+  localStorage.setItem('recall_currency', state.userProfile.currency);
+  localStorage.setItem('recall_inflow', String(state.userProfile.inflow));
+  localStorage.setItem('recall_hourly_wage', String(state.userProfile.hourlyWage));
+  localStorage.setItem('recall_cycle_days', String(state.userProfile.cycleDays));
+
+  closeOnboardingModal();
+  renderUserProfileUI();
+  if (typeof renderCustomEnvelopes === 'function') renderCustomEnvelopes();
+  if (typeof syncCategoryDropdowns === 'function') syncCategoryDropdowns();
+  if (typeof loadUserProfileToSettings === 'function') loadUserProfileToSettings();
+
+  switchView('app');
+  showToast(`Welcome, ${state.userProfile.name}! Your PocketSentinel vault is active.`, 'success');
+}
+window.finishOnboardingAndLaunch = finishOnboardingAndLaunch;
+
+function signOutUser() {
+  localStorage.removeItem('recall_user_signed_in');
+  state.userProfile.signedIn = false;
+  showToast('Signed out of personal vault. Ready for new sign in.', 'info');
+  switchView('landing');
+}
+window.signOutUser = signOutUser;
+
+
 

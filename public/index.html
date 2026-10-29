@@ -38,7 +38,7 @@
       </nav>
 
       <div class="header-right">
-        <button class="btn-amber-cta" id="headerLaunchBtn" onclick="switchView('app')">
+        <button class="btn-amber-cta" id="headerLaunchBtn" onclick="handleLaunchAppClick()">
           <span>LAUNCH APP</span>
           <span class="cta-arrow">→</span>
         </button>
@@ -102,7 +102,7 @@
           </p>
 
           <div class="hero-cta-group">
-            <button class="btn-hero-dark" onclick="switchView('app')">
+            <button class="btn-hero-dark" onclick="handleLaunchAppClick()">
               <i data-lucide="shield-check"></i>
               <span>GET STARTED FREE</span>
               <span class="cta-arrow">→</span>
@@ -957,7 +957,7 @@
             <input type="text" class="demo-text-input" placeholder="YOUR NAME" id="landingDemoName" value="Alex Rivera">
             <input type="text" class="demo-text-input" placeholder="PRIMARY GOAL" id="landingDemoGoal" value="Cut Unused Subscriptions">
           </div>
-          <button class="btn-book-demo" onclick="switchView('app')">
+          <button class="btn-book-demo" onclick="handleLaunchAppClick()">
             <span>START TRACKING FREE →</span>
           </button>
         </div>
@@ -1024,7 +1024,7 @@
 
         <div class="dark-footer-bottom-bar">
           <span class="cert-text">POCKETSENTINEL &copy; 2026. 100% CLIENT-SIDE ENCRYPTED. MIT LICENSED.</span>
-          <a href="javascript:void(0)" onclick="switchView('app')" class="link-book-demo">OPEN DASHBOARD →</a>
+          <a href="javascript:void(0)" onclick="handleLaunchAppClick()" class="link-book-demo">OPEN DASHBOARD →</a>
         </div>
       </div>
     </footer>
@@ -2807,10 +2807,15 @@
                   </div>
 
                   <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                    <button class="btn-ghost-outline text-coral" onclick="resetToHackathonDefaults()">
-                      <i data-lucide="rotate-ccw"></i> Reset Defaults
-                    </button>
-                    <button class="btn-amber-card-action" onclick="saveUserProfileSettings()">
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                      <button type="button" class="btn-ghost-outline text-coral" onclick="resetToHackathonDefaults()">
+                        <i data-lucide="rotate-ccw"></i> Reset Defaults
+                      </button>
+                      <button type="button" class="btn-ghost-outline" onclick="signOutUser()" title="Sign out of local vault and return to onboarding">
+                        <i data-lucide="log-out"></i> Sign Out
+                      </button>
+                    </div>
+                    <button type="button" class="btn-amber-card-action" onclick="saveUserProfileSettings()">
                       <i data-lucide="check"></i>
                       <span>Save Profile</span>
                     </button>
@@ -4116,6 +4121,224 @@
         <button type="button" class="btn-primary-action" onclick="closeLegalPolicyModal()" style="border: 2px solid #141413; background: #141413; color: #ffffff; font-weight: 800; padding: 8px 20px; border-radius: 8px; box-shadow: 2px 2px 0px #141413;">
           Close
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= AUTHENTICATION & MULTI-STEP ONBOARDING MODAL ================= -->
+  <div class="modal-backdrop" id="authOnboardingModal" style="display: none; z-index: 10000;">
+    <div class="modal-card onboarding-modal-card">
+      
+      <!-- Progress Bar Track -->
+      <div class="onboard-top-progress">
+        <div class="onboard-progress-fill" id="onboardProgressFill" style="width: 25%;"></div>
+      </div>
+
+      <!-- Modal Header -->
+      <div class="onboard-header">
+        <div class="onboard-brand">
+          <div class="onboard-logo-icon">🛡️</div>
+          <div>
+            <span class="onboard-brand-name">PocketSentinel</span>
+            <span class="onboard-step-pill" id="onboardStepBadge">Step 1 of 4 · Sign In</span>
+          </div>
+        </div>
+        <button type="button" class="onboard-close-btn" onclick="closeOnboardingModal()" title="Close">&times;</button>
+      </div>
+
+      <!-- Modal Body (Steps) -->
+      <div class="onboard-body">
+
+        <!-- STEP 1: AUTHENTICATION / GMAIL -->
+        <div class="onboard-step active" id="onboardStep1">
+          <div class="onboard-step-heading">
+            <h3 class="onboard-title">Sign in to PocketSentinel</h3>
+            <p class="onboard-subtitle">Zero cloud surveillance. Client-side encrypted financial intelligence.</p>
+          </div>
+
+          <!-- One-Click Google Auth Button -->
+          <button type="button" class="btn-google-auth" id="btnGoogleAuth" onclick="handleGoogleSignIn()">
+            <svg class="google-icon" width="18" height="18" viewBox="0 0 18 18">
+              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+              <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+
+          <div class="auth-divider">
+            <span>or sign in with email</span>
+          </div>
+
+          <!-- Email Input Form -->
+          <form onsubmit="event.preventDefault(); submitAuthStep1();" class="auth-form-wrap">
+            <label class="onboard-label" for="authEmailInput">GMAIL OR WORK EMAIL</label>
+            <div class="onboard-input-box">
+              <i data-lucide="mail" class="onboard-field-icon"></i>
+              <input type="email" id="authEmailInput" class="onboard-text-input" placeholder="name@gmail.com" value="alex.rivera@gmail.com" required autocomplete="email">
+            </div>
+
+            <div class="auth-pill-suggestions">
+              <span class="auth-suggest-label">Quick select:</span>
+              <button type="button" class="btn-email-chip" onclick="fillQuickEmail('alex.rivera@gmail.com')">alex.rivera@gmail.com</button>
+            </div>
+
+            <button type="submit" class="btn-onboard-action" id="btnContinueEmail">
+              <span>Continue →</span>
+            </button>
+          </form>
+
+          <div class="onboard-security-footnote">
+            <i data-lucide="lock"></i>
+            <span>100% Client-Side Encrypted. No passwords stored on central servers.</span>
+          </div>
+        </div>
+
+        <!-- STEP 2: PROFILE & IDENTITY -->
+        <div class="onboard-step" id="onboardStep2" style="display: none;">
+          <div class="onboard-step-heading">
+            <h3 class="onboard-title">What should we call you?</h3>
+            <p class="onboard-subtitle">Personalize your spending sentinel, dynamic greetings, and currency.</p>
+          </div>
+
+          <div class="auth-form-wrap">
+            <label class="onboard-label" for="onboardNameInput">YOUR FULL NAME</label>
+            <div class="onboard-input-box">
+              <i data-lucide="user" class="onboard-field-icon"></i>
+              <input type="text" id="onboardNameInput" class="onboard-text-input" placeholder="e.g. Alex Rivera" value="Alex Rivera" required>
+            </div>
+
+            <label class="onboard-label">PRIMARY CURRENCY</label>
+            <div class="currency-pills-grid" id="onboardCurrencyGrid">
+              <button type="button" class="cur-pill active" data-cur="$" onclick="selectOnboardCurrency('$')">
+                <span class="cur-symbol">$</span>
+                <span class="cur-code">USD ($)</span>
+              </button>
+              <button type="button" class="cur-pill" data-cur="€" onclick="selectOnboardCurrency('€')">
+                <span class="cur-symbol">€</span>
+                <span class="cur-code">EUR (€)</span>
+              </button>
+              <button type="button" class="cur-pill" data-cur="£" onclick="selectOnboardCurrency('£')">
+                <span class="cur-symbol">£</span>
+                <span class="cur-code">GBP (£)</span>
+              </button>
+              <button type="button" class="cur-pill" data-cur="₦" onclick="selectOnboardCurrency('₦')">
+                <span class="cur-symbol">₦</span>
+                <span class="cur-code">NGN (₦)</span>
+              </button>
+            </div>
+
+            <label class="onboard-label" for="onboardWageInput">HOURLY TAKE-HOME (LIFE ENERGY RATE)</label>
+            <div class="onboard-input-box">
+              <span class="onboard-prefix-symbol" id="onboardWagePrefix">$</span>
+              <input type="number" id="onboardWageInput" class="onboard-text-input" placeholder="25.00" value="25.00" step="1" min="1">
+              <span class="onboard-suffix-tag">/ hr</span>
+            </div>
+            <p class="onboard-field-tip">Used by Spending Copilot to convert discretionary purchases into real life energy work hours.</p>
+
+            <div class="onboard-btn-row">
+              <button type="button" class="btn-onboard-back" onclick="goToOnboardStep(1)">← Back</button>
+              <button type="button" class="btn-onboard-action" onclick="submitAuthStep2()">Next: Baseline →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: FINANCIAL BASELINE & PRIORITIES -->
+        <div class="onboard-step" id="onboardStep3" style="display: none;">
+          <div class="onboard-step-heading">
+            <h3 class="onboard-title">Define your monthly runway</h3>
+            <p class="onboard-subtitle">Allocate your income target into protected digital envelopes.</p>
+          </div>
+
+          <div class="auth-form-wrap">
+            <label class="onboard-label" for="onboardInflowInput">EXPECTED MONTHLY INFLOW</label>
+            <div class="onboard-input-box">
+              <span class="onboard-prefix-symbol" id="onboardInflowPrefix">$</span>
+              <input type="number" id="onboardInflowInput" class="onboard-text-input" placeholder="4850.00" value="4850.00" step="50" min="100">
+              <span class="onboard-suffix-tag">/ mo</span>
+            </div>
+
+            <label class="onboard-label">PAY CYCLE REMAINING</label>
+            <div class="cycle-pills-row" id="onboardCycleRow">
+              <button type="button" class="cycle-pill active" data-days="10" onclick="selectOnboardCycle(10)">
+                <strong>10 Days</strong> (Mid-Cycle)
+              </button>
+              <button type="button" class="cycle-pill" data-days="15" onclick="selectOnboardCycle(15)">
+                <strong>15 Days</strong> (Bi-Weekly)
+              </button>
+              <button type="button" class="cycle-pill" data-days="30" onclick="selectOnboardCycle(30)">
+                <strong>30 Days</strong> (Full Month)
+              </button>
+            </div>
+
+            <label class="onboard-label">PRIMARY SENTINEL FOCUS</label>
+            <div class="focus-cards-stack" id="onboardFocusStack">
+              <div class="focus-card active" data-focus="subscriptions" onclick="selectOnboardFocus('subscriptions')">
+                <div class="focus-card-icon">🛡️</div>
+                <div class="focus-card-text">
+                  <strong>Subscription &amp; Free Trial Watch</strong>
+                  <p>Catch stealth $2-$5 monthly price hikes and alert before trials bill.</p>
+                </div>
+                <div class="focus-card-check">✓</div>
+              </div>
+              <div class="focus-card" data-focus="velocity" onclick="selectOnboardFocus('velocity')">
+                <div class="focus-card-icon">⚡</div>
+                <div class="focus-card-text">
+                  <strong>Daily Safe-to-Spend Velocity</strong>
+                  <p>Live burn-rate calculation so you know exactly what is safe to spend today.</p>
+                </div>
+                <div class="focus-card-check">✓</div>
+              </div>
+              <div class="focus-card" data-focus="envelopes" onclick="selectOnboardFocus('envelopes')">
+                <div class="focus-card-icon">✉️</div>
+                <div class="focus-card-text">
+                  <strong>Zero-Based Envelope Balancing</strong>
+                  <p>Auto-rebalance groceries, dining out, and flex categories dynamically.</p>
+                </div>
+                <div class="focus-card-check">✓</div>
+              </div>
+            </div>
+
+            <div class="onboard-btn-row">
+              <button type="button" class="btn-onboard-back" onclick="goToOnboardStep(2)">← Back</button>
+              <button type="button" class="btn-onboard-action" onclick="submitAuthStep3()">Initialize Vault →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: CRYPTOGRAPHIC VAULT PROVISIONING -->
+        <div class="onboard-step" id="onboardStep4" style="display: none;">
+          <div class="onboard-step-heading">
+            <h3 class="onboard-title">Provisioning Sovereign Vault</h3>
+            <p class="onboard-subtitle">Generating client-side keys and decentralized memory ledger...</p>
+          </div>
+
+          <div class="vault-provisioning-box">
+            <div class="vault-animation-ring">
+              <div class="vault-pulse-icon">🔐</div>
+            </div>
+
+            <!-- Terminal Provisioning Log -->
+            <div class="provisioning-terminal" id="provisioningTerminal">
+              <div class="terminal-line" id="termLine1"><span class="term-status pending">●</span> Generating 256-bit AES-GCM vault key via W3C WebCrypto API...</div>
+              <div class="terminal-line" id="termLine2" style="display: none;"><span class="term-status pending">●</span> Allocating zero-knowledge encrypted container...</div>
+              <div class="terminal-line" id="termLine3" style="display: none;"><span class="term-status pending">●</span> Syncing baseline verified memories to Walrus Protocol on Sui...</div>
+              <div class="terminal-line" id="termLine4" style="display: none;"><span class="term-status pending">●</span> Calibrating AI Spending Copilot guardrails...</div>
+            </div>
+
+            <!-- Provisioning Progress Bar -->
+            <div class="provision-bar-wrap">
+              <div class="provision-bar-fill" id="provisionBarFill" style="width: 15%;"></div>
+            </div>
+            <div class="provision-status-text" id="provisionStatusText">Initializing cryptographic primitives (15%)...</div>
+
+            <button type="button" class="btn-onboard-success" id="btnLaunchWorkspace" onclick="finishOnboardingAndLaunch()" style="display: none; margin-top: 18px;">
+              <span>ENTER POCKETSENTINEL WORKSPACE →</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
