@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[SENTINEL] PocketSentinel Sentinel initializing...');
   
   // Clean slate data reset to support fresh new user login
-  const CLEAN_SLATE_KEY = 'recall_fresh_user_v6';
+  const CLEAN_SLATE_KEY = 'recall_fresh_user_v7';
   if (!localStorage.getItem(CLEAN_SLATE_KEY)) {
     console.log('[RESET] Wiping stored data for clean new user onboarding...');
     const savedTheme = localStorage.getItem('recallramp-theme');
@@ -209,14 +209,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     state.userProfile = {
       name: '',
       currency: '$',
-      inflow: 4850.00,
+      inflow: 0.00,
       hourlyWage: 25.00,
       cycleDays: 10,
-      safeSpend: 482.35,
-      dailyVelocity: 48.23,
+      safeSpend: 0.00,
+      dailyVelocity: 0.00,
       signedIn: false
     };
     state.subscriptions = [];
+    state.auditResults = [];
+    state.wallets = [
+      { id: 'checking', name: 'Primary Checking', balance: 0.00, type: 'bank', color: '#10b981', icon: 'landmark', default: true },
+      { id: 'babylon', name: 'Babylon 10% Gold Reserve', balance: 0.00, type: 'vault', color: '#f59e0b', icon: 'shield-alert', locked: true, note: 'Clason & Housel Buffer' },
+      { id: 'cash', name: 'Physical Cash / Pocket', balance: 0.00, type: 'cash', color: '#6366f1', icon: 'banknote' },
+      { id: 'credit', name: 'Household Credit Card', balance: 0.00, type: 'card', color: '#ef4444', icon: 'credit-card', liability: true }
+    ];
+  } else {
+    // Restore saved user wallets if available
+    const savedWallets = localStorage.getItem('recall_user_wallets');
+    if (savedWallets) {
+      try {
+        state.wallets = JSON.parse(savedWallets);
+      } catch (e) {
+        console.warn('Failed to parse saved wallets', e);
+      }
+    }
+    // Restore saved user transactions if available
+    const savedTxs = localStorage.getItem('recall_user_transactions');
+    if (savedTxs) {
+      try {
+        state.auditResults = JSON.parse(savedTxs);
+      } catch (e) {
+        console.warn('Failed to parse saved transactions', e);
+      }
+    } else if (localStorage.getItem('recall_user_signed_in') === 'true') {
+      state.auditResults = [];
+    }
   }
 
   // Initialize light/dark theme preference
@@ -1330,6 +1358,8 @@ function renderSpendCalendar() {
 
   const eventsByDay = getCalendarEventsForMonth(year, month);
 
+  const cur = state.userProfile?.currency || '$';
+
   // Compute total monthly debits
   let totalDebitsCount = 0;
   let totalDebitsSum = 0;
@@ -1340,7 +1370,7 @@ function renderSpendCalendar() {
 
   const metaEl = document.getElementById('calMonthMetaText');
   if (metaEl) {
-    metaEl.textContent = `${totalDebitsCount} scheduled debits ($${totalDebitsSum.toFixed(2)} total)`;
+    metaEl.textContent = `${totalDebitsCount} scheduled debits (${cur}${totalDebitsSum.toFixed(2)} total)`;
   }
 
   let html = '';
@@ -1391,9 +1421,9 @@ function renderSpendCalendar() {
 
       const pillClass = primaryEvt.status === 'PRICE_CREEP' ? 'red' : primaryEvt.status === 'TRIAL_URGENT' ? 'amber' : primaryEvt.status === 'SUPPRESSED' ? 'blue' : 'green';
       pillHtml = `
-        <div class="cal-pill ${pillClass}" title="${primaryEvt.merchant} ($${primaryEvt.amount.toFixed(2)})">
+        <div class="cal-pill ${pillClass}" title="${primaryEvt.merchant} (${cur}${primaryEvt.amount.toFixed(2)})">
           <strong class="cal-pill-merchant">${primaryEvt.merchant}</strong>
-          <span class="cal-pill-amt">$${primaryEvt.amount.toFixed(2)}</span>
+          <span class="cal-pill-amt">${cur}${primaryEvt.amount.toFixed(2)}</span>
         </div>
       `;
 
@@ -1806,9 +1836,23 @@ function renderAuditRecords(records) {
   if (!container) return;
 
   if (!records || records.length === 0) {
-    container.innerHTML = `<div class="empty-feed">No audit records found. Ingest a statement above.</div>`;
+    container.innerHTML = `
+      <div style="text-align:center; padding: 48px 24px; color: var(--text-muted);">
+        <i data-lucide="inbox" style="width:40px; height:40px; margin-bottom:12px; stroke-width:1.5; opacity:0.6;"></i>
+        <div style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">No transactions recorded yet</div>
+        <p style="font-size:13px; max-width:400px; margin:0 auto 16px auto;">Upload a bank statement or click "+ Log Expense" above to start auditing your expenses against policy baselines.</p>
+        <button class="btn-primary-compact" onclick="openLogExpenseModal()" style="display:inline-flex; align-items:center; gap:6px;">
+          <i data-lucide="plus" style="width:14px; height:14px;"></i> Log First Expense
+        </button>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    if (typeof renderHomeTxMiniPreview === 'function') renderHomeTxMiniPreview();
+    if (typeof updateTxPageMetrics === 'function') updateTxPageMetrics();
     return;
   }
+
+  const cur = state.userProfile?.currency || '$';
 
   // Filter based on state.activeFilter and local search / chips
   let filtered = records.filter(r => {
@@ -1866,7 +1910,7 @@ function renderAuditRecords(records) {
       `;
     } else if (r.status === 'ESCALATION_REQUIRED' || r.status === 'ESCALATION_FLAG') {
       actionBtnHtml = `
-        <button class="btn-card-action-amber" onclick="alert('Unknown merchant exceeding $50 threshold. Policy MEM_07 triggered: Human escalation required.')">
+        <button class="btn-card-action-amber" onclick="alert('Unknown merchant exceeding threshold. Policy triggered: Human escalation required.')">
           <i data-lucide="alert-circle"></i> Review
         </button>
       `;
@@ -1902,7 +1946,7 @@ function renderAuditRecords(records) {
 
     let subtextParts = [formattedDate];
     if (walletLabel) subtextParts.push(walletLabel);
-    if (isHikeAlert && baseline !== null && baseline > 0) subtextParts.push(`Baseline $${baseline.toFixed(2)}`);
+    if (isHikeAlert && baseline !== null && baseline > 0) subtextParts.push(`Baseline ${cur}${baseline.toFixed(2)}`);
 
     return `
       <div class="audit-record-row ${r.status.toLowerCase()}">
@@ -1921,7 +1965,7 @@ function renderAuditRecords(records) {
 
         <div class="record-right">
           <div class="record-amount-block">
-            <span class="billed-amount">$${amount.toFixed(2)}</span>
+            <span class="billed-amount">${cur}${amount.toFixed(2)}</span>
           </div>
           <div class="record-actions">
             ${actionBtnHtml}
@@ -1941,6 +1985,7 @@ function renderAuditRecords(records) {
 function renderHomeTxMiniPreview() {
   const lineTxBadge = document.getElementById('homeLineTxBadge');
   const lineAlertBadge = document.getElementById('homeLineAlertBadge');
+  const lineAlertSub = document.getElementById('homeLineAlertSub');
   const sidebarTxCount = document.getElementById('sidebarTxCount');
 
   const records = state.auditResults || [];
@@ -1950,7 +1995,14 @@ function renderHomeTxMiniPreview() {
   const alertsCount = records.filter(r => 
     r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'TRIAL_CONVERTING' || r.status === 'ESCALATION_REQUIRED'
   ).length;
-  if (lineAlertBadge) lineAlertBadge.textContent = `${alertsCount || 2} Action Needed`;
+  if (lineAlertBadge) lineAlertBadge.textContent = `${alertsCount} Action Needed`;
+  if (lineAlertSub) {
+    if (alertsCount === 0) {
+      lineAlertSub.textContent = 'All baselines verified · Zero alerts';
+    } else {
+      lineAlertSub.textContent = `${alertsCount} flagged discrepancy action(s) needed`;
+    }
+  }
 
   if (window.lucide) window.lucide.createIcons();
 }
@@ -1958,13 +2010,14 @@ window.renderHomeTxMiniPreview = renderHomeTxMiniPreview;
 
 function updateTxPageMetrics() {
   const records = state.auditResults || [];
+  const cur = state.userProfile?.currency || '$';
   const totalVolume = records.reduce((sum, r) => {
     const amt = r.currentAmount !== undefined ? r.currentAmount : (r.amount !== undefined ? r.amount : (r.transaction && r.transaction.amount) || 0);
     return sum + amt;
   }, 0);
 
   const wage = state.userProfile?.hourlyWage || 25;
-  const totalHours = (totalVolume / wage).toFixed(1);
+  const totalHours = wage > 0 ? (totalVolume / wage).toFixed(1) : '0.0';
 
   const alertsCount = records.filter(r => 
     r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'TRIAL_CONVERTING' || r.status === 'ESCALATION_REQUIRED'
@@ -1976,20 +2029,21 @@ function updateTxPageMetrics() {
   const wageSub = document.getElementById('txKpiWageSub');
   const alertDisplay = document.getElementById('txKpiAlertsCount');
 
-  if (volDisplay) volDisplay.textContent = `$${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (volDisplay) volDisplay.textContent = `${cur}${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (countSub) countSub.textContent = `${records.length} processed statement debits`;
   if (hoursDisplay) hoursDisplay.textContent = `${totalHours} hrs`;
-  if (wageSub) wageSub.textContent = `Calculated at $${wage.toFixed(2)}/hr wage`;
+  if (wageSub) wageSub.textContent = `Calculated at ${cur}${wage.toFixed(2)}/hr wage`;
   if (alertDisplay) alertDisplay.textContent = `${alertsCount} Flagged`;
 }
 window.updateTxPageMetrics = updateTxPageMetrics;
 
 function getAuditStatusBadge(status, delta) {
+  const cur = state.userProfile?.currency || '$';
   switch (status) {
     case 'MICRO_INFLATION_ALERT':
     case 'PRICE_CREEP':
       return {
-        badgeHtml: `<span class="status-badge alert"><i data-lucide="trending-up"></i> +$${delta ? delta.toFixed(2) : '2.50'} Hike</span>`
+        badgeHtml: `<span class="status-badge alert"><i data-lucide="trending-up"></i> +${cur}${delta ? delta.toFixed(2) : '2.50'} Hike</span>`
       };
     case 'TRIAL_CONVERTING':
     case 'TRIAL_URGENT':
@@ -2203,7 +2257,8 @@ function filterAppView(filterType) {
   } else if (filterType === 'wallets') {
     renderWalletsUI();
   } else if (filterType === 'plan' || filterType === 'envelopes') {
-    // Envelopes active
+    renderEnvelopesPlan();
+    renderPlanSubscriptionsLedger();
   } else if (filterType === 'safespend') {
     if (typeof calculateAffordability === 'function') calculateAffordability();
     const chatContainer = document.getElementById('copilotChatMessages');
@@ -2464,6 +2519,8 @@ function renderSubscriptionsLedger() {
     return;
   }
 
+  const cur = state.userProfile?.currency || '$';
+
   let html = `
     <table class="subscriptions-table">
       <thead>
@@ -2523,8 +2580,8 @@ function renderSubscriptionsLedger() {
           <span class="category-chip chip-slate">${sub.categoryLabel}</span>
         </td>
         <td class="sub-cost-cell">
-          <strong>$${sub.cost.toFixed(2)}</strong>
-          <small>$${(sub.cost * 12).toFixed(2)} / yr</small>
+          <strong>${cur}${sub.cost.toFixed(2)}</strong>
+          <small>${cur}${(sub.cost * 12).toFixed(2)} / yr</small>
         </td>
         <td class="sub-date-cell">
           <span>${sub.renewalText}</span>
@@ -3199,76 +3256,24 @@ window.handleNewsletterSubmit = handleNewsletterSubmit;
 // PARADIGM 01: ZERO-BASED ENVELOPES & ADAPTIVE REBALANCING
 // =========================================================================
 function rebalanceEnvelopesWithPunch() {
-  const diningCard = document.getElementById('envDiningCard');
-  const diningPill = document.getElementById('envDiningPill');
-  const diningFill = document.getElementById('envDiningFill');
-  const diningAllocated = document.getElementById('envDiningAllocated');
-
-  const funPill = document.getElementById('envFunPill');
-  const funFill = document.getElementById('envFunFill');
-  const funAllocated = document.getElementById('envFunAllocated');
+  const cur = state.userProfile?.currency || '$';
+  
+  if (typeof renderEnvelopesPlan === 'function') {
+    renderEnvelopesPlan();
+  }
 
   const toBeBudgeted = document.getElementById('toBeBudgetedDisplay');
-  const rollBox = document.getElementById('rollPunchesBox');
-
-  // Update Envelope Subview
-  if (diningCard) {
-    diningCard.classList.remove('alert-deficit');
-  }
-  if (diningPill) {
-    diningPill.className = 'env-remaining-pill green';
-    diningPill.textContent = '+$0.00 Balanced';
-  }
-  if (diningFill) {
-    diningFill.className = 'env-fill green';
-    diningFill.style.width = '100%';
-  }
-  if (diningAllocated) {
-    diningAllocated.textContent = 'Allocated: $395.00';
-  }
-
-  if (funPill) {
-    funPill.className = 'env-remaining-pill green';
-    funPill.textContent = '+$85.00 Left';
-  }
-  if (funFill) {
-    funFill.className = 'env-fill green';
-    funFill.style.width = '58%';
-  }
-  if (funAllocated) {
-    funAllocated.textContent = 'Allocated: $205.00';
-  }
-
   if (toBeBudgeted) {
-    toBeBudgeted.textContent = '$0.00 (Balanced · Every Dollar Assigned)';
+    toBeBudgeted.textContent = `${cur}0.00 (Balanced · Every Dollar Assigned)`;
   }
 
-  // Update Plan & Envelopes Tab elements
-  const planDiningCard = document.getElementById('planEnvDiningCard');
-  const planDiningPill = document.getElementById('planEnvDiningPill');
-  const planDiningBar = document.getElementById('planEnvDiningBar');
-  const planDiningAlloc = document.getElementById('planEnvDiningAlloc');
-  const planDiningCallout = document.getElementById('planEnvDiningCallout');
-  const planFunPill = document.getElementById('planEnvFunPill');
-  const planFunBar = document.getElementById('planEnvFunBar');
-  const planFunAlloc = document.getElementById('planEnvFunAlloc');
-
-  if (planDiningCard) planDiningCard.classList.remove('alert-deficit');
-  if (planDiningPill) { planDiningPill.className = 'env-remaining-pill green'; planDiningPill.textContent = '+$0.00 Balanced'; }
-  if (planDiningBar) { planDiningBar.className = 'env-fill green'; planDiningBar.style.width = '100%'; }
-  if (planDiningAlloc) planDiningAlloc.textContent = 'Allocated: $395.00';
-  if (planDiningCallout) planDiningCallout.innerHTML = '<span class="text-green"><i data-lucide="check-circle"></i> Balanced: $45.00 transferred from Fun</span>';
-
-  if (planFunPill) { planFunPill.className = 'env-remaining-pill green'; planFunPill.textContent = '+$85.00 Left'; }
-  if (planFunBar) { planFunBar.className = 'env-fill green'; planFunBar.style.width = '58%'; }
-  if (planFunAlloc) planFunAlloc.textContent = 'Allocated: $205.00';
-
+  const rollBox = document.getElementById('rollPunchesBox');
   if (rollBox) {
     rollBox.innerHTML = `
       <div class="punch-left">
         <span class="status-pill green"><i data-lucide="check-circle"></i> Deficit Neutralized</span>
-        <h4>Deficit Resolved</h4>
-        <p>$45.00 transferred from Fun to Dining. All categories balanced.</p>
+        <h4>Envelopes Verified</h4>
+        <p>All category allocations balanced against active debits.</p>
       </div>
       <button class="btn-ghost-outline" onclick="showToast('Envelopes verified: 0 overspent categories.')">
         <i data-lucide="shield-check"></i>
@@ -3284,7 +3289,7 @@ function rebalanceEnvelopesWithPunch() {
     kpiEnvelope.textContent = 'All Balanced';
   }
   const kpiSub = document.getElementById('kpiEnvelopeSub');
-  if (kpiSub) kpiSub.textContent = '6 Envelopes in Zero Debt';
+  if (kpiSub) kpiSub.textContent = 'All Envelopes in Zero Debt';
 
   const kpiDeficitBadge = document.getElementById('kpiDeficitBadge');
   if (kpiDeficitBadge) {
@@ -3296,24 +3301,6 @@ function rebalanceEnvelopesWithPunch() {
     kpiDeficitSub.className = 'kpi-sub text-green';
     kpiDeficitSub.textContent = 'Zero category deficits (Zero-Based Balanced)';
   }
-
-  const overviewDiningLabel = document.getElementById('overviewDiningLabel');
-  if (overviewDiningLabel) {
-    overviewDiningLabel.className = 'text-green';
-    overviewDiningLabel.textContent = '+$0.00 Balanced ($395.00 / $395)';
-  }
-  const overviewDiningBar = document.getElementById('overviewDiningBar');
-  if (overviewDiningBar) {
-    overviewDiningBar.className = 'env-fill green';
-    overviewDiningBar.style.width = '100%';
-  }
-
-  const overviewFunLabel = document.getElementById('overviewFunLabel');
-  if (overviewFunLabel) {
-    overviewFunLabel.textContent = '+$85.00 Left ($120.00 / $205)';
-  }
-  const overviewFunBar = document.getElementById('overviewFunBar');
-  if (overviewFunBar) overviewFunBar.style.width = '58%';
 
   const overviewNotice = document.getElementById('overviewDeficitNotice');
   if (overviewNotice) {
@@ -3329,8 +3316,7 @@ function rebalanceEnvelopesWithPunch() {
   }
 
   state.envelopesRebalanced = true;
-
-  showToast('Envelopes Rebalanced: $45.00 shifted from Fun → Dining Out. Zero-based balance restored!');
+  showToast('Category envelopes verified: zero deficits detected.', 'success');
   if (window.lucide) window.lucide.createIcons();
 }
 window.rebalanceEnvelopesWithPunch = rebalanceEnvelopesWithPunch;
@@ -4596,11 +4582,15 @@ function confirmSaveQuickAddTransaction() {
     message: `Logged to ${category} envelope via ${walletName}. Costs ${lifeEnergyHours} hrs of mortal life energy.`
   };
   state.auditResults.unshift(newTx);
+  localStorage.setItem('recall_user_transactions', JSON.stringify(state.auditResults));
+  localStorage.setItem('recall_user_wallets', JSON.stringify(state.wallets));
 
   // 5. Update UI
+  recalculateAllFinancialMetrics();
   renderUserProfileUI();
   renderWalletsUI();
   renderAuditRecords(state.auditResults);
+  renderEnvelopesPlan();
   closeQuickAddModal();
 
   if (amountInput) amountInput.value = '';
@@ -4616,6 +4606,8 @@ function deleteUserLoggedTx(merchant, amount) {
   const index = state.auditResults.findIndex(r => r.merchant === merchant && Math.abs(r.amount - amount) < 0.01);
   if (index !== -1) {
     const deleted = state.auditResults.splice(index, 1)[0];
+    localStorage.setItem('recall_user_transactions', JSON.stringify(state.auditResults));
+
     // Restore safe runway
     state.userProfile.safeSpend = Number((state.userProfile.safeSpend + amount).toFixed(2));
     const daysLeft = state.userProfile.cycleDays || 10;
@@ -4625,11 +4617,14 @@ function deleteUserLoggedTx(merchant, amount) {
     const targetWallet = state.wallets.find(w => w.name === (deleted.wallet || 'Primary Checking'));
     if (targetWallet) {
       targetWallet.balance = Number((targetWallet.balance + amount).toFixed(2));
+      localStorage.setItem('recall_user_wallets', JSON.stringify(state.wallets));
     }
 
+    recalculateAllFinancialMetrics();
     renderUserProfileUI();
     renderWalletsUI();
     renderAuditRecords(state.auditResults);
+    renderEnvelopesPlan();
 
     if (typeof showToast === 'function') {
       showToast(`🗑️ Removed ${merchant}. Safe velocity restored.`);
@@ -4943,10 +4938,10 @@ function loadUserProfileToSettings() {
   const wageInp = document.getElementById('settingProfileWage');
   const daysInp = document.getElementById('settingProfileCycleDays');
 
-  if (nameInp) nameInp.value = profile.name || 'Alex Rivera';
+  if (nameInp) nameInp.value = profile.name || '';
   if (curSel) curSel.value = profile.currency || '$';
-  if (inflowInp) inflowInp.value = profile.inflow || 4850.00;
-  if (wageInp) wageInp.value = profile.hourlyWage || 25.00;
+  if (inflowInp) inflowInp.value = profile.inflow !== undefined ? profile.inflow : '';
+  if (wageInp) wageInp.value = profile.hourlyWage !== undefined ? profile.hourlyWage : '';
   if (daysInp) daysInp.value = profile.cycleDays || 10;
 }
 window.loadUserProfileToSettings = loadUserProfileToSettings;
@@ -4958,9 +4953,9 @@ function saveUserProfileSettings() {
   const wageInp = document.getElementById('settingProfileWage');
   const daysInp = document.getElementById('settingProfileCycleDays');
 
-  const newName = (nameInp?.value || 'Alex Rivera').trim();
+  const newName = (nameInp?.value || 'User').trim();
   const newCur = curSel?.value || '$';
-  const newInflow = parseFloat(inflowInp?.value) || 4850.00;
+  const newInflow = parseFloat(inflowInp?.value) || 0.00;
   const newWage = parseFloat(wageInp?.value) || 25.00;
   const newDays = parseInt(daysInp?.value) || 10;
 
@@ -4979,9 +4974,12 @@ function saveUserProfileSettings() {
   localStorage.setItem('recall_hourly_wage', newWage.toString());
   localStorage.setItem('recall_cycle_days', newDays.toString());
 
+  recalculateAllFinancialMetrics();
   renderUserProfileUI();
   renderWalletsUI();
   renderAuditRecords(state.auditResults);
+  renderEnvelopesPlan();
+  renderSpendCalendar();
 
   if (typeof showToast === 'function') {
     showToast(`✅ Profile saved: ${newName} · Real wage ${newCur}${newWage}/hr · Metrics updated!`);
@@ -5044,6 +5042,12 @@ function renderWalletsUI() {
   if (babylonEl && babylon) babylonEl.textContent = `${cur}${babylon.balance.toFixed(2)}`;
   if (cashEl && cash) cashEl.textContent = `${cur}${cash.balance.toFixed(2)}`;
   if (creditEl && credit) creditEl.textContent = `${cur}${credit.balance.toFixed(2)}`;
+
+  const checkHint = document.getElementById('walletCheckingHint');
+  if (checkHint) {
+    const safe = state.userProfile?.safeSpend || 0;
+    checkHint.textContent = `Covers ${cur}${safe.toFixed(2)} Safe Runway`;
+  }
 }
 window.renderWalletsUI = renderWalletsUI;
 
@@ -5079,6 +5083,8 @@ function renderPlanSubscriptionsLedger() {
     ];
   }
 
+  const cur = state.userProfile?.currency || '$';
+
   if (subs.length === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding: 24px; color: var(--text-muted); font-size:13px;">
@@ -5100,14 +5106,14 @@ function renderPlanSubscriptionsLedger() {
             <strong>${s.merchant || 'Subscription'}</strong>
             <div class="sub-item-meta">
               <span>Renews ${s.dayOfMonth || s.renewalDay || 15}th</span>
-              ${isHike && s.baselineAmount !== undefined ? `<span>· Baseline $${s.baselineAmount.toFixed(2)}</span>` : ''}
+              ${isHike && s.baselineAmount !== undefined ? `<span>· Baseline ${cur}${s.baselineAmount.toFixed(2)}</span>` : ''}
             </div>
           </div>
         </div>
         <div class="sub-item-right">
           <div class="sub-item-amt">
-            <span class="amt-val">$${Number(s.amount !== undefined ? s.amount : (s.cost !== undefined ? s.cost : 0)).toFixed(2)} / mo</span>
-            ${isHike ? '<span class="tag-hike">+$2.50 Hike</span>' : ''}
+            <span class="amt-val">${cur}${Number(s.amount !== undefined ? s.amount : (s.cost !== undefined ? s.cost : 0)).toFixed(2)} / mo</span>
+            ${isHike ? `<span class="tag-hike">+${cur}2.50 Hike</span>` : ''}
             ${isTrial ? '<span class="tag-trial">48h Alert</span>' : ''}
           </div>
           ${isHike ? `<button class="btn-mini-dispute" onclick="openDisputeModalForRecord('${s.merchant}', ${s.amount}, ${s.baselineAmount}, 2.50, '${s.walrusMemoryRef || 'MEM_01'}')">Dispute</button>` : ''}
@@ -5338,62 +5344,240 @@ function deleteCustomEnvelope(envId) {
 }
 window.deleteCustomEnvelope = deleteCustomEnvelope;
 
-function renderCustomEnvelopes() {
+function renderEnvelopesPlan() {
   const grid = document.getElementById('envelopesCardsGrid');
   if (!grid) return;
 
-  grid.querySelectorAll('.custom-env-card').forEach(el => el.remove());
+  const cur = state.userProfile?.currency || '$';
+  const inflow = Number(state.userProfile?.inflow || 0);
+  const reserve = Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : (inflow * 0.10));
 
-  const envelopes = getCustomEnvelopes();
-  envelopes.forEach(env => {
+  // Load custom envelopes if user created any
+  const customEnvelopes = typeof getCustomEnvelopes === 'function' ? getCustomEnvelopes() : [];
+  const customAllocTotal = customEnvelopes.reduce((sum, env) => sum + (Number(env.budget) || 0), 0);
+
+  // Calculate default categories from remaining pool (inflow - reserve - customAlloc)
+  const spendablePool = Math.max(0, inflow - reserve - customAllocTotal);
+  
+  // Clean default target proportions that sum exactly to spendablePool
+  const groceriesBudget = Number((spendablePool * 0.35).toFixed(2));
+  const diningBudget = Number((spendablePool * 0.20).toFixed(2));
+  const transportBudget = Number((spendablePool * 0.15).toFixed(2));
+  const utilitiesBudget = Number((spendablePool * 0.15).toFixed(2));
+  const funBudget = Number((spendablePool - groceriesBudget - diningBudget - transportBudget - utilitiesBudget).toFixed(2));
+
+  // Compute actual spent from state.auditResults (zero for new users!)
+  const txList = state.auditResults || [];
+  
+  function getSpentForCategory(catKeywords) {
+    return txList.reduce((acc, tx) => {
+      const cat = (tx.category || '').toLowerCase();
+      const merchant = (tx.merchant || '').toLowerCase();
+      const matches = catKeywords.some(kw => cat.includes(kw) || merchant.includes(kw));
+      if (matches) {
+        const amt = Number(tx.currentAmount !== undefined ? tx.currentAmount : (tx.amount || 0));
+        return acc + amt;
+      }
+      return acc;
+    }, 0);
+  }
+
+  const groceriesSpent = getSpentForCategory(['grocer', 'supermarket', 'food', 'trader joe']);
+  const diningSpent = getSpentForCategory(['dining', 'restaurant', 'cafe', 'coffee', 'doordash', 'uber eats']);
+  const transportSpent = getSpentForCategory(['transport', 'fuel', 'gas', 'chevron', 'shell', 'transit', 'uber']);
+  const utilitiesSpent = getSpentForCategory(['utilit', 'internet', 'electric', 'water', 'phone', 'bill']);
+  const funSpent = getSpentForCategory(['fun', 'entertainment', 'cinema', 'game', 'hobby']);
+  const reserveSpent = 0.00; // Locked reserve
+
+  const standardEnvelopes = [
+    {
+      id: 'planEnvGroceries',
+      name: 'Groceries',
+      icon: 'shopping-cart',
+      color: 'green',
+      budget: groceriesBudget,
+      spent: groceriesSpent
+    },
+    {
+      id: 'planEnvDining',
+      name: 'Dining Out',
+      icon: 'utensils',
+      color: 'coral',
+      budget: diningBudget,
+      spent: diningSpent
+    },
+    {
+      id: 'planEnvFun',
+      name: 'Discretionary Fun',
+      icon: 'ticket',
+      color: 'blue',
+      budget: funBudget,
+      spent: funSpent
+    },
+    {
+      id: 'planEnvTransport',
+      name: 'Transport & Fuel',
+      icon: 'fuel',
+      color: 'green',
+      budget: transportBudget,
+      spent: transportSpent
+    },
+    {
+      id: 'planEnvUtilities',
+      name: 'Utilities & Internet',
+      icon: 'zap',
+      color: 'green',
+      budget: utilitiesBudget,
+      spent: utilitiesSpent
+    },
+    {
+      id: 'planEnvReserve',
+      name: '10% Emergency Reserve',
+      icon: 'shield',
+      color: 'amber',
+      budget: reserve,
+      spent: reserveSpent,
+      isReserve: true
+    }
+  ];
+
+  let totalAllocated = reserve + groceriesBudget + diningBudget + funBudget + transportBudget + utilitiesBudget + customAllocTotal;
+  let hasAnyDeficit = false;
+
+  let cardsHtml = standardEnvelopes.map(env => {
+    const isReserve = Boolean(env.isReserve);
     const remaining = env.budget - env.spent;
     const isDeficit = remaining < 0;
-    const pct = Math.min(Math.round((env.spent / env.budget) * 100), 100);
-    const pillClass = isDeficit ? 'red' : (remaining > 0 ? 'green' : 'blue');
-    const pillText = isDeficit ? `-$${Math.abs(remaining).toFixed(2)} Deficit` : `+$${remaining.toFixed(2)} Left`;
+    if (isDeficit) hasAnyDeficit = true;
 
-    const card = document.createElement('div');
-    card.className = `envelope-card custom-env-card ${isDeficit ? 'alert-deficit' : ''}`;
-    card.id = env.id;
-    card.innerHTML = `
-      <div class="env-header">
-        <div class="env-title-wrap">
-          <span class="env-icon"><i data-lucide="${env.icon}"></i></span>
-          <div>
-            <strong>${env.name}</strong>
-            <span class="env-meta">Target: $${env.budget.toFixed(2)} / mo</span>
+    const pct = env.budget > 0 ? Math.min(Math.round((env.spent / env.budget) * 100), 100) : 0;
+    
+    let pillHtml = '';
+    let calloutHtml = '';
+    let barColor = env.color || 'green';
+
+    if (isReserve) {
+      pillHtml = `<span class="env-remaining-pill amber"><i data-lucide="lock"></i> ${cur}${env.budget.toFixed(2)} Locked</span>`;
+      barColor = 'amber';
+    } else if (isDeficit) {
+      pillHtml = `<span class="env-remaining-pill red">-${cur}${Math.abs(remaining).toFixed(2)} Deficit</span>`;
+      barColor = 'red';
+      calloutHtml = `
+        <div class="env-rebalance-callout">
+          <span>⚠️ Overspent by ${cur}${Math.abs(remaining).toFixed(2)}</span>
+          <button class="btn-mini-rebalance" onclick="rebalanceEnvelopesWithPunch()">Rebalance from Fun</button>
+        </div>
+      `;
+    } else {
+      const pillClass = remaining > 0 ? (env.color === 'blue' ? 'blue' : 'green') : 'blue';
+      const label = remaining === 0 ? 'Balanced' : 'Left';
+      pillHtml = `<span class="env-remaining-pill ${pillClass}">+${cur}${remaining.toFixed(2)} ${label}</span>`;
+    }
+
+    return `
+      <div class="envelope-card ${isReserve ? 'reserve-card' : ''} ${isDeficit ? 'alert-deficit' : ''}" id="${env.id}Card">
+        <div class="env-header">
+          <div class="env-title-wrap">
+            <span class="env-icon ${isReserve ? 'amber' : ''}"><i data-lucide="${env.icon}"></i></span>
+            <div>
+              <strong>${env.name}</strong>
+              <span class="env-meta">${isReserve ? 'Locked reserve' : `Target: ${cur}${env.budget.toFixed(2)} / mo`}</span>
+            </div>
           </div>
+          ${pillHtml}
         </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span class="env-remaining-pill ${pillClass}">${pillText}</span>
-          <button class="custom-env-delete-btn" title="Delete category envelope" onclick="deleteCustomEnvelope('${env.id}')">
-            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
-          </button>
+        <div class="env-progress-bar">
+          <div class="env-fill ${barColor}" style="width: ${isReserve ? '100%' : `${pct}%`};"></div>
         </div>
-      </div>
-      <div class="env-progress-bar">
-        <div class="env-fill ${env.color || 'blue'}" style="width: ${pct}%;"></div>
-      </div>
-      <div class="env-footer">
-        <span>Spent: $${env.spent.toFixed(2)}</span>
-        <span>Allocated: $${env.budget.toFixed(2)}</span>
+        <div class="env-footer">
+          <span>Spent: ${cur}${env.spent.toFixed(2)}</span>
+          <span>${isReserve ? 'Target' : 'Allocated'}: ${cur}${env.budget.toFixed(2)}</span>
+        </div>
+        ${calloutHtml}
       </div>
     `;
-    grid.appendChild(card);
+  }).join('');
+
+  // Add custom envelopes
+  customEnvelopes.forEach(env => {
+    const customSpent = getSpentForCategory([(env.name || '').toLowerCase()]);
+    const budget = Number(env.budget) || 0;
+    const remaining = budget - customSpent;
+    const isDeficit = remaining < 0;
+    if (isDeficit) hasAnyDeficit = true;
+    const pct = budget > 0 ? Math.min(Math.round((customSpent / budget) * 100), 100) : 0;
+    const pillClass = isDeficit ? 'red' : (remaining > 0 ? 'green' : 'blue');
+    const pillText = isDeficit ? `-${cur}${Math.abs(remaining).toFixed(2)} Deficit` : `+${cur}${remaining.toFixed(2)} Left`;
+
+    cardsHtml += `
+      <div class="envelope-card custom-env-card ${isDeficit ? 'alert-deficit' : ''}" id="${env.id}">
+        <div class="env-header">
+          <div class="env-title-wrap">
+            <span class="env-icon"><i data-lucide="${env.icon || 'folder-plus'}"></i></span>
+            <div>
+              <strong>${env.name}</strong>
+              <span class="env-meta">Target: ${cur}${budget.toFixed(2)} / mo</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="env-remaining-pill ${pillClass}">${pillText}</span>
+            <button class="custom-env-delete-btn" title="Delete category envelope" onclick="deleteCustomEnvelope('${env.id}')">
+              <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+            </button>
+          </div>
+        </div>
+        <div class="env-progress-bar">
+          <div class="env-fill ${isDeficit ? 'red' : (env.color || 'blue')}" style="width: ${pct}%;"></div>
+        </div>
+        <div class="env-footer">
+          <span>Spent: ${cur}${customSpent.toFixed(2)}</span>
+          <span>Allocated: ${cur}${budget.toFixed(2)}</span>
+        </div>
+      </div>
+    `;
   });
 
-  // Dynamically update zero-based allocation pool displays
-  const baseAllocated = 4850.00;
-  const customAllocated = envelopes.reduce((acc, env) => acc + (Number(env.budget) || 0), 0);
-  const totalAllocated = baseAllocated + customAllocated;
-  const inflow = 4850.00 + customAllocated;
+  grid.innerHTML = cardsHtml;
 
-  const allocEl = document.getElementById('planAllocatedPoolDisplay');
+  // Banner metrics
+  const unassigned = Math.max(0, inflow - totalAllocated);
   const inflowEl = document.getElementById('planInflowPoolDisplay');
-  if (allocEl) allocEl.textContent = `$${totalAllocated.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (inflowEl) inflowEl.textContent = `$${inflow.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const allocEl = document.getElementById('planAllocatedPoolDisplay');
+  const unassignEl = document.getElementById('planUnassignedPoolDisplay');
+  const subtitleEl = document.getElementById('planIncomeAssignedSubtitle');
+  const statusPill = document.getElementById('planEnvelopesStatusPill');
+
+  if (inflowEl) inflowEl.textContent = `${cur}${inflow.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+  if (allocEl) allocEl.textContent = `${cur}${totalAllocated.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+  if (unassignEl) {
+    unassignEl.textContent = `${cur}${unassigned.toFixed(2)} (${unassigned === 0 ? 'Balanced' : 'Available'})`;
+  }
+  if (subtitleEl) {
+    subtitleEl.textContent = `${cur}${inflow.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} monthly income assigned`;
+  }
+  if (statusPill) {
+    if (hasAnyDeficit) {
+      statusPill.className = 'status-pill red';
+      statusPill.innerHTML = '<i data-lucide="alert-triangle"></i> Deficit Detected';
+    } else {
+      statusPill.className = 'status-pill green';
+      statusPill.innerHTML = '<i data-lucide="check-circle"></i> Balanced';
+    }
+  }
+
+  // Redirect card subtitle
+  const redirectSub = document.getElementById('planRedirectCardSub');
+  const fixedCount = (state.subscriptions || []).length;
+  if (redirectSub) {
+    redirectSub.textContent = `${fixedCount} recurring services, 48-hour trial alerts, and renewal cadence calendar.`;
+  }
 
   if (window.lucide) window.lucide.createIcons();
+}
+window.renderEnvelopesPlan = renderEnvelopesPlan;
+
+function renderCustomEnvelopes() {
+  renderEnvelopesPlan();
 }
 window.renderCustomEnvelopes = renderCustomEnvelopes;
 
@@ -5635,23 +5819,23 @@ function openOnboardingModal(step = 1) {
   if (!modal) return;
   modal.style.display = 'flex';
 
-  const savedEmail = localStorage.getItem('recall_user_email') || '';
-  const savedName = localStorage.getItem('recall_user_name') || '';
-  const savedCurrency = localStorage.getItem('recall_currency') || state.userProfile?.currency || '$';
-  const savedInflow = parseFloat(localStorage.getItem('recall_inflow')) || 4850.00;
-  const savedWage = parseFloat(localStorage.getItem('recall_hourly_wage')) || 25.00;
-  const savedDays = parseInt(localStorage.getItem('recall_cycle_days'), 10) || 10;
-  const savedChecking = parseFloat(localStorage.getItem('recall_user_checking')) || 2430.00;
-  const savedReserve = parseFloat(localStorage.getItem('recall_user_reserve')) || 500.00;
+  const storedEmail = localStorage.getItem('recall_user_email');
+  const storedName = localStorage.getItem('recall_user_name');
+  const storedCurrency = localStorage.getItem('recall_currency') || state.userProfile?.currency || '$';
+  const storedInflow = localStorage.getItem('recall_inflow');
+  const storedWage = localStorage.getItem('recall_hourly_wage');
+  const storedDays = localStorage.getItem('recall_cycle_days');
+  const storedChecking = localStorage.getItem('recall_user_checking');
+  const storedReserve = localStorage.getItem('recall_user_reserve');
 
-  onboardDraft.email = savedEmail;
-  onboardDraft.name = savedName;
-  onboardDraft.currency = savedCurrency;
-  onboardDraft.inflow = savedInflow;
-  onboardDraft.hourlyWage = savedWage;
-  onboardDraft.cycleDays = savedDays;
-  onboardDraft.checking = savedChecking;
-  onboardDraft.reserve = savedReserve;
+  onboardDraft.email = storedEmail || '';
+  onboardDraft.name = storedName || '';
+  onboardDraft.currency = storedCurrency;
+  onboardDraft.inflow = storedInflow !== null ? parseFloat(storedInflow) : undefined;
+  onboardDraft.hourlyWage = storedWage !== null ? parseFloat(storedWage) : undefined;
+  onboardDraft.cycleDays = storedDays !== null ? parseInt(storedDays, 10) : 10;
+  onboardDraft.checking = storedChecking !== null ? parseFloat(storedChecking) : undefined;
+  onboardDraft.reserve = storedReserve !== null ? parseFloat(storedReserve) : undefined;
 
   if (!onboardDraft.subscriptions || onboardDraft.subscriptions.length === 0) {
     onboardDraft.subscriptions = defaultSubscriptionsCatalog.map(s => ({
@@ -5661,19 +5845,25 @@ function openOnboardingModal(step = 1) {
   }
 
   const emailInput = document.getElementById('authEmailInput');
-  if (emailInput) emailInput.value = savedEmail;
+  if (emailInput) emailInput.value = storedEmail || '';
 
   const nameInput = document.getElementById('onboardNameInput');
-  if (nameInput) nameInput.value = savedName;
+  if (nameInput) nameInput.value = storedName || '';
 
   const checkingInput = document.getElementById('onboardCheckingInput');
-  if (checkingInput) checkingInput.value = savedChecking.toFixed(2);
+  if (checkingInput) checkingInput.value = storedChecking !== null ? parseFloat(storedChecking).toFixed(2) : '';
 
   const reserveInput = document.getElementById('onboardReserveInput');
-  if (reserveInput) reserveInput.value = savedReserve.toFixed(2);
+  if (reserveInput) reserveInput.value = storedReserve !== null ? parseFloat(storedReserve).toFixed(2) : '';
 
-  selectOnboardCurrency(savedCurrency);
-  selectOnboardCycle(savedDays);
+  const inflowInput = document.getElementById('onboardInflowInput');
+  if (inflowInput) inflowInput.value = storedInflow !== null ? parseFloat(storedInflow).toFixed(2) : '';
+
+  const wageInput = document.getElementById('onboardWageInput');
+  if (wageInput) wageInput.value = storedWage !== null ? parseFloat(storedWage).toFixed(2) : '';
+
+  selectOnboardCurrency(storedCurrency);
+  selectOnboardCycle(onboardDraft.cycleDays);
   selectOnboardFocus('subscriptions');
 
   goToOnboardStep(step);
@@ -5874,8 +6064,8 @@ function submitAuthStep2() {
   onboardDraft.name = name;
 
   const wageInput = document.getElementById('onboardWageInput');
-  const wage = wageInput ? parseFloat(wageInput.value) : 25.00;
-  onboardDraft.hourlyWage = (!isNaN(wage) && wage > 0) ? wage : 25.00;
+  const wageVal = wageInput && wageInput.value.trim() !== '' ? parseFloat(wageInput.value) : NaN;
+  onboardDraft.hourlyWage = (!isNaN(wageVal) && wageVal > 0) ? wageVal : 25.00;
 
   goToOnboardStep(3);
 }
@@ -5883,16 +6073,17 @@ window.submitAuthStep2 = submitAuthStep2;
 
 function submitAuthStep3() {
   const inflowInput = document.getElementById('onboardInflowInput');
-  const inflow = inflowInput ? parseFloat(inflowInput.value) : 4850.00;
-  onboardDraft.inflow = (!isNaN(inflow) && inflow > 0) ? inflow : 4850.00;
+  const inflowVal = inflowInput && inflowInput.value.trim() !== '' ? parseFloat(inflowInput.value) : NaN;
 
   const checkingInput = document.getElementById('onboardCheckingInput');
-  const checking = checkingInput ? parseFloat(checkingInput.value) : 2430.00;
-  onboardDraft.checking = (!isNaN(checking) && checking >= 0) ? checking : 2430.00;
+  const checkingVal = checkingInput && checkingInput.value.trim() !== '' ? parseFloat(checkingInput.value) : NaN;
 
   const reserveInput = document.getElementById('onboardReserveInput');
-  const reserve = reserveInput ? parseFloat(reserveInput.value) : 500.00;
-  onboardDraft.reserve = (!isNaN(reserve) && reserve >= 0) ? reserve : 500.00;
+  const reserveVal = reserveInput && reserveInput.value.trim() !== '' ? parseFloat(reserveInput.value) : NaN;
+
+  onboardDraft.checking = !isNaN(checkingVal) ? checkingVal : 0.00;
+  onboardDraft.reserve = !isNaN(reserveVal) ? reserveVal : 0.00;
+  onboardDraft.inflow = !isNaN(inflowVal) && inflowVal > 0 ? inflowVal : (onboardDraft.checking || 0.00);
 
   goToOnboardStep(4);
 }
@@ -6209,6 +6400,22 @@ function recalculateAllFinancialMetrics() {
 
   const sideSubs = document.getElementById('sidebarSubCount');
   if (sideSubs) sideSubs.textContent = `${fixedBillsCount}`;
+
+  const sideAlerts = document.getElementById('sidebarAlertCount');
+  const alertCount = (state.auditResults || []).filter(r => r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP').length;
+  if (sideAlerts) sideAlerts.textContent = `${alertCount}`;
+
+  const sideTrials = document.getElementById('sidebarTrialCount');
+  const trialCount = (state.subscriptions || []).filter(s => s.isTrial).length + 
+    (state.auditResults || []).filter(r => r.status === 'TRIAL_CONVERTING' || r.status === 'TRIAL_URGENT').length;
+  if (sideTrials) sideTrials.textContent = `${trialCount}`;
+
+  const sideTxs = document.getElementById('sidebarTxCount');
+  if (sideTxs) sideTxs.textContent = `${(state.auditResults || []).length} Txns`;
+
+  if (typeof renderEnvelopesPlan === 'function') {
+    renderEnvelopesPlan();
+  }
 }
 window.recalculateAllFinancialMetrics = recalculateAllFinancialMetrics;
 
@@ -6217,10 +6424,10 @@ function finishOnboardingAndLaunch() {
   state.userProfile.email = onboardDraft.email || 'alex.rivera@gmail.com';
   state.userProfile.name = onboardDraft.name || 'Alex Rivera';
   state.userProfile.currency = onboardDraft.currency || '$';
-  state.userProfile.inflow = onboardDraft.inflow || 4850.00;
-  state.userProfile.hourlyWage = onboardDraft.hourlyWage || 25.00;
-  state.userProfile.cycleDays = onboardDraft.cycleDays || 10;
-  state.userProfile.reserve = onboardDraft.reserve !== undefined ? onboardDraft.reserve : 500.00;
+  state.userProfile.inflow = onboardDraft.inflow !== undefined ? onboardDraft.inflow : 0.00;
+  state.userProfile.hourlyWage = onboardDraft.hourlyWage !== undefined ? onboardDraft.hourlyWage : 25.00;
+  state.userProfile.cycleDays = onboardDraft.cycleDays !== undefined ? onboardDraft.cycleDays : 10;
+  state.userProfile.reserve = onboardDraft.reserve !== undefined ? onboardDraft.reserve : 0.00;
 
   const userSubs = (onboardDraft.subscriptions || [])
     .filter(s => s.active)
@@ -6237,7 +6444,7 @@ function finishOnboardingAndLaunch() {
       renewalText: `Day ${s.dayOfMonth || 15} of month`,
       category: s.category || 'Subscription',
       categoryLabel: s.category || 'Subscription',
-      logo: s.logo || '/assets/logos/generic.svg',
+      logo: s.logo || getMerchantLogo(s.merchant) || '/assets/logos/generic.svg',
       memory: `MEM_${String(idx + 1).padStart(2, '0')}`,
       isTrial: Boolean(s.isTrial),
       status: s.isTrial ? 'TRIAL_URGENT' : 'NORMAL',
@@ -6249,13 +6456,38 @@ function finishOnboardingAndLaunch() {
   state.subscriptions = userSubs;
   localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
 
-  const checkingBal = onboardDraft.checking !== undefined ? onboardDraft.checking : 2430.00;
-  const reserveBal = onboardDraft.reserve !== undefined ? onboardDraft.reserve : 500.00;
+  const checkingBal = onboardDraft.checking !== undefined ? onboardDraft.checking : 0.00;
+  const reserveBal = onboardDraft.reserve !== undefined ? onboardDraft.reserve : 0.00;
 
-  const checkingWallet = state.wallets.find(w => w.id === 'checking');
-  if (checkingWallet) checkingWallet.balance = checkingBal;
-  const reserveWallet = state.wallets.find(w => w.id === 'babylon');
-  if (reserveWallet) reserveWallet.balance = reserveBal;
+  // Clean wallets with NO hidden figures
+  state.wallets = [
+    { id: 'checking', name: 'Primary Checking', balance: checkingBal, type: 'bank', color: '#10b981', icon: 'landmark', default: true },
+    { id: 'babylon', name: 'Babylon 10% Gold Reserve', balance: reserveBal, type: 'vault', color: '#f59e0b', icon: 'shield-alert', locked: true, note: 'Clason & Housel Buffer' },
+    { id: 'cash', name: 'Physical Cash / Pocket', balance: 0.00, type: 'cash', color: '#6366f1', icon: 'banknote' },
+    { id: 'credit', name: 'Household Credit Card', balance: 0.00, type: 'card', color: '#ef4444', icon: 'credit-card', liability: true }
+  ];
+  localStorage.setItem('recall_user_wallets', JSON.stringify(state.wallets));
+
+  // Clean transactions with NO hidden debits
+  if (userSubs.length === 0) {
+    state.auditResults = [];
+  } else {
+    state.auditResults = userSubs.map((sub, i) => ({
+      id: `tx_user_sub_${i + 1}`,
+      merchant: sub.merchant,
+      category: sub.category || 'Subscription',
+      wallet: 'Primary Checking',
+      date: `2026-10-${String(Math.min(sub.dayOfMonth || 15, 28)).padStart(2, '0')}`,
+      amount: sub.amount,
+      currentAmount: sub.amount,
+      baselineAmount: sub.amount,
+      deltaAmount: 0.00,
+      status: sub.isTrial ? 'TRIAL_URGENT' : 'NORMAL',
+      walrusMemoryRef: `MEM_${String(i + 1).padStart(2, '0')}`,
+      explanation: `Verified subscription debit in ${state.userProfile.currency}`
+    }));
+  }
+  localStorage.setItem('recall_user_transactions', JSON.stringify(state.auditResults));
 
   localStorage.setItem('recall_user_signed_in', 'true');
   localStorage.setItem('recall_user_email', state.userProfile.email);
@@ -6272,10 +6504,11 @@ function finishOnboardingAndLaunch() {
   closeOnboardingModal();
   renderUserProfileUI();
   renderWalletsUI();
+  renderAuditRecords(state.auditResults);
+  renderEnvelopesPlan();
   renderSpendCalendar();
   renderSubscriptionsLedger();
   renderPlanSubscriptionsLedger();
-  if (typeof renderCustomEnvelopes === 'function') renderCustomEnvelopes();
   if (typeof syncCategoryDropdowns === 'function') syncCategoryDropdowns();
   if (typeof loadUserProfileToSettings === 'function') loadUserProfileToSettings();
 
@@ -6295,16 +6528,26 @@ function signOutUser() {
   localStorage.removeItem('recall_user_checking');
   localStorage.removeItem('recall_user_reserve');
   localStorage.removeItem('recall_user_subscriptions');
+  localStorage.removeItem('recall_user_wallets');
+  localStorage.removeItem('recall_user_transactions');
+  localStorage.removeItem('pocketsentinel_custom_envelopes');
   sessionStorage.clear();
 
   state.userProfile.signedIn = false;
   state.subscriptions = [];
+  state.auditResults = [];
+  state.wallets = [
+    { id: 'checking', name: 'Primary Checking', balance: 0.00, type: 'bank', color: '#10b981', icon: 'landmark', default: true },
+    { id: 'babylon', name: 'Babylon 10% Gold Reserve', balance: 0.00, type: 'vault', color: '#f59e0b', icon: 'shield-alert', locked: true, note: 'Clason & Housel Buffer' },
+    { id: 'cash', name: 'Physical Cash / Pocket', balance: 0.00, type: 'cash', color: '#6366f1', icon: 'banknote' },
+    { id: 'credit', name: 'Household Credit Card', balance: 0.00, type: 'card', color: '#ef4444', icon: 'credit-card', liability: true }
+  ];
 
   onboardDraft.email = '';
   onboardDraft.name = '';
-  onboardDraft.inflow = 4850.00;
-  onboardDraft.checking = 2430.00;
-  onboardDraft.reserve = 500.00;
+  onboardDraft.inflow = 0.00;
+  onboardDraft.checking = 0.00;
+  onboardDraft.reserve = 0.00;
   onboardDraft.cycleDays = 10;
   onboardDraft.subscriptions = [];
 
