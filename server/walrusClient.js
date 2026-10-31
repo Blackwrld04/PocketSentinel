@@ -246,9 +246,13 @@ export class WalrusClient {
       tags: Array.isArray(tags) ? tags : [],
       content: onchainContent,
       value: value,
+      version: metadata?.version || 1,
+      history: metadata?.history || [],
       suiTxDigest: txDigest,
       metadata: {
         ...metadata,
+        version: metadata?.version || 1,
+        history: metadata?.history || [],
         userSummary: content || null,
         network: this.network,
         mode: this.isLive ? 'live' : 'mock',
@@ -309,6 +313,8 @@ export class WalrusClient {
     if (mem.sensitivity === 'encrypted' && mem.metadata?.encryptedPayload && !mem.value) {
       mem.value = decryptPayload(mem.metadata.encryptedPayload);
     }
+    if (!mem.version && mem.metadata?.version) mem.version = mem.metadata.version;
+    if (!mem.history && mem.metadata?.history) mem.history = mem.metadata.history;
     return mem;
   }
 
@@ -321,13 +327,13 @@ export class WalrusClient {
     
     // Normalize and decrypt values for authorized consumer
     list = list.map(m => {
-      if (m.sensitivity === 'encrypted' && m.metadata?.encryptedPayload && !m.value) {
-        return {
-          ...m,
-          value: decryptPayload(m.metadata.encryptedPayload)
-        };
+      const item = { ...m };
+      if (item.sensitivity === 'encrypted' && item.metadata?.encryptedPayload && !item.value) {
+        item.value = decryptPayload(item.metadata.encryptedPayload);
       }
-      return m;
+      if (!item.version && item.metadata?.version) item.version = item.metadata.version;
+      if (!item.history && item.metadata?.history) item.history = item.metadata.history;
+      return item;
     });
 
     if (filter) {

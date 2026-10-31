@@ -18,81 +18,109 @@ export const INITIAL_MEMORIES = [
     id: 'MEM_01',
     type: 'Baseline',
     category: 'Baseline',
-    key: 'netflix_standard',
-    content: '$15.49/mo baseline established. Max acceptable variance: $0.00. Alert on any deviation.',
-    value: {
-      merchant: 'Netflix',
-      baselineAmount: 15.49,
-      cadence: 'monthly',
-      dayOfMonth: 12,
-      varianceTolerance: 0.00,
-      annualCost: 185.88
-    },
+    key: 'subscription_ledger',
+    content: 'Consolidated Household Subscription Ledger (6 active baseline services, version 1)',
     effective_date: '2026-10-01',
-    source: 'user_confirmed',
-    sensitivity: 'public',
-    tags: ['subscription', 'baseline', 'streaming'],
-    metadata: {
-      merchant: 'Netflix',
-      baselineAmount: 15.49,
-      cadence: 'monthly',
-      dayOfMonth: 12,
-      varianceTolerance: 0.00,
-      annualCost: 185.88
-    }
-  },
-  {
-    id: 'MEM_02',
-    type: 'Baseline',
-    category: 'Baseline',
-    key: 'spotify_premium',
-    content: '$10.99/mo baseline. Flag price increase > $0.50 immediately.',
+    source: 'user_stated',
+    sensitivity: 'encrypted',
+    tags: ['subscription_ledger', 'baseline', 'household'],
     value: {
-      merchant: 'Spotify',
-      baselineAmount: 10.99,
-      cadence: 'monthly',
-      dayOfMonth: 24,
-      varianceTolerance: 0.50,
-      annualCost: 131.88
+      services: {
+        netflix: {
+          display_name: 'Netflix Standard Tier',
+          price: 15.49,
+          cadence: 'monthly',
+          bill_day: 20,
+          max_variance: 0.00,
+          status: 'active',
+          source: 'user_stated',
+          first_seen: '2026-10-01',
+          category: 'Streaming',
+          raw_patterns: ['Netflix', 'NETFLIX.COM', 'Netflix Standard']
+        },
+        spotify: {
+          display_name: 'Spotify Premium',
+          price: 10.99,
+          cadence: 'monthly',
+          bill_day: 15,
+          max_variance: 0.50,
+          status: 'active',
+          source: 'user_stated',
+          first_seen: '2026-10-01',
+          category: 'Streaming',
+          raw_patterns: ['Spotify', 'SPOTIFY USA', 'Spotify Premium']
+        },
+        chatgpt: {
+          display_name: 'OpenAI (ChatGPT Plus)',
+          price: 20.00,
+          cadence: 'monthly',
+          bill_day: 14,
+          max_variance: 0.00,
+          status: 'active',
+          source: 'user_stated',
+          first_seen: '2026-10-01',
+          category: 'AI & Cloud',
+          raw_patterns: ['OpenAI', 'ChatGPT', 'OPENAI *CHATGPT', 'OpenAI (ChatGPT Plus)']
+        },
+        gym_equinox: {
+          display_name: 'Equinox Gym',
+          price: 240.00,
+          cadence: 'monthly',
+          bill_day: 1,
+          max_variance: 0.00,
+          status: 'active',
+          source: 'user_stated',
+          first_seen: '2026-10-01',
+          category: 'Fitness & Health',
+          raw_patterns: ['Equinox', 'EQUINOX CLUB', 'Equinox Gym']
+        },
+        github_copilot: {
+          display_name: 'GitHub Copilot',
+          price: 10.00,
+          cadence: 'monthly',
+          bill_day: 28,
+          max_variance: 0.00,
+          status: 'active',
+          source: 'user_stated',
+          first_seen: '2026-10-01',
+          category: 'Developer Tools',
+          raw_patterns: ['GitHub', 'GITHUB *COPILOT', 'GitHub Copilot']
+        },
+        icloud: {
+          display_name: 'Apple iCloud+ 2TB',
+          price: 9.99,
+          cadence: 'monthly',
+          bill_day: 5,
+          max_variance: 0.00,
+          status: 'active',
+          source: 'user_stated',
+          first_seen: '2026-10-01',
+          category: 'Cloud Storage',
+          raw_patterns: ['iCloud', 'APPLE.COM/BILL', 'Apple iCloud+ 2TB']
+        }
+      }
     },
-    effective_date: '2026-10-01',
-    source: 'user_confirmed',
-    sensitivity: 'public',
-    tags: ['subscription', 'baseline', 'audio'],
+    version: 1,
+    history: [
+      {
+        version: 1,
+        committedAt: '2026-10-01T00:00:00.000Z',
+        blobId: 'genesis_blob',
+        summary: 'Initial household subscription ledger baseline'
+      }
+    ],
     metadata: {
-      merchant: 'Spotify',
-      baselineAmount: 10.99,
-      cadence: 'monthly',
-      dayOfMonth: 24,
-      varianceTolerance: 0.50,
-      annualCost: 131.88
-    }
-  },
-  {
-    id: 'MEM_03',
-    type: 'Baseline',
-    category: 'Baseline',
-    key: 'chatgpt_plus',
-    content: '$20.00/mo recurring on the 14th. Auto-reconcile without human ping.',
-    value: {
-      merchant: 'OpenAI (ChatGPT Plus)',
-      baselineAmount: 20.00,
-      cadence: 'monthly',
-      dayOfMonth: 14,
-      varianceTolerance: 0.00,
-      annualCost: 240.00
-    },
-    effective_date: '2026-10-01',
-    source: 'user_confirmed',
-    sensitivity: 'public',
-    tags: ['ai_tools', 'subscription', 'productivity'],
-    metadata: {
-      merchant: 'OpenAI (ChatGPT Plus)',
-      baselineAmount: 20.00,
-      cadence: 'monthly',
-      dayOfMonth: 14,
-      varianceTolerance: 0.00,
-      annualCost: 240.00
+      version: 1,
+      history: [
+        {
+          version: 1,
+          committedAt: '2026-10-01T00:00:00.000Z',
+          blobId: 'genesis_blob',
+          summary: 'Initial household subscription ledger baseline'
+        }
+      ],
+      suiTxDigest: '0x7a8b9c0d1e2f34567890abcdef1234567890abcdef12',
+      blobId: 'blob_walrus_sui_mainnet_subscription_ledger_v1'
     }
   },
   {
@@ -119,33 +147,6 @@ export const INITIAL_MEMORIES = [
       season: 'Q4_OCT_DEC',
       authorizedBy: 'User_HumanInLoop_001',
       lastApprovedDate: '2025-10-18T14:20:00Z'
-    }
-  },
-  {
-    id: 'MEM_05',
-    type: 'Baseline',
-    category: 'Baseline',
-    key: 'gym_equinox',
-    content: '$240.00/mo billed on 1st. Seasonal freeze scheduled for January.',
-    value: {
-      merchant: 'Equinox Gym',
-      baselineAmount: 240.00,
-      cadence: 'monthly',
-      dayOfMonth: 1,
-      freezeScheduledMonth: 'January',
-      annualCost: 2880.00
-    },
-    effective_date: '2026-10-01',
-    source: 'user_confirmed',
-    sensitivity: 'public',
-    tags: ['fitness', 'subscription'],
-    metadata: {
-      merchant: 'Equinox Gym',
-      baselineAmount: 240.00,
-      cadence: 'monthly',
-      dayOfMonth: 1,
-      freezeScheduledMonth: 'January',
-      annualCost: 2880.00
     }
   },
   {
@@ -220,31 +221,6 @@ export const INITIAL_MEMORIES = [
     }
   },
   {
-    id: 'MEM_09',
-    type: 'Baseline',
-    category: 'Baseline',
-    key: 'github_copilot',
-    content: '$10.00/mo baseline developer tool. Do not flag unless duplicated by team seat.',
-    value: {
-      merchant: 'GitHub Copilot',
-      baselineAmount: 10.00,
-      cadence: 'monthly',
-      dayOfMonth: 5,
-      category: 'Developer Productivity'
-    },
-    effective_date: '2026-10-01',
-    source: 'user_confirmed',
-    sensitivity: 'public',
-    tags: ['developer', 'productivity', 'subscription'],
-    metadata: {
-      merchant: 'GitHub Copilot',
-      baselineAmount: 10.00,
-      cadence: 'monthly',
-      dayOfMonth: 5,
-      category: 'Developer Productivity'
-    }
-  },
-  {
     id: 'MEM_10',
     type: 'Dispute',
     category: 'Dispute Trace',
@@ -292,31 +268,6 @@ export const INITIAL_MEMORIES = [
       combinedMonthlyWaste: 10.99,
       annualSavingsPotential: 131.88,
       recommendedAction: 'CANCEL_ONE_OR_SWITCH_FAMILY'
-    }
-  },
-  {
-    id: 'MEM_12',
-    type: 'Baseline',
-    category: 'Baseline',
-    key: 'icloud_storage_2tb',
-    content: '$9.99/mo family plan. Fixed utility tier.',
-    value: {
-      merchant: 'Apple iCloud+ 2TB',
-      baselineAmount: 9.99,
-      cadence: 'monthly',
-      dayOfMonth: 19,
-      category: 'Cloud Storage & Utility'
-    },
-    effective_date: '2026-10-01',
-    source: 'user_confirmed',
-    sensitivity: 'public',
-    tags: ['storage', 'utility', 'cloud'],
-    metadata: {
-      merchant: 'Apple iCloud+ 2TB',
-      baselineAmount: 9.99,
-      cadence: 'monthly',
-      dayOfMonth: 19,
-      category: 'Cloud Storage & Utility'
     }
   },
 
@@ -582,13 +533,13 @@ export const INITIAL_MEMORIES = [
 export async function seedAllMemories(client = new WalrusClient()) {
   const modeLabel = client.isLive ? 'Live Sui Mainnet' : 'Local Mock';
   console.log(`\n======================================================`);
-  console.log(`[Seed Harness] Seeding 24 Verified Memories to Walrus (${modeLabel}) (Schema v2)`);
+  console.log(`[Seed Harness] Seeding ${INITIAL_MEMORIES.length} Verified Memories to Walrus (${modeLabel}) (Schema v2)`);
   console.log(`Target Agent ID: ${client.agentId}`);
   console.log(`Target Network : ${client.network} (${modeLabel})`);
   console.log(`Taxonomy Scope : 10 Distinct Types (Baseline, Income, Commitment, Envelope, Goal, Policy, Correction, Decision, Dispute, Event)`);
   console.log(`======================================================\n`);
 
-  // Clear existing memories to ensure clean deterministic 24-anchor state
+  // Clear existing memories to ensure clean deterministic anchor state
   const store = client.loadStore();
   store.memories = {};
   client.saveStore(store);

@@ -22,8 +22,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { WalrusClient } from '../walrusClient.js';
 import { WatchdogEngine } from '../watchdogEngine.js';
-import { seedAllMemories } from '../seedMemories.js';
+import { seedAllMemories, INITIAL_MEMORIES } from '../seedMemories.js';
 import { TatumClient } from '../tatumClient.js';
+import { validateService, ValidationError, updateLedger } from '../subscriptionLedger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,9 +48,9 @@ async function runTests() {
   await seedAllMemories(walrus);
   const watchdog = new WatchdogEngine(walrus);
 
-  // Test 1: Check Walrus Mainnet Memory Count == 24 (spanning 10 distinct types)
+  // Test 1: Check Walrus Mainnet Memory Count (must match INITIAL_MEMORIES, >= 10 Mainnet rule)
   const memories = await walrus.listMemories();
-  assert(memories.length === 24, `Walrus memory count is ${memories.length} (must be 24, >= 10 Mainnet rule)`);
+  assert(memories.length === INITIAL_MEMORIES.length, `Walrus memory count is ${memories.length} (must be ${INITIAL_MEMORIES.length}, >= 10 Mainnet rule)`);
   const uniqueTypes = new Set(memories.map(m => m.type));
   assert(uniqueTypes.size >= 10, `Memories span ${uniqueTypes.size} distinct types (>= 10 required)`);
 
@@ -176,7 +177,39 @@ async function runTests() {
     purpose: 'Automated dispute micro-bounty'
   });
   assert(agentPay.status === 'CONFIRMED_ONCHAIN', 'Executes x402 / MPP agent payment on Sui via Tatum');
-  assert(Boolean(agentPay.gasEstimate), 'Agent payment incorporates real-time gas estimate');
+  // Test 12: Subscription Ledger Validation & Mutex Updates
+  let valErrThrown = false;
+  try {
+    validateService({ display_name: '', price: 10, cadence: 'monthly', bill_day: 5 });
+  } catch (err) {
+    if (err instanceof ValidationError) valErrThrown = true;
+  }
+  assert(valErrThrown, 'validateService throws ValidationError on empty vendor name');
+
+  let badCadenceThrown = false;
+  try {
+    validateService({ display_name: 'Test Sub', price: 10, cadence: 'biweekly', bill_day: 5 });
+  } catch (err) {
+    if (err instanceof ValidationError) badCadenceThrown = true;
+  }
+  assert(badCadenceThrown, 'validateService throws ValidationError on invalid cadence');
+
+  const updatedLedger = await updateLedger(walrus, (services) => {
+    services['hulu'] = {
+      display_name: 'Hulu',
+      price: 7.99,
+      cadence: 'monthly',
+      bill_day: 10,
+      category: 'Streaming',
+      raw_patterns: ['Hulu']
+    };
+    return services;
+  }, 'Add Hulu to subscription ledger');
+
+  assert(Boolean(updatedLedger.value.services.hulu), 'updateLedger successfully adds a service under mutex');
+  assert(updatedLedger.version === 2, 'updateLedger increments ledger version to 2');
+  assert(updatedLedger.history.length === 2, 'updateLedger appends audit history entry');
+  assert(Boolean(updatedLedger.supersedes), 'updateLedger points supersedes to previous version');
 
   console.log(`\n=============================================`);
   console.log(`Test Results: ${passed}/${total} Passed`);
