@@ -219,24 +219,24 @@ To honor our sovereign privacy guarantee while anchoring on decentralized infras
 | Memory ID | Type | Key | Sensitivity | Provenance | Stored Content & Policy Semantics | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `MEM_01` | Baseline | `subscription_ledger` | **Encrypted** | user_stated | Consolidated active subscription ledger holding Netflix ($15.49), Spotify ($10.99), ChatGPT Plus ($20.00), Equinox ($240.00), GitHub Copilot ($10.00), and iCloud ($9.99). Versioned with audit history. | **Committed** |
+| `MEM_13` | Income | `primary_pay_cycle` | **Encrypted** | user_stated | `Payroll inflow of $4,850.00 on 25th of month (variance: 0%). Basis for Safe-to-Spend runway.` | **Committed** |
+| `MEM_14` | Income | `hourly_wage_life_energy` | **Encrypted** | user_stated | `Real hourly wage baseline: $25.00/hr after tax/commute deductions for Life Energy calculator.` | **Committed** |
+| `MEM_15` | Commitment | `rent` | **Encrypted** | user_stated | `Fixed monthly apartment lease commitment of $1,500.00 due on 1st of month.` | **Committed** |
+| `MEM_16` | Goal | `emergency_buffer` | **Encrypted** | user_stated | `Emergency safety reserve target of $500.00. Sovereign policy: never count toward Safe-to-Spend.` | **Committed** |
+| `MEM_18` | Envelope | `groceries_baseline` | **Encrypted** | user_confirmed | `Groceries envelope baseline: $450.00/mo. Flagged 3 consecutive months of overspend.` | **Committed** |
+| `MEM_19` | Envelope | `rebalance_2026_10_groceries` | **Encrypted** | user_stated | `Roll With The Punches: $45 shifted from Dining to Groceries via 1-tap rebalance.` | **Committed** |
+| `MEM_23` | Decision | `purchase_smartphone_1200` | **Encrypted** | user_stated | `Impulse purchase evaluation: $1,200 smartphone equals 48 Life Energy hours. Deferred 30 days.` | **Committed** |
+| `MEM_24` | Event | `one_off_car_repair` | **Encrypted** | user_stated | `One-off shock: $320 alternator replacement. Excluded from recurring habit models.` | **Committed** |
 | `MEM_04` | Override | `aws_cloud_hosting` | Public | user_confirmed | `Q4 holiday traffic approved for surges up to $180/mo (authorized Oct 2025).` | **Committed** |
 | `MEM_06` | Trial Watch | `adobe_creative_trial` | Public | user_confirmed | `7-day free trial started Oct 18. Mandatory 48h cancellation notice scheduled Oct 23.` | **Committed** |
 | `MEM_07` | Policy | `unknown_vendor_threshold` | Public | user_stated | `Strict rule: Any new merchant debiting > $50.00 requires immediate SMS/Push approval.` | **Committed** |
 | `MEM_08` | Policy | `annual_renewal_tolerance` | Public | user_confirmed | `Annual renewals (Prime, 1Password) permitted +5% max inflation vs prior year.` | **Committed** |
 | `MEM_10` | Dispute | `doordash_pass` | Public | user_stated | `Duplicate charge disputed in August 2026. Refunded $9.99. Watch merchant for rebill.` | **Committed** |
 | `MEM_11` | Policy | `audio_streaming_overlap` | Public | user_confirmed | `Duplicate alert: User holds active Spotify ($10.99) and Apple Music ($10.99). Prompt consolidation.` | **Committed** |
-| `MEM_13` | Income | `primary_pay_cycle` | **Encrypted** | user_stated | `Payroll inflow of $4,850.00 on 25th of month (variance: 0%). Basis for Safe-to-Spend runway.` | **Committed** |
-| `MEM_14` | Income | `hourly_wage_life_energy` | **Encrypted** | user_stated | `Real hourly wage baseline: $25.00/hr after tax/commute deductions for Life Energy calculator.` | **Committed** |
-| `MEM_15` | Commitment | `rent` | **Encrypted** | user_stated | `Fixed monthly apartment lease commitment of $1,500.00 due on 1st of month.` | **Committed** |
-| `MEM_16` | Goal | `emergency_buffer` | **Encrypted** | user_stated | `Emergency safety reserve target of $500.00. Sovereign policy: never count toward Safe-to-Spend.` | **Committed** |
 | `MEM_17` | Policy | `pay_yourself_first` | Public | user_confirmed | `Pay-Yourself-First policy: Divert exactly 10% of every payroll inflow directly to emergency buffer.` | **Committed** |
-| `MEM_18` | Envelope | `groceries_baseline` | **Encrypted** | user_confirmed | `Groceries envelope baseline: $450.00/mo. Flagged 3 consecutive months of overspend.` | **Committed** |
-| `MEM_19` | Envelope | `rebalance_2026_10_groceries` | **Encrypted** | user_stated | `Roll With The Punches: $45 shifted from Dining to Groceries via 1-tap rebalance.` | **Committed** |
 | `MEM_20` | Correction | `merchant_sq_tst_blue_bottle` | Public | user_stated | `Raw processor string "SQ *TST* BLUE BOTTLE" maps to canonical vendor "Blue Bottle Coffee" under "Dining".` | **Committed** |
 | `MEM_21` | Policy | `rebalance_donor_priority` | Public | user_confirmed | `Donor priority: Draw surplus funds from Entertainment first, then Dining. Rent and Buffer protected.` | **Committed** |
 | `MEM_22` | Preference | `copilot_persona` | Public | user_stated | `Copilot persona: Default mode "Sentinel", gentle roasting allowed on splurges, hype on wins.` | **Committed** |
-| `MEM_23` | Decision | `purchase_smartphone_1200` | **Encrypted** | user_stated | `Impulse purchase evaluation: $1,200 smartphone equals 48 Life Energy hours. Deferred 30 days.` | **Committed** |
-| `MEM_24` | Event | `one_off_car_repair` | **Encrypted** | user_stated | `One-off shock: $320 alternator replacement. Excluded from recurring habit models.` | **Committed** |
 
 ---
 
