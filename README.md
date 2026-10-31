@@ -40,6 +40,23 @@ npm run dev
 #    Sentinel Household App     : http://localhost:3000/#app
 ```
 
+### 🚀 Production Cloud Deployment (Vercel & Render)
+
+#### Option A: Deploy on Vercel
+1. Push your repository to GitHub: `git push origin master`
+2. Go to [vercel.com/new](https://vercel.com/new) and import `Blackwrld04/PocketSentinel`.
+3. Vercel automatically detects the project using [vercel.json](file:///home/blackwrld04/RECALL/vercel.json) and [api/index.js](file:///home/blackwrld04/RECALL/api/index.js).
+4. Add your environment variables in Vercel Project Settings (`GROQ_API_KEY`, `TATUM_API_KEY`, `MEMWAL_KEY`, `MEMWAL_ACCOUNT_ID`).
+5. Click **Deploy**.
+
+#### Option B: Deploy on Render
+1. Connect your repository on [render.com](https://dashboard.render.com).
+2. Choose **New Web Service** or use the included [render.yaml](file:///home/blackwrld04/RECALL/render.yaml) blueprint.
+3. Configure the build and start settings:
+   * **Build Command:** `npm install`
+   * **Start Command:** `npm start`
+4. Add your secret environment keys in the Render dashboard and hit **Create Web Service**.
+
 ---
 
 ## 1. Executive Summary & Core Philosophy

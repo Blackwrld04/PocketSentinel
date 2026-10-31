@@ -431,21 +431,27 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Start Server
-const server = app.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(`🛡️  RecallRamp Sentinel Live: http://localhost:${PORT}`);
-  console.log(`📡 Walrus Memory Agent ID  : ${walrus.agentId}`);
-  console.log(`⛓️  Tatum Sui RPC Gateway   : ${tatum.suiRpcUrl}`);
-  console.log(`======================================================\n`);
-});
+// Start Server (only when not running inside Vercel serverless environment)
+let server;
+if (!process.env.VERCEL) {
+  server = app.listen(PORT, () => {
+    console.log(`\n======================================================`);
+    console.log(`🛡️  PocketSentinel Sentinel Live: http://localhost:${PORT}`);
+    console.log(`📡 Walrus Memory Agent ID  : ${walrus.agentId}`);
+    console.log(`⛓️  Tatum Sui RPC Gateway   : ${tatum.suiRpcUrl}`);
+    console.log(`======================================================\n`);
+  });
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`\n❌ Error: Port ${PORT} is already in use by another process.`);
-    console.error(`💡 Tip: Run 'fuser -k ${PORT}/tcp' or 'npx kill-port ${PORT}', or launch with PORT=${Number(PORT) + 1} npm run dev\n`);
-    process.exit(1);
-  } else {
-    throw err;
-  }
-});
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n❌ Error: Port ${PORT} is already in use by another process.`);
+      console.error(`💡 Tip: Run 'fuser -k ${PORT}/tcp' or 'npx kill-port ${PORT}', or launch with PORT=${Number(PORT) + 1} npm run dev\n`);
+      process.exit(1);
+    } else {
+      throw err;
+    }
+  });
+}
+
+export default app;
+export { app };

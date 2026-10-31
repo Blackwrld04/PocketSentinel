@@ -10,6 +10,9 @@
     "seed": "node server/seedMemories.js",
     "test": "node server/test/watchdog.test.js"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "keywords": [
     "pocketsentinel",
     "walrus-memory",
