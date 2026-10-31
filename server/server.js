@@ -116,15 +116,26 @@ app.post('/api/memories/seed', async (req, res) => {
 });
 
 /**
- * Commit a single new memory
+ * Commit a single new memory (Schema v2 supported)
  */
 app.post('/api/memories/commit', async (req, res) => {
   try {
-    const { key, category, content, metadata } = req.body;
-    if (!key || !content) {
-      return res.status(400).json({ error: 'Key and content are required' });
+    const { key, category, type, content, value, source, sensitivity, tags, supersedes, metadata } = req.body;
+    if (!key) {
+      return res.status(400).json({ error: 'Key is required' });
     }
-    const record = await walrus.commitMemory({ key, category: category || 'Custom', content, metadata });
+    const record = await walrus.commitMemory({
+      key,
+      category: category || type || 'Custom',
+      type: type || category || 'Baseline',
+      content: content || '',
+      value: value || null,
+      source: source || 'user_stated',
+      sensitivity: sensitivity || null,
+      tags: tags || [],
+      supersedes: supersedes || null,
+      metadata: metadata || {}
+    });
     res.json({ success: true, record });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -139,6 +150,32 @@ app.post('/api/memories/override', async (req, res) => {
     const { key, reason, amount } = req.body;
     const record = await walrus.recordOverride(key, { reason, amount });
     res.json({ success: true, message: 'Policy override permanently recorded to Walrus Memory', record });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Dynamic Runway calculated directly from Walrus Memory anchors (MEM_13, MEM_15, MEM_16)
+ */
+app.get('/api/memories/runway', async (req, res) => {
+  try {
+    const balance = req.query.balance ? Number(req.query.balance) : 2450.00;
+    const currency = req.query.currency || '$';
+    const runway = await watchdog.calculateRunwayFromMemories(balance, null, currency);
+    res.json(runway);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Cognitive Envelope Health derived from historical overspending and rebalances (MEM_18, MEM_19, MEM_21)
+ */
+app.get('/api/memories/envelope-health', async (req, res) => {
+  try {
+    const health = await watchdog.evaluateEnvelopeHealth();
+    res.json(health);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

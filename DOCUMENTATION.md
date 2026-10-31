@@ -86,7 +86,7 @@ To eliminate all complexity for everyday users, we conducted a forensic audit of
 
 ---
 
-## 4. Decentralized Episodic Memory: Walrus on Sui Mainnet
+## 4. Decentralized Episodic Memory: Walrus on Sui Mainnet (Schema v2)
 
 ### 4.1 Why Walrus Memory is Transformative
 Traditional finance apps are **stateless or centralized**:
@@ -95,19 +95,23 @@ Traditional finance apps are **stateless or centralized**:
 
 **Walrus gives the AI Sentinel persistent, sovereign memory:**
 1. **Agent ID Registration:** `walrus_agent_recallramp_mainnet_0x7f4b82c` on Sui Mainnet.
-2. **Permanent Baselines:** Remembers that Netflix was approved at $\$15.49$ in June. When Netflix bills $\$17.99$ in October, the agent instantly detects a $+\$2.50$/mo creep ($\$30.00$/yr leakage).
-3. **Suppression of False Alarms:** Remembers that AWS bills surge in Q4 due to machine learning compute, up to an authorized ceiling of $\$180.00$. When a $\$142.50$ charge hits, the agent suppresses the alert, eliminating alert fatigue.
-4. **Trial Expiration Defense:** Tracks Adobe CC 7-day trial and alerts the user 48 hours prior to auto-rebill ($\$54.99$/mo).
+2. **Schema v2 Taxonomy (10 Distinct Types):** Baseline, Envelope, Income, Commitment, Goal, Policy, Correction, Decision, Dispute, Event, Preference.
+3. **Client-Side AES-256-GCM Encryption:** Plaintext income, lease commitments, buffer goals, envelope balances, impulse decisions, and life shocks are encrypted locally before committing to Walrus. Only ciphertext, IV, and authTag go on-chain.
+4. **Learning Across Sessions:** 
+   - Normalizes merchant strings (`SQ *TST* BLUE BOTTLE` -> `Blue Bottle Coffee` under `Dining` via `MEM_20`).
+   - Learns envelope deficit habits across multiple months (`MEM_18` + `MEM_19`) to advise baseline adjustments instead of blind monthly rebalancing.
+5. **Safety Rule on Suppression:** Inferred memories (`source: 'inferred'`) are strictly prohibited from suppressing alerts or auto-clearing charges without explicit human confirmation.
 
-### 4.2 The 12 Verified Onchain Memory Anchors
+### 4.2 The 24 Verified Onchain Memory Anchors
 Provisioned via `server/seedMemories.js` and verified in unit tests (`npm test`):
 
 ```javascript
+// Baselines & Subscriptions (Public)
 [MEM_01] netflix_standard: Baseline $15.49/mo (Flags $17.99 debit as +$2.50 creep)
-[MEM_02] spotify_premium: Baseline $10.99/mo (Active baseline verification)
+[MEM_02] spotify_premium: Baseline $10.99/mo (Active audio streaming baseline)
 [MEM_03] chatgpt_plus: Baseline $20.00/mo (AI productivity baseline)
 [MEM_04] aws_cloud_hosting: Seasonal Override Ceiling $180.00 (Suppresses false alarm on $142.50 debit)
-[MEM_05] gym_equinox: Frozen State $0.00/mo (Injury medical suspension freeze)
+[MEM_05] gym_equinox: Frozen State $240.00/mo (Seasonal freeze scheduled for January)
 [MEM_06] adobe_creative_trial: Trial Watch (7-day trial ending in 48 hours, $54.99/mo risk)
 [MEM_07] unknown_vendor_threshold: Policy Gate ($50.00 limit before human sign-off)
 [MEM_08] annual_renewal_tolerance: Policy Ceiling (Flag annual price hikes > 5.0%)
@@ -115,6 +119,20 @@ Provisioned via `server/seedMemories.js` and verified in unit tests (`npm test`)
 [MEM_10] doordash_pass: Dispute Trace (Active dispute tracking against unauthorized fee creep)
 [MEM_11] audio_streaming_overlap: Overlap Watch (Flags Spotify $10.99 + Apple Music $10.99 redundancy)
 [MEM_12] icloud_storage_2tb: Baseline $9.99/mo (Family cloud storage baseline)
+
+// Household Wealth OS & Cognitive Learning (Schema v2)
+[MEM_13] primary_pay_cycle: [ENCRYPTED] Income inflow $4,850.00 on 25th (Basis for Safe-to-Spend runway)
+[MEM_14] hourly_wage_life_energy: [ENCRYPTED] Real hourly wage $25.00/hr (Life Energy calculator)
+[MEM_15] rent: [ENCRYPTED] Fixed lease commitment $1,500.00 due on 1st of month
+[MEM_16] emergency_buffer: [ENCRYPTED] Emergency buffer goal $500.00 (Excluded from Safe-to-Spend)
+[MEM_17] pay_yourself_first: Policy 10% automatic reserve diversion upon income arrival (Public)
+[MEM_18] groceries_baseline: [ENCRYPTED] Envelope baseline $450.00/mo (3 consecutive months of overspend)
+[MEM_19] rebalance_2026_10_groceries: [ENCRYPTED] Envelope rebalance history ($45 Dining -> Groceries)
+[MEM_20] merchant_sq_tst_blue_bottle: Correction rule "SQ *TST* BLUE BOTTLE" -> "Blue Bottle Coffee" (Dining)
+[MEM_21] rebalance_donor_priority: Policy rebalance donor sequence [Entertainment, Dining] (Public)
+[MEM_22] copilot_persona: Preference "Sentinel" default, gentle roasting on splurges, hype on wins
+[MEM_23] purchase_smartphone_1200: [ENCRYPTED] Decision $1,200 smartphone (48 Life Energy hrs, deferred 30d)
+[MEM_24] one_off_car_repair: [ENCRYPTED] Life shock $320 alternator repair (Excluded from habit model)
 ```
 
 ---

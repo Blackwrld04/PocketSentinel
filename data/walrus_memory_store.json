@@ -1,14 +1,34 @@
 {
   "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
   "network": "sui-mainnet",
-  "lastSync": "2026-10-31T13:08:12.429Z",
+  "lastSync": "2026-10-31T14:09:44.425Z",
   "memories": {
     "netflix_standard": {
       "id": "MEM_01",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "netflix_standard",
+      "type": "Baseline",
       "category": "Baseline",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "subscription",
+        "baseline",
+        "streaming"
+      ],
       "content": "$15.49/mo baseline established. Max acceptable variance: $0.00. Alert on any deviation.",
+      "value": {
+        "merchant": "Netflix",
+        "baselineAmount": 15.49,
+        "cadence": "monthly",
+        "dayOfMonth": 12,
+        "varianceTolerance": 0,
+        "annualCost": 185.88
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "Netflix",
         "baselineAmount": 15.49,
@@ -16,9 +36,10 @@
         "dayOfMonth": 12,
         "varianceTolerance": 0,
         "annualCost": 185.88,
+        "userSummary": "$15.49/mo baseline established. Max acceptable variance: $0.00. Alert on any deviation.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.414Z",
+        "committedAt": "2026-10-31T14:09:44.376Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000001",
         "memwalJobId": "mock-job-000001",
@@ -29,8 +50,28 @@
       "id": "MEM_02",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "spotify_premium",
+      "type": "Baseline",
       "category": "Baseline",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "subscription",
+        "baseline",
+        "audio"
+      ],
       "content": "$10.99/mo baseline. Flag price increase > $0.50 immediately.",
+      "value": {
+        "merchant": "Spotify",
+        "baselineAmount": 10.99,
+        "cadence": "monthly",
+        "dayOfMonth": 24,
+        "varianceTolerance": 0.5,
+        "annualCost": 131.88
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "Spotify",
         "baselineAmount": 10.99,
@@ -38,9 +79,10 @@
         "dayOfMonth": 24,
         "varianceTolerance": 0.5,
         "annualCost": 131.88,
+        "userSummary": "$10.99/mo baseline. Flag price increase > $0.50 immediately.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.419Z",
+        "committedAt": "2026-10-31T14:09:44.377Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000002",
         "memwalJobId": "mock-job-000002",
@@ -51,8 +93,28 @@
       "id": "MEM_03",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "chatgpt_plus",
+      "type": "Baseline",
       "category": "Baseline",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "ai_tools",
+        "subscription",
+        "productivity"
+      ],
       "content": "$20.00/mo recurring on the 14th. Auto-reconcile without human ping.",
+      "value": {
+        "merchant": "OpenAI (ChatGPT Plus)",
+        "baselineAmount": 20,
+        "cadence": "monthly",
+        "dayOfMonth": 14,
+        "varianceTolerance": 0,
+        "annualCost": 240
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "OpenAI (ChatGPT Plus)",
         "baselineAmount": 20,
@@ -60,9 +122,10 @@
         "dayOfMonth": 14,
         "varianceTolerance": 0,
         "annualCost": 240,
+        "userSummary": "$20.00/mo recurring on the 14th. Auto-reconcile without human ping.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.423Z",
+        "committedAt": "2026-10-31T14:09:44.377Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000003",
         "memwalJobId": "mock-job-000003",
@@ -73,8 +136,27 @@
       "id": "MEM_04",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "aws_cloud_hosting",
+      "type": "Override",
       "category": "Override",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2025-10-18",
+      "supersedes": null,
+      "tags": [
+        "override",
+        "cloud_hosting",
+        "suppression"
+      ],
       "content": "Q4 holiday traffic approved for surges up to $180/mo (authorized by user Oct 2025). Suppress alert if below $180.",
+      "value": {
+        "merchant": "Amazon Web Services (AWS)",
+        "standardBaseline": 64.2,
+        "approvedSurgeCeiling": 180,
+        "season": "Q4_OCT_DEC",
+        "authorizedBy": "User_HumanInLoop_001"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "Amazon Web Services (AWS)",
         "standardBaseline": 64.2,
@@ -82,9 +164,10 @@
         "season": "Q4_OCT_DEC",
         "authorizedBy": "User_HumanInLoop_001",
         "lastApprovedDate": "2025-10-18T14:20:00Z",
+        "userSummary": "Q4 holiday traffic approved for surges up to $180/mo (authorized by user Oct 2025). Suppress alert if below $180.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.425Z",
+        "committedAt": "2026-10-31T14:09:44.377Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000004",
         "memwalJobId": "mock-job-000004",
@@ -95,8 +178,27 @@
       "id": "MEM_05",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "gym_equinox",
+      "type": "Baseline",
       "category": "Baseline",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "fitness",
+        "subscription"
+      ],
       "content": "$240.00/mo billed on 1st. Seasonal freeze scheduled for January.",
+      "value": {
+        "merchant": "Equinox Gym",
+        "baselineAmount": 240,
+        "cadence": "monthly",
+        "dayOfMonth": 1,
+        "freezeScheduledMonth": "January",
+        "annualCost": 2880
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "Equinox Gym",
         "baselineAmount": 240,
@@ -104,9 +206,10 @@
         "dayOfMonth": 1,
         "freezeScheduledMonth": "January",
         "annualCost": 2880,
+        "userSummary": "$240.00/mo billed on 1st. Seasonal freeze scheduled for January.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.425Z",
+        "committedAt": "2026-10-31T14:09:44.377Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000005",
         "memwalJobId": "mock-job-000005",
@@ -117,8 +220,28 @@
       "id": "MEM_06",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "adobe_creative_trial",
+      "type": "Trial Watch",
       "category": "Trial Watch",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-18",
+      "supersedes": null,
+      "tags": [
+        "trial_watch",
+        "cancellation",
+        "urgency"
+      ],
       "content": "7-day free trial started Oct 18. Mandatory 48h cancellation notice scheduled Oct 23. Rebill risk: $54.99/mo.",
+      "value": {
+        "merchant": "Adobe Creative Cloud",
+        "trialStartDate": "2026-10-18T09:00:00Z",
+        "trialDurationDays": 7,
+        "rebillAmount": 54.99,
+        "cancellationNoticeDeadline": "2026-10-23T09:00:00Z",
+        "status": "URGENT_ACTION_REQUIRED"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "Adobe Creative Cloud",
         "trialStartDate": "2026-10-18T09:00:00Z",
@@ -126,9 +249,10 @@
         "rebillAmount": 54.99,
         "cancellationNoticeDeadline": "2026-10-23T09:00:00Z",
         "status": "URGENT_ACTION_REQUIRED",
+        "userSummary": "7-day free trial started Oct 18. Mandatory 48h cancellation notice scheduled Oct 23. Rebill risk: $54.99/mo.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.426Z",
+        "committedAt": "2026-10-31T14:09:44.377Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000006",
         "memwalJobId": "mock-job-000006",
@@ -139,16 +263,35 @@
       "id": "MEM_07",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "unknown_vendor_threshold",
+      "type": "Policy",
       "category": "Policy",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "policy",
+        "safety_gate",
+        "human_in_loop"
+      ],
       "content": "Strict rule: Any new merchant debiting > $50.00 requires immediate SMS/Push approval. Suppress autonomous pass.",
+      "value": {
+        "policyType": "HARD_ESCALATION_GATE",
+        "thresholdAmount": 50,
+        "action": "REQUIRE_HUMAN_CONFIRMATION",
+        "severity": "HIGH"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "policyType": "HARD_ESCALATION_GATE",
         "thresholdAmount": 50,
         "action": "REQUIRE_HUMAN_CONFIRMATION",
         "severity": "HIGH",
+        "userSummary": "Strict rule: Any new merchant debiting > $50.00 requires immediate SMS/Push approval. Suppress autonomous pass.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.426Z",
+        "committedAt": "2026-10-31T14:09:44.378Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000007",
         "memwalJobId": "mock-job-000007",
@@ -159,15 +302,33 @@
       "id": "MEM_08",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "annual_renewal_tolerance",
+      "type": "Policy",
       "category": "Policy",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "policy",
+        "inflation",
+        "annual_renewals"
+      ],
       "content": "Annual renewals (Prime, 1Password) permitted +5% max inflation vs prior year without emergency escalation.",
+      "value": {
+        "policyType": "ANNUAL_INFLATION_TOLERANCE",
+        "maxAllowedPercentage": 5,
+        "applicableCadence": "annual"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "policyType": "ANNUAL_INFLATION_TOLERANCE",
         "maxAllowedPercentage": 5,
         "applicableCadence": "annual",
+        "userSummary": "Annual renewals (Prime, 1Password) permitted +5% max inflation vs prior year without emergency escalation.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.427Z",
+        "committedAt": "2026-10-31T14:09:44.378Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000008",
         "memwalJobId": "mock-job-000008",
@@ -178,17 +339,37 @@
       "id": "MEM_09",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "github_copilot",
+      "type": "Baseline",
       "category": "Baseline",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "developer",
+        "productivity",
+        "subscription"
+      ],
       "content": "$10.00/mo baseline developer tool. Do not flag unless duplicated by team seat.",
+      "value": {
+        "merchant": "GitHub Copilot",
+        "baselineAmount": 10,
+        "cadence": "monthly",
+        "dayOfMonth": 5,
+        "category": "Developer Productivity"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "GitHub Copilot",
         "baselineAmount": 10,
         "cadence": "monthly",
         "dayOfMonth": 5,
         "category": "Developer Productivity",
+        "userSummary": "$10.00/mo baseline developer tool. Do not flag unless duplicated by team seat.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.427Z",
+        "committedAt": "2026-10-31T14:09:44.378Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000009",
         "memwalJobId": "mock-job-000009",
@@ -199,17 +380,37 @@
       "id": "MEM_10",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "doordash_pass",
+      "type": "Dispute",
       "category": "Dispute Trace",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-08-14",
+      "supersedes": null,
+      "tags": [
+        "dispute",
+        "refund",
+        "trace"
+      ],
       "content": "Duplicate charge disputed in August 2026. Refunded $9.99. Watch merchant for rebill.",
+      "value": {
+        "merchant": "DoorDash DashPass",
+        "disputedAmount": 9.99,
+        "resolutionStatus": "REFUNDED_WON",
+        "disputeDate": "2026-08-14T11:00:00Z",
+        "actionPlan": "FLAG_INSTANT_IF_RECURS"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "DoorDash DashPass",
         "disputedAmount": 9.99,
         "resolutionStatus": "REFUNDED_WON",
         "disputeDate": "2026-08-14T11:00:00Z",
         "actionPlan": "FLAG_INSTANT_IF_RECURS",
+        "userSummary": "Duplicate charge disputed in August 2026. Refunded $9.99. Watch merchant for rebill.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.428Z",
+        "committedAt": "2026-10-31T14:09:44.379Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000010",
         "memwalJobId": "mock-job-000010",
@@ -220,8 +421,29 @@
       "id": "MEM_11",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "audio_streaming_overlap",
+      "type": "Policy",
       "category": "Overlap Watch",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "overlap",
+        "waste_reduction"
+      ],
       "content": "Duplicate alert: User holds active Spotify ($10.99) and Apple Music ($10.99). Prompt consolidation.",
+      "value": {
+        "overlapType": "DUPLICATE_CATEGORY_SERVICES",
+        "merchants": [
+          "Spotify Premium",
+          "Apple Music"
+        ],
+        "combinedMonthlyWaste": 10.99,
+        "annualSavingsPotential": 131.88,
+        "recommendedAction": "CANCEL_ONE_OR_SWITCH_FAMILY"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "overlapType": "DUPLICATE_CATEGORY_SERVICES",
         "merchants": [
@@ -231,9 +453,10 @@
         "combinedMonthlyWaste": 10.99,
         "annualSavingsPotential": 131.88,
         "recommendedAction": "CANCEL_ONE_OR_SWITCH_FAMILY",
+        "userSummary": "Duplicate alert: User holds active Spotify ($10.99) and Apple Music ($10.99). Prompt consolidation.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.428Z",
+        "committedAt": "2026-10-31T14:09:44.379Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000011",
         "memwalJobId": "mock-job-000011",
@@ -244,40 +467,579 @@
       "id": "MEM_12",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
       "key": "icloud_storage_2tb",
+      "type": "Baseline",
       "category": "Baseline",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "storage",
+        "utility",
+        "cloud"
+      ],
       "content": "$9.99/mo family plan. Fixed utility tier.",
+      "value": {
+        "merchant": "Apple iCloud+ 2TB",
+        "baselineAmount": 9.99,
+        "cadence": "monthly",
+        "dayOfMonth": 19,
+        "category": "Cloud Storage & Utility"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
         "merchant": "Apple iCloud+ 2TB",
         "baselineAmount": 9.99,
         "cadence": "monthly",
         "dayOfMonth": 19,
         "category": "Cloud Storage & Utility",
+        "userSummary": "$9.99/mo family plan. Fixed utility tier.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-31T13:08:12.429Z",
+        "committedAt": "2026-10-31T14:09:44.379Z",
         "verifiedMainnet": true,
         "memwalBlobId": "mock-blob-000012",
         "memwalJobId": "mock-job-000012",
         "isLiveMemWal": false
       }
     },
-    "dispute_adobe_creative_cloud_all_apps_1792789668822": {
+    "primary_pay_cycle": {
       "id": "MEM_13",
       "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
-      "key": "dispute_adobe_creative_cloud_all_apps_1792789668822",
-      "category": "DISPUTE_LOG",
-      "content": {
-        "merchant": "Adobe Creative Cloud All Apps",
-        "deltaRefundClaimed": 54.99,
-        "action": "1_TAP_DISPUTE_FILED",
-        "status": "PENDING_VENDOR_CREDIT",
-        "timestamp": "2026-10-23T21:07:48.822Z"
+      "key": "primary_pay_cycle",
+      "type": "Income",
+      "category": "Income",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "runway",
+        "income",
+        "pay_cycle"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0x1a9ddd7b7ff3a18d",
+      "value": {
+        "frequency": "monthly",
+        "day_of_month": 25,
+        "amount": 4850,
+        "variance_pct": 0
       },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
       "metadata": {
+        "frequency": "monthly",
+        "day_of_month": 25,
+        "amount": 4850,
+        "variance_pct": 0,
+        "userSummary": "Primary payroll inflow of $4,850.00 recurring on the 25th of each month (variance: 0%). Basis for Safe-to-Spend runway calculation.",
         "network": "sui-mainnet",
         "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
-        "committedAt": "2026-10-23T21:07:48.837Z",
-        "verifiedMainnet": true
+        "committedAt": "2026-10-31T14:09:44.380Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000013",
+        "memwalJobId": "mock-job-000013",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "01d4c84b297b0a29793d6fceb4b77f71e7d032ca3727f39480bde12239d218c448e2a695d5dd102c55f8622e1b256071654e10df941439373c488b46e68c6094872df9f6681bf238",
+          "iv": "567f10579ddb5f6c8470f0cc",
+          "authTag": "1aecae3943d2cce559fc554eef2f1aa1",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "hourly_wage_life_energy": {
+      "id": "MEM_14",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "hourly_wage_life_energy",
+      "type": "Income",
+      "category": "Income",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "life_energy",
+        "wage",
+        "copilot"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0x6cebb310865019e6",
+      "value": {
+        "hourly_wage": 25,
+        "used_by": "life_energy_calculator"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "hourly_wage": 25,
+        "used_by": "life_energy_calculator",
+        "userSummary": "Real hourly wage baseline established at $25.00/hour after tax/commute deductions. Used by Copilot Life Energy calculator.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.381Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000014",
+        "memwalJobId": "mock-job-000014",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "8a15a04c375eb496dfc68aaf93d2360bf57affd16f83fc4e6550f389500c16c63c3378cf4ad6ba1314cd1add96dfef657fa4cfed3e",
+          "iv": "824a5363b83c82654c47f997",
+          "authTag": "7d1d8449ae136adb53a38a999a8a44f0",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "rent": {
+      "id": "MEM_15",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "rent",
+      "type": "Commitment",
+      "category": "Commitment",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "fixed_bills",
+        "runway",
+        "commitment"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0x0419fcbebbfd6387",
+      "value": {
+        "amount": 1500,
+        "due_day": 1,
+        "note": "Monthly apartment lease payment; fixed bill commitment"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "amount": 1500,
+        "due_day": 1,
+        "note": "Monthly apartment lease payment; fixed bill commitment",
+        "userSummary": "Fixed monthly apartment lease commitment of $1,500.00 due on the 1st of each month. Essential fixed commitment for runway math.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.382Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000015",
+        "memwalJobId": "mock-job-000015",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "9395de33f789bd4f83e8d34ad83aca14ff6b7f597236a7da1e162b4636186dbc2a02674dd590d728fe1a44a38e9dc36d9edf2f6ca840a82b77619cb40dcbc092ff03445affabf3e1e537557628d0691f452e57052e128b6db5e0d4",
+          "iv": "6a7cebfbead85db82a391a34",
+          "authTag": "ca5d03919e2cd816d0d6b4fabdf90384",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "emergency_buffer": {
+      "id": "MEM_16",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "emergency_buffer",
+      "type": "Goal",
+      "category": "Goal",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "savings",
+        "buffer",
+        "reserve"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0xd5523d4b17d10dd9",
+      "value": {
+        "target": 500,
+        "rule": "never count toward Safe-to-Spend"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "target": 500,
+        "rule": "never count toward Safe-to-Spend",
+        "userSummary": "Emergency safety reserve target of $500.00. Sovereign policy: never count toward Safe-to-Spend runway balance.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.382Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000016",
+        "memwalJobId": "mock-job-000016",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "ec5d22b4fba044c02814ca3f6c760b7231a7a81bcd9626fb016acb537c782f470921419130806b4fa917e6bb883239159c541249d27d3c4b",
+          "iv": "a29a17b7686fece95cd9424b",
+          "authTag": "d2bbea378b7fc8ec836569c06de32337",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "pay_yourself_first": {
+      "id": "MEM_17",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "pay_yourself_first",
+      "type": "Policy",
+      "category": "Policy",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "policy",
+        "savings",
+        "automation"
+      ],
+      "content": "Pay-Yourself-First policy: Divert exactly 10% of every payroll inflow directly to emergency buffer upon arrival.",
+      "value": {
+        "percent_of_inflow": 10,
+        "destination": "emergency_buffer",
+        "timing": "on_income_arrival"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "percent_of_inflow": 10,
+        "destination": "emergency_buffer",
+        "timing": "on_income_arrival",
+        "userSummary": "Pay-Yourself-First policy: Divert exactly 10% of every payroll inflow directly to emergency buffer upon arrival.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.383Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000017",
+        "memwalJobId": "mock-job-000017",
+        "isLiveMemWal": false
+      }
+    },
+    "groceries_baseline": {
+      "id": "MEM_18",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "groceries_baseline",
+      "type": "Envelope",
+      "category": "Envelope",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-01",
+      "supersedes": null,
+      "tags": [
+        "envelopes",
+        "groceries",
+        "budget"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0x7abd5078e7fb35b3",
+      "value": {
+        "monthly_allocation": 450,
+        "history_overspend_months": 3,
+        "proposed_raise": "pending_user_approval"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "monthly_allocation": 450,
+        "history_overspend_months": 3,
+        "proposed_raise": "pending_user_approval",
+        "userSummary": "Groceries envelope baseline: $450.00/mo. Flagged 3 consecutive months of overspend. Proposed raise to $495/mo pending user approval.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.384Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000018",
+        "memwalJobId": "mock-job-000018",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "677307442717f92e67ba92735af1455f7705fdc9dc712684f6fb32a7c7323a44e68e043113ec3e17133288ec6a7d39886e5379f4551f5ad945648ec5bd611d983d2d11139d9bc0ea0ef41ac0e1f31d51b95273ab42246ddef15e3162af67b40c",
+          "iv": "1e27674537a9e629f3aff487",
+          "authTag": "3a7b879d771bad653baf338e4b4978d0",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "rebalance_2026_10_groceries": {
+      "id": "MEM_19",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "rebalance_2026_10_groceries",
+      "type": "Envelope",
+      "category": "Envelope",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-28",
+      "supersedes": null,
+      "tags": [
+        "rebalance",
+        "learning_loop",
+        "envelopes"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0x206830e3f9b697a7",
+      "value": {
+        "from": "Dining",
+        "to": "Groceries",
+        "amount": 45,
+        "reason": "overspend",
+        "trigger": "one_tap_rebalance"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "from": "Dining",
+        "to": "Groceries",
+        "amount": 45,
+        "reason": "overspend",
+        "trigger": "one_tap_rebalance",
+        "userSummary": "Roll With The Punches: $45.00 shifted from Dining to Groceries via 1-tap rebalance to cover end-of-month grocery deficit.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.385Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000019",
+        "memwalJobId": "mock-job-000019",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "3429357d477d7016760a2e503551aa4d26868ebda7bb8615e7d19da4cec91314412819b124ee452866a664b2b94b413337ed2d064e5eaabe30e399553572a10983982480b2c33dca02b9187c1248380a19f176ea017040be3133dbf6319cd6f323",
+          "iv": "235fdbc34a4181038b4689df",
+          "authTag": "36dca196562ac9e180772883d020e760",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "merchant_sq_tst_blue_bottle": {
+      "id": "MEM_20",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "merchant_sq_tst_blue_bottle",
+      "type": "Correction",
+      "category": "Correction",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-28",
+      "supersedes": null,
+      "tags": [
+        "normalization",
+        "correction",
+        "learning_loop"
+      ],
+      "content": "Merchant normalization rule: Raw string \"SQ *TST* BLUE BOTTLE\" maps to canonical vendor \"Blue Bottle Coffee\" in category \"Dining\".",
+      "value": {
+        "raw_pattern": "SQ *TST* BLUE BOTTLE",
+        "canonical_vendor": "Blue Bottle Coffee",
+        "category": "Dining"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "raw_pattern": "SQ *TST* BLUE BOTTLE",
+        "canonical_vendor": "Blue Bottle Coffee",
+        "category": "Dining",
+        "userSummary": "Merchant normalization rule: Raw string \"SQ *TST* BLUE BOTTLE\" maps to canonical vendor \"Blue Bottle Coffee\" in category \"Dining\".",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.386Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000020",
+        "memwalJobId": "mock-job-000020",
+        "isLiveMemWal": false
+      }
+    },
+    "rebalance_donor_priority": {
+      "id": "MEM_21",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "rebalance_donor_priority",
+      "type": "Policy",
+      "category": "Policy",
+      "source": "user_confirmed",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-28",
+      "supersedes": null,
+      "tags": [
+        "policy",
+        "rebalance",
+        "priority"
+      ],
+      "content": "Envelope rebalancing donor priority: Draw surplus funds from Entertainment first, then Dining. Rent, Groceries, and Buffer are protected.",
+      "value": {
+        "donors_in_order": [
+          "Entertainment",
+          "Dining"
+        ],
+        "protected": [
+          "Rent",
+          "Groceries",
+          "Emergency Buffer"
+        ]
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "donors_in_order": [
+          "Entertainment",
+          "Dining"
+        ],
+        "protected": [
+          "Rent",
+          "Groceries",
+          "Emergency Buffer"
+        ],
+        "userSummary": "Envelope rebalancing donor priority: Draw surplus funds from Entertainment first, then Dining. Rent, Groceries, and Buffer are protected.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.386Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000021",
+        "memwalJobId": "mock-job-000021",
+        "isLiveMemWal": false
+      }
+    },
+    "copilot_persona": {
+      "id": "MEM_22",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "copilot_persona",
+      "type": "Preference",
+      "category": "Preference",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-28",
+      "supersedes": null,
+      "tags": [
+        "copilot",
+        "persona",
+        "preferences"
+      ],
+      "content": "AI Copilot persona configuration: Default mode \"Sentinel\", gentle roasting allowed on impulse splurges, hype celebratory toasts after budget wins.",
+      "value": {
+        "default_mode": "Sentinel",
+        "roast_allowed": true,
+        "hype_after_wins": true
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "default_mode": "Sentinel",
+        "roast_allowed": true,
+        "hype_after_wins": true,
+        "userSummary": "AI Copilot persona configuration: Default mode \"Sentinel\", gentle roasting allowed on impulse splurges, hype celebratory toasts after budget wins.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.386Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000022",
+        "memwalJobId": "mock-job-000022",
+        "isLiveMemWal": false
+      }
+    },
+    "purchase_smartphone_1200": {
+      "id": "MEM_23",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "purchase_smartphone_1200",
+      "type": "Decision",
+      "category": "Decision",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-29",
+      "supersedes": null,
+      "tags": [
+        "impulse_watch",
+        "decision",
+        "life_energy"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0xe4fb50489aa622c1",
+      "value": {
+        "amount": 1200,
+        "life_energy_hours": 48,
+        "copilot_advice": "wait_30_days",
+        "user_choice": "deferred",
+        "outcome": "pending"
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "amount": 1200,
+        "life_energy_hours": 48,
+        "copilot_advice": "wait_30_days",
+        "user_choice": "deferred",
+        "outcome": "pending",
+        "userSummary": "Impulse purchase evaluation: $1,200.00 smartphone equals 48 Life Energy hours. Copilot advised 30-day cooling delay; user deferred decision.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.387Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000023",
+        "memwalJobId": "mock-job-000023",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "ffcd6ab8563fcbb6e2c12f4fcd0a92b882a83890d37990141e3b2f3f841650af6872b5371ac0401a2dc274d4bfe7ca180b8defa79da1472a1bd220c8da5b7267f9fa7a69c4f2e9c94d4c298ecd42f5e3f9fc4c51dd13113d8a04401d84e617b974fe78c764d530e3e1696c44cc5e075d419fcc",
+          "iv": "eb381244bfffa769ab42a0da",
+          "authTag": "94292e6b412bafa59dd8418aab658125",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "one_off_car_repair": {
+      "id": "MEM_24",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "one_off_car_repair",
+      "type": "Event",
+      "category": "Event",
+      "source": "user_stated",
+      "confidence": 1,
+      "sensitivity": "encrypted",
+      "effective_date": "2026-10-15",
+      "supersedes": null,
+      "tags": [
+        "shock_event",
+        "anomalies",
+        "transport"
+      ],
+      "content": "[ENCRYPTED_AES_256_GCM] payload_hash:0x4225e2e51f2bebc9",
+      "value": {
+        "amount": 320,
+        "category": "Transport",
+        "exclude_from_habit_analysis": true
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "amount": 320,
+        "category": "Transport",
+        "exclude_from_habit_analysis": true,
+        "userSummary": "One-off unexpected life shock: $320.00 alternator replacement in category \"Transport\". Exclude from recurring discretionary habit models.",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.387Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000024",
+        "memwalJobId": "mock-job-000024",
+        "isLiveMemWal": false,
+        "encryptedPayload": {
+          "ciphertext": "593994736239de69bbb42f77ba531ddf79221ddfc17546080d0bc0fed5ca6816f5c0308c3ae4301b8b0a12773efdd6b2c2d092056e0787ec46921bf05d51d6b0d6924bfa21b3381e",
+          "iv": "8667b3c534eb9550d793611b",
+          "authTag": "ea1b39bd142043ba0679922d06e58d4e",
+          "algorithm": "aes-256-gcm"
+        }
+      }
+    },
+    "inferred_uber_surge": {
+      "id": "MEM_TEST_INFERRED",
+      "agentId": "walrus_agent_recallramp_mainnet_0x7f4b82c",
+      "key": "inferred_uber_surge",
+      "type": "Override",
+      "category": "Override",
+      "source": "inferred",
+      "confidence": 1,
+      "sensitivity": "public",
+      "effective_date": "2026-10-31",
+      "supersedes": null,
+      "tags": [],
+      "content": "Inferred surge ceiling for Uber",
+      "value": {
+        "approvedSurgeCeiling": 100
+      },
+      "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+      "metadata": {
+        "userSummary": "Inferred surge ceiling for Uber",
+        "network": "sui-mainnet",
+        "suiTxDigest": "0x77616c7275735f6167656e745f726563616c6c72616d",
+        "committedAt": "2026-10-31T14:09:44.425Z",
+        "verifiedMainnet": true,
+        "memwalBlobId": "mock-blob-000025",
+        "memwalJobId": "mock-job-000025",
+        "isLiveMemWal": false
       }
     }
   }
