@@ -14,6 +14,7 @@
  */
 
 import { WalrusClient } from './walrusClient.js';
+import { toVendorSlug, updateLedger } from './subscriptionLedger.js';
 
 export class WatchdogEngine {
   constructor(walrusClient = new WalrusClient()) {
@@ -69,59 +70,29 @@ export class WatchdogEngine {
       }
     }
 
-    const vendorSlug = tx.merchant.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    
-    // Find matching memory or baseline
-    const matchingKey = Object.keys(memories).find(k => {
+    const cleanMerchant = (tx.merchant || '').toLowerCase().trim();
+    const vendorSlug = cleanMerchant.replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const canonicalSlug = toVendorSlug(cleanMerchant);
+
+    // 1. Check override_<vendor> memory (overrides checked first before ledger)
+    const overrideKey = Object.keys(memories).find(k => {
+      if (k === 'subscription_ledger') return false;
       const mem = memories[k];
-      const merchantInMeta = mem.metadata?.merchant?.toLowerCase();
-      const merchantInValue = mem.value?.merchant?.toLowerCase();
+      if (!(mem.type === 'Override' || mem.category === 'Override' || k.startsWith('override_'))) return false;
+      const kClean = k.replace(/^override_/, '').toLowerCase();
+      const merchantInMeta = (mem.metadata?.merchant || '').toLowerCase();
+      const merchantInValue = (mem.value?.merchant || '').toLowerCase();
       return (
-        vendorSlug.includes(k) || 
-        k.includes(vendorSlug) || 
-        (merchantInMeta && merchantInMeta.includes(tx.merchant.toLowerCase())) ||
-        (merchantInValue && merchantInValue.includes(tx.merchant.toLowerCase()))
+        cleanMerchant.includes(kClean) ||
+        kClean.includes(cleanMerchant) ||
+        (merchantInMeta && (merchantInMeta.includes(cleanMerchant) || cleanMerchant.includes(merchantInMeta))) ||
+        (merchantInValue && (merchantInValue.includes(cleanMerchant) || cleanMerchant.includes(merchantInValue))) ||
+        (vendorSlug && (vendorSlug.includes(kClean) || kClean.includes(vendorSlug)))
       );
     });
 
-    const memory = matchingKey ? memories[matchingKey] : null;
-
-    // Check unknown vendor policy gate ($50 threshold, scaled for Naira)
-    const policyMemory = memories['unknown_vendor_threshold'];
-    const baseThreshold = (policyMemory?.value?.thresholdAmount) || (policyMemory?.metadata?.thresholdAmount) || 50.00;
-    const threshold = isNaira ? (baseThreshold * 1500) : baseThreshold;
-
-    if (!memory) {
-      if (tx.amount >= threshold) {
-        return {
-          status: 'ESCALATION_REQUIRED',
-          type: 'UNKNOWN_VENDOR_GATE',
-          merchant: tx.merchant,
-          amount: tx.amount,
-          currency,
-          date: tx.date,
-          walrusMemoryRef: policyMemory ? policyMemory.id : 'MEM_07',
-          title: `⚠️ Unknown Merchant High-Debit: ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          message: `Charge of ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from "${tx.merchant}" has no baseline in Walrus Memory and exceeds the ${currency}${threshold.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} autonomous safety threshold.`,
-          actionRequired: 'HUMAN_APPROVAL',
-          recommendedAction: 'Verify transaction legitimacy or approve new recurring baseline.',
-          ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
-        };
-      }
-      return {
-        status: 'PASSED',
-        type: 'ROUTINE_UNTRACKED',
-        merchant: tx.merchant,
-        amount: tx.amount,
-        currency,
-        message: 'Normal micro-spend within discretionary limits.',
-        ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
-      };
-    }
-
-    // Evaluate against existing memory
-    // 1. Check if an override suppresses the alert (e.g. AWS Q4 surge)
-    if (memory.category === 'Override' || memory.type === 'Override') {
+    if (overrideKey) {
+      const memory = memories[overrideKey];
       // Safety Rule: Inferred memories CANNOT suppress an alert without explicit user confirmation!
       if (memory.source === 'inferred') {
         return {
@@ -155,59 +126,257 @@ export class WatchdogEngine {
       }
     }
 
-    // 2. Check for micro-inflation price creep
-    const baseline = memory.value?.baselineAmount !== undefined ? memory.value.baselineAmount : memory.metadata?.baselineAmount;
-    if (baseline !== undefined) {
-      const delta = Number((tx.amount - baseline).toFixed(2));
-      const percentHike = ((delta / baseline) * 100).toFixed(1);
-      const tolerance = memory.value?.varianceTolerance !== undefined ? memory.value.varianceTolerance : (memory.metadata?.varianceTolerance !== undefined ? memory.metadata.varianceTolerance : 0.00);
+    // 2. Check Consolidated Subscription Ledger (MEM_01: subscription_ledger)
+    // Matching order: ledger service by slug, then by raw_patterns
+    const ledgerMem = memories['subscription_ledger'] || Object.values(memories).find(m => m.key === 'subscription_ledger');
+    const services = ledgerMem?.value?.services || {};
 
-      if (delta > tolerance) {
-        const annualDrain = (delta * 12).toFixed(2);
+    let matchedService = null;
+    let matchedSlug = null;
+
+    if (services[canonicalSlug]) {
+      matchedSlug = canonicalSlug;
+      matchedService = services[canonicalSlug];
+    } else if (services[vendorSlug]) {
+      matchedSlug = vendorSlug;
+      matchedService = services[vendorSlug];
+    } else {
+      for (const [sKey, sVal] of Object.entries(services)) {
+        if (
+          sKey === canonicalSlug || 
+          sKey === vendorSlug || 
+          canonicalSlug.includes(sKey) || 
+          sKey.includes(canonicalSlug) || 
+          vendorSlug.includes(sKey) || 
+          sKey.includes(vendorSlug)
+        ) {
+          matchedSlug = sKey;
+          matchedService = sVal;
+          break;
+        }
+      }
+    }
+
+    if (!matchedService) {
+      for (const [sKey, sVal] of Object.entries(services)) {
+        const patterns = Array.isArray(sVal.raw_patterns) ? sVal.raw_patterns : [];
+        const patternMatch = patterns.some(p => {
+          const pl = p.toLowerCase().trim();
+          return cleanMerchant.includes(pl) || pl.includes(cleanMerchant);
+        });
+        const nameMatch = sVal.display_name && (
+          cleanMerchant.includes(sVal.display_name.toLowerCase().trim()) ||
+          sVal.display_name.toLowerCase().trim().includes(cleanMerchant)
+        );
+        if (patternMatch || nameMatch) {
+          matchedSlug = sKey;
+          matchedService = sVal;
+          break;
+        }
+      }
+    }
+
+    if (matchedService) {
+      // Rule: Cancelled service followed by a charge -> REBILL_ALERT
+      if (matchedService.status === 'cancelled') {
         return {
-          status: 'MICRO_INFLATION_ALERT',
-          type: 'PRICE_CREEP_DETECTED',
+          status: 'REBILL_ALERT',
+          type: 'CANCELLED_SERVICE_REBILL',
           merchant: tx.merchant,
-          currentAmount: tx.amount,
-          baselineAmount: baseline,
-          deltaAmount: delta,
+          amount: tx.amount,
           currency,
-          percentageIncrease: `${percentHike}%`,
-          annualDrainFormatted: `${currency}${annualDrain}`,
-          walrusMemoryRef: memory.id,
-          title: `🚨 Stealth Price Creep: ${tx.merchant} (+${percentHike}%)`,
-          message: `${tx.merchant} billed ${currency}${tx.amount.toFixed(2)}, which is +${currency}${delta.toFixed(2)} above your stored Walrus baseline (${currency}${baseline.toFixed(2)}). Silently drains ${currency}${annualDrain}/year.`,
-          disputePack: this.generateDisputePack(tx, baseline, delta, memory, currency),
+          walrusMemoryRef: ledgerMem ? ledgerMem.id : 'MEM_01',
+          serviceSlug: matchedSlug,
+          title: `⚠️ Unexpected Charge for Cancelled Service: ${tx.merchant}`,
+          message: `${tx.merchant} billed ${currency}${tx.amount.toFixed(2)}, but this subscription was cancelled on ${matchedService.cancelled_on || 'record'}.`,
+          cancelled_on: matchedService.cancelled_on,
+          disputePack: this.generateDisputePack(tx, 0, tx.amount, ledgerMem || { id: 'MEM_01', content: 'Subscription Ledger' }, currency),
+          actionRequired: 'HUMAN_APPROVAL',
+          ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
+        };
+      }
+
+      // Rule: Inferred entries never enforce baselines or suppress alerts
+      if (matchedService.source === 'inferred') {
+        return {
+          status: 'ESCALATION_REQUIRED',
+          type: 'INFERRED_POLICY_GATE',
+          merchant: tx.merchant,
+          amount: tx.amount,
+          currency,
+          walrusMemoryRef: ledgerMem ? ledgerMem.id : 'MEM_01',
+          title: `⚠️ Unconfirmed Inferred Policy [${ledgerMem ? ledgerMem.id : 'MEM_01'}]`,
+          message: `An inferred subscription exists for "${tx.merchant}", but sovereign safety rules prohibit inferred memories from suppressing alerts without explicit user confirmation.`,
+          actionRequired: 'HUMAN_APPROVAL',
+          ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
+        };
+      }
+
+      // Rule: Only ledger entries with source user_stated or user_confirmed and status active enforce baselines
+      if (matchedService.status === 'active' && (matchedService.source === 'user_stated' || matchedService.source === 'user_confirmed')) {
+        const baseline = matchedService.price !== undefined ? matchedService.price : 0.00;
+        const delta = Number((tx.amount - baseline).toFixed(2));
+        const percentHike = baseline > 0 ? ((delta / baseline) * 100).toFixed(1) : '0.0';
+        const tolerance = matchedService.max_variance !== undefined ? matchedService.max_variance : 0.00;
+
+        if (delta > tolerance) {
+          const annualDrain = (delta * 12).toFixed(2);
+          return {
+            status: 'MICRO_INFLATION_ALERT',
+            type: 'PRICE_CREEP_DETECTED',
+            merchant: tx.merchant,
+            currentAmount: tx.amount,
+            baselineAmount: baseline,
+            deltaAmount: delta,
+            currency,
+            percentageIncrease: `${percentHike}%`,
+            annualDrainFormatted: `${currency}${annualDrain}`,
+            walrusMemoryRef: ledgerMem ? ledgerMem.id : 'MEM_01',
+            title: `🚨 Stealth Price Creep: ${tx.merchant} (+${percentHike}%)`,
+            message: `${tx.merchant} billed ${currency}${tx.amount.toFixed(2)}, which is +${currency}${delta.toFixed(2)} above your stored Walrus baseline (${currency}${baseline.toFixed(2)}). Silently drains ${currency}${annualDrain}/year.`,
+            disputePack: this.generateDisputePack(tx, baseline, delta, ledgerMem || { id: 'MEM_01', content: 'Subscription Ledger' }, currency),
+            ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
+          };
+        }
+
+        return {
+          status: 'VERIFIED_OK',
+          type: 'BASELINE_MATCHED',
+          merchant: tx.merchant,
+          amount: tx.amount,
+          baseline: baseline,
+          currency,
+          walrusMemoryRef: ledgerMem ? ledgerMem.id : 'MEM_01',
+          message: `Verified exact match against stored Walrus baseline (${currency}${baseline.toFixed(2)}). Reconciled automatically.`,
+          ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
+        };
+      }
+      // If status === 'pending_review', it cannot enforce baselines or suppress alerts -> falls through to unknown gate
+    }
+
+    // 3. Check Trial Watch memories
+    const trialKey = Object.keys(memories).find(k => {
+      if (k === 'subscription_ledger') return false;
+      const mem = memories[k];
+      if (!(mem.category === 'Trial Watch' || mem.type === 'Trial Watch' || k.startsWith('trial_'))) return false;
+      const kClean = k.replace(/^trial_/, '').toLowerCase();
+      const mVendor = (mem.value?.merchant || mem.metadata?.merchant || '').toLowerCase();
+      return (
+        cleanMerchant.includes(kClean) ||
+        kClean.includes(cleanMerchant) ||
+        (mVendor && (mVendor.includes(cleanMerchant) || cleanMerchant.includes(mVendor))) ||
+        (vendorSlug && (vendorSlug.includes(kClean) || kClean.includes(vendorSlug)))
+      );
+    });
+
+    if (trialKey) {
+      const trialMem = memories[trialKey];
+      if (trialMem.value?.status !== 'converted') {
+        // First real charge converts trial into a ledger entry and marks trial converted
+        const slug = toVendorSlug(trialMem.value?.merchant || tx.merchant);
+        try {
+          await updateLedger(this.walrus, (services) => {
+            services[slug] = {
+              display_name: trialMem.value?.merchant || tx.merchant,
+              price: tx.amount,
+              cadence: 'monthly',
+              bill_day: new Date(tx.date || Date.now()).getDate() || 1,
+              max_variance: 0.00,
+              status: 'active',
+              source: 'user_confirmed',
+              first_seen: tx.date || new Date().toISOString().split('T')[0],
+              category: trialMem.value?.category || 'Software',
+              raw_patterns: [trialMem.value?.merchant || tx.merchant]
+            };
+          });
+          trialMem.value = trialMem.value || {};
+          trialMem.value.status = 'converted';
+          trialMem.value.converted_at = tx.date || new Date().toISOString();
+          await this.walrus.commitMemory(trialMem);
+        } catch {
+          // Mutex or storage error fallback
+        }
+
+        return {
+          status: 'TRIAL_CONVERTING',
+          type: 'TRIAL_CONVERTED_TO_SUBSCRIPTION',
+          merchant: tx.merchant,
+          amount: tx.amount,
+          currency,
+          walrusMemoryRef: trialMem.id,
+          title: `Trial Converted to Subscription: ${tx.merchant}`,
+          message: `First charge of ${currency}${tx.amount.toFixed(2)} received. Trial converted to active subscription in ledger.`,
+          trialConverted: true,
           ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
         };
       }
     }
 
-    // 3. Dispute trace watch
-    if (memory.category === 'Dispute Trace' || memory.type === 'Dispute') {
+    // 4. Other top-level memories (Dispute trace, etc.), EXCLUDING subscription_ledger
+    const matchingKey = Object.keys(memories).find(k => {
+      if (k === 'subscription_ledger') return false;
+      const mem = memories[k];
+      const merchantInMeta = mem.metadata?.merchant?.toLowerCase();
+      const merchantInValue = mem.value?.merchant?.toLowerCase();
+      return (
+        vendorSlug.includes(k) || 
+        k.includes(vendorSlug) || 
+        (merchantInMeta && merchantInMeta.includes(cleanMerchant)) ||
+        (merchantInValue && merchantInValue.includes(cleanMerchant))
+      );
+    });
+
+    const memory = matchingKey ? memories[matchingKey] : null;
+
+    if (memory) {
+      // Dispute trace watch
+      if (memory.category === 'Dispute Trace' || memory.type === 'Dispute') {
+        return {
+          status: 'WATCHDOG_WARNING',
+          type: 'PRIOR_DISPUTE_RECURRENCE',
+          merchant: tx.merchant,
+          amount: tx.amount,
+          currency,
+          walrusMemoryRef: memory.id,
+          title: `⚠️ Re-bill Alert on Prior Disputed Vendor: ${tx.merchant}`,
+          message: `Walrus Memory [${memory.id}] notes this merchant had a contested duplicate charge previously. Please inspect closely.`,
+          disputePack: this.generateDisputePack(tx, tx.amount, tx.amount, memory, currency),
+          ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
+        };
+      }
+    }
+
+    // 5. Unknown vendor policy gate ($50 threshold, scaled for Naira)
+    const policyMemory = memories['unknown_vendor_threshold'];
+    const baseThreshold = (policyMemory?.value?.thresholdAmount) || (policyMemory?.metadata?.thresholdAmount) || 50.00;
+    const threshold = isNaira ? (baseThreshold * 1500) : baseThreshold;
+
+    if (tx.amount >= threshold) {
       return {
-        status: 'WATCHDOG_WARNING',
-        type: 'PRIOR_DISPUTE_RECURRENCE',
+        status: 'ESCALATION_REQUIRED',
+        type: 'UNKNOWN_VENDOR_GATE',
         merchant: tx.merchant,
         amount: tx.amount,
         currency,
-        walrusMemoryRef: memory.id,
-        title: `⚠️ Re-bill Alert on Prior Disputed Vendor: ${tx.merchant}`,
-        message: `Walrus Memory [${memory.id}] notes this merchant had a contested duplicate charge previously. Please inspect closely.`,
-        disputePack: this.generateDisputePack(tx, tx.amount, tx.amount, memory, currency),
+        date: tx.date,
+        walrusMemoryRef: policyMemory ? policyMemory.id : 'MEM_07',
+        title: `⚠️ Unknown Merchant High-Debit: ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        message: `Charge of ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from "${tx.merchant}" has no baseline in Walrus Memory and exceeds the ${currency}${threshold.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} autonomous safety threshold.`,
+        actionRequired: 'HUMAN_APPROVAL',
+        recommendedAction: 'Verify transaction legitimacy or approve new recurring baseline.',
         ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
       };
     }
 
     return {
-      status: 'VERIFIED_OK',
-      type: 'BASELINE_MATCHED',
+      status: 'PENDING_REVIEW',
+      type: 'ROUTINE_UNTRACKED',
       merchant: tx.merchant,
       amount: tx.amount,
-      baseline: baseline,
       currency,
-      walrusMemoryRef: memory.id,
-      message: `Verified exact match against stored Walrus baseline (${currency}${baseline.toFixed(2)}). Reconciled automatically.`,
+      marker: 'pending_review',
+      pending_review: true,
+      message: 'Normal micro-spend within discretionary limits, pending review.',
       ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
     };
   }
@@ -262,6 +431,9 @@ export class WatchdogEngine {
         suppressedCount++;
       } else if (evaluation.status === 'ESCALATION_REQUIRED') {
         alertsCount++;
+      } else if (evaluation.status === 'REBILL_ALERT') {
+        alertsCount++;
+        totalSavingsFlagged += (evaluation.amount * 12);
       }
     }
 
@@ -284,19 +456,51 @@ export class WatchdogEngine {
     const overlaps = [];
 
     for (const [key, mem] of Object.entries(memories)) {
-      if (mem.category === 'Baseline' || mem.type === 'Baseline') {
+      if (key === 'subscription_ledger' || mem.key === 'subscription_ledger') {
+        const services = mem.value?.services || {};
+        for (const [slug, s] of Object.entries(services)) {
+          let monthlyCost = Number(s.price) || 0;
+          if (s.cadence === 'annual') {
+            monthlyCost = monthlyCost / 12;
+          } else if (s.cadence === 'weekly') {
+            monthlyCost = (monthlyCost * 52) / 12;
+          }
+
+          subscriptions.push({
+            key: slug,
+            slug: slug,
+            id: mem.id || 'MEM_01',
+            merchant: s.display_name || slug,
+            amount: s.price,
+            monthlyAmount: Number(monthlyCost.toFixed(2)),
+            cadence: s.cadence || 'monthly',
+            dayOfMonth: s.bill_day || 15,
+            category: s.category || 'Subscription',
+            status: s.status || 'active',
+            source: s.source || 'user_stated',
+            first_seen: s.first_seen,
+            cancelled_on: s.cancelled_on,
+            raw_patterns: s.raw_patterns || [],
+            verifiedOnchain: true
+          });
+        }
+      } else if (mem.category === 'Baseline' || mem.type === 'Baseline') {
         const amount = mem.value?.baselineAmount !== undefined ? mem.value.baselineAmount : mem.metadata?.baselineAmount;
         subscriptions.push({
           key,
+          slug: key,
           id: mem.id,
           merchant: mem.value?.merchant || mem.metadata?.merchant || key,
           amount: amount,
+          monthlyAmount: Number(amount) || 0,
           cadence: mem.value?.cadence || mem.metadata?.cadence || 'monthly',
           dayOfMonth: mem.value?.dayOfMonth || mem.metadata?.dayOfMonth || 15,
           category: mem.value?.category || mem.metadata?.category || 'Subscription',
+          status: 'active',
+          source: mem.source || 'user_stated',
           verifiedOnchain: true
         });
-      } else if (mem.category === 'Trial Watch' || mem.type === 'Trial Watch') {
+      } else if (mem.category === 'Trial Watch' || mem.type === 'Trial Watch' || key.startsWith('trial_')) {
         trials.push({
           key,
           id: mem.id,
@@ -307,7 +511,7 @@ export class WatchdogEngine {
           status: mem.value?.status || mem.metadata?.status,
           urgent: true
         });
-      } else if (mem.category === 'Overlap Watch') {
+      } else if (mem.category === 'Overlap Watch' || mem.type === 'Overlap Watch' || key === 'audio_streaming_overlap') {
         overlaps.push({
           key,
           id: mem.id,
@@ -319,11 +523,14 @@ export class WatchdogEngine {
       }
     }
 
-    const totalMonthlyRunRate = subscriptions.reduce((acc, s) => acc + (s.amount || 0), 0).toFixed(2);
+    const totalMonthlyRunRate = subscriptions
+      .filter(s => s.status === 'active')
+      .reduce((acc, s) => acc + (s.monthlyAmount !== undefined ? s.monthlyAmount : (s.amount || 0)), 0)
+      .toFixed(2);
 
     return {
       subscriptions,
-      activeSubscriptions: subscriptions,
+      activeSubscriptions: subscriptions.filter(s => s.status === 'active'),
       trials,
       overlaps,
       totalMonthlyRunRate,
