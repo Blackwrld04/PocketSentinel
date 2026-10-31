@@ -95,8 +95,16 @@ app.use(express.static(path.join(__dirname, '../public'), {
   }
 }));
 
-// File upload handler for statements and receipts
-const upload = multer({ dest: path.join(__dirname, '../data/uploads') });
+// File upload handler for statements and receipts (use /tmp on Vercel serverless)
+const uploadsDir = process.env.VERCEL ? path.join('/tmp', 'uploads') : path.join(__dirname, '../data/uploads');
+if (!fs.existsSync(uploadsDir)) {
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch {
+    // Ignore directory creation errors if already present or restricted
+  }
+}
+const upload = multer({ dest: uploadsDir });
 
 /**
  * Sanitizes values for CSV output to prevent spreadsheet formula injection
@@ -179,11 +187,15 @@ const watchdog = new WatchdogEngine(walrus);
 const groq = new GroqClient();
 const geminiVision = new GeminiVisionClient();
 
-// Auto-seed if first run
-const existingMemories = await walrus.listMemories();
-if (existingMemories.length < 10) {
-  console.log(`[PocketSentinel Server] Initializing Walrus Memory with 12 Mainnet records...`);
-  await seedAllMemories(walrus);
+// Auto-seed if first run (with resilience against cold-start failures)
+try {
+  const existingMemories = await walrus.listMemories();
+  if (existingMemories.length < 10) {
+    console.log(`[PocketSentinel Server] Initializing Walrus Memory with 19 Mainnet records...`);
+    await seedAllMemories(walrus);
+  }
+} catch (err) {
+  console.warn('[PocketSentinel Server] Initial auto-seed skipped or encountered warning:', err.message);
 }
 
 // ================= API ROUTES =================

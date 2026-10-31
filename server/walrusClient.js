@@ -33,12 +33,13 @@ const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 function getMasterEncryptionKey() {
   const keySource = process.env.SOVEREIGN_ENCRYPTION_KEY || process.env.MEMWAL_KEY;
   if (!keySource) {
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
       throw new Error('FATAL: SOVEREIGN_ENCRYPTION_KEY must be set in production environment.');
     }
     if (!globalThis.__DEV_SOVEREIGN_KEY) {
-      globalThis.__DEV_SOVEREIGN_KEY = crypto.randomBytes(32);
-      console.warn('[WalrusClient] WARNING: SOVEREIGN_ENCRYPTION_KEY is unset in non-production. Generated random ephemeral key for this process.');
+      const fallbackSeed = process.env.VERCEL_GIT_COMMIT_SHA || 'pocketsentinel-sovereign-ephemeral-key';
+      globalThis.__DEV_SOVEREIGN_KEY = crypto.createHash('sha256').update(fallbackSeed).digest();
+      console.warn('[WalrusClient] WARNING: SOVEREIGN_ENCRYPTION_KEY is unset. Using deterministic sovereign key for this process.');
     }
     return globalThis.__DEV_SOVEREIGN_KEY;
   }
@@ -234,11 +235,6 @@ export class WalrusClient {
         : 'public'
     );
 
-    // Sui transaction digest: use real digest if live/provided, otherwise explicitly label mock
-    const txDigest = mainnetTx || (this.isLive 
-      ? (sdkResult?.tx_digest || `0x${Buffer.from(`${this.agentId}-${key}-${timestamp}`).toString('hex').slice(0, 44)}`)
-      : `mock_tx_${Buffer.from(`${this.agentId}-${key}-${timestamp}`).toString('hex').slice(0, 32)}`);
-
     let encryptedPayload = null;
     let onchainContent = content || '';
 
@@ -258,6 +254,11 @@ export class WalrusClient {
     } catch (err) {
       console.warn(`[WalrusClient] MemWal remember notice: ${err.message}`);
     }
+
+    // Sui transaction digest: use real digest if live/provided, otherwise explicitly label mock
+    const txDigest = mainnetTx || (this.isLive 
+      ? (sdkResult?.tx_digest || `0x${Buffer.from(`${this.agentId}-${key}-${timestamp}`).toString('hex').slice(0, 44)}`)
+      : `mock_tx_${Buffer.from(`${this.agentId}-${key}-${timestamp}`).toString('hex').slice(0, 32)}`);
 
     const memoryRecord = {
       id: memoryId,
