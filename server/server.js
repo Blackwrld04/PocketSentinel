@@ -23,6 +23,7 @@ import { seedAllMemories } from './seedMemories.js';
 import { GroqClient } from './groqClient.js';
 import { GeminiVisionClient } from './geminiVision.js';
 import { parseStatementFile } from './statementParser.js';
+import { validateService, ValidationError, toVendorSlug, updateLedger } from './subscriptionLedger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -205,8 +206,362 @@ app.get('/api/memories/envelope-health', async (req, res) => {
  * Active Subscriptions & Trial Watches
  */
 app.get('/api/subscriptions', async (req, res) => {
-  const data = await watchdog.getActiveSubscriptionsState();
-  res.json(data);
+  try {
+    const data = await watchdog.getActiveSubscriptionsState();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Helper: Category Overlap Check
+ */
+function checkCategoryOverlap(category, newVendorSlug, services = {}) {
+  if (!category) return null;
+  const catNorm = category.toLowerCase().trim();
+  const overlapping = [];
+  for (const [slug, s] of Object.entries(services)) {
+    if (slug === newVendorSlug) continue;
+    if (s.status !== 'active') continue;
+    if (s.category && s.category.toLowerCase().trim() === catNorm) {
+      overlapping.push(s.display_name || slug);
+    }
+  }
+  if (overlapping.length > 0) {
+    return {
+      detected: true,
+      category,
+      existingServices: overlapping,
+      warning: `Potential duplicate subscription in ${category}: already active with ${overlapping.join(', ')}.`
+    };
+  }
+  return null;
+}
+
+/**
+ * Manual Subscription or Trial Add
+ */
+app.post('/api/subscriptions', async (req, res) => {
+  try {
+    const vendorName = req.body.vendor || req.body.display_name || req.body.merchant || req.body.name;
+    const trialEnds = req.body.trial_ends || req.body.trialEndDate || req.body.trial_end;
+
+    // If trial_ends is supplied, create a Trial Watch memory instead (default 48h alert, no price baseline)
+    if (trialEnds) {
+      if (!vendorName || typeof vendorName !== 'string' || !vendorName.trim()) {
+        return res.status(400).json({ error: 'Vendor name is required for trial watch.' });
+      }
+      const slug = toVendorSlug(vendorName);
+      const trialKey = `trial_${slug}`;
+      const trialId = `MEM_TRIAL_${Date.now().toString(16).slice(-4).toUpperCase()}`;
+      const record = await walrus.commitMemory({
+        id: trialId,
+        type: 'Event',
+        category: 'Trial Watch',
+        key: trialKey,
+        content: `${vendorName.trim()} free trial ending ${trialEnds}. 48h cancellation notice alert.`,
+        effective_date: new Date().toISOString().split('T')[0],
+        source: 'user_stated',
+        sensitivity: 'public',
+        tags: ['trial', slug, 'trial_watch'],
+        value: {
+          merchant: vendorName.trim(),
+          trialStartDate: new Date().toISOString().split('T')[0],
+          trialEndDate: trialEnds,
+          cancellationNoticeDeadline: trialEnds,
+          rebillAmount: req.body.price !== undefined ? Number(req.body.price) : 0.00,
+          status: 'active_trial',
+          alertWindowHours: 48,
+          category: req.body.category || 'Software'
+        }
+      });
+
+      const store = await walrus.loadStore();
+      const ledgerMem = store.memories['subscription_ledger'];
+      const overlap = checkCategoryOverlap(req.body.category || 'Software', slug, ledgerMem?.value?.services || {});
+
+      return res.status(201).json({ success: true, type: 'trial', memory: record, overlap });
+    }
+
+    // Manual add to ledger: source user_stated
+    const serviceData = {
+      display_name: vendorName,
+      price: req.body.price !== undefined ? Number(req.body.price) : NaN,
+      cadence: req.body.cadence || 'monthly',
+      bill_day: req.body.bill_day !== undefined ? Number(req.body.bill_day) : (new Date().getDate() || 1),
+      max_variance: req.body.max_variance !== undefined ? Number(req.body.max_variance) : 0.00,
+      status: req.body.status || 'active',
+      source: 'user_stated',
+      first_seen: req.body.first_seen || new Date().toISOString().split('T')[0],
+      category: req.body.category || 'Subscription',
+      raw_patterns: Array.isArray(req.body.raw_patterns) ? req.body.raw_patterns : [vendorName].filter(Boolean)
+    };
+
+    validateService(serviceData);
+
+    const slug = toVendorSlug(vendorName);
+    const updatedLedger = await updateLedger(walrus, (services) => {
+      services[slug] = serviceData;
+    });
+
+    const overlap = checkCategoryOverlap(serviceData.category, slug, updatedLedger.value.services);
+
+    return res.status(201).json({
+      success: true,
+      service: serviceData,
+      slug,
+      overlap,
+      ledger: updatedLedger
+    });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return res.status(400).json({ error: err.message });
+    }
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Confirm Proposal into Ledger
+ */
+app.post('/api/subscriptions/confirm', async (req, res) => {
+  try {
+    const vendorName = req.body.vendor || req.body.display_name || req.body.merchant;
+    const rawPattern = req.body.raw_pattern || req.body.rawPattern || vendorName;
+    const rawPatterns = Array.isArray(req.body.raw_patterns) ? req.body.raw_patterns : (rawPattern ? [rawPattern] : [vendorName]);
+    if (rawPattern && !rawPatterns.includes(rawPattern)) rawPatterns.push(rawPattern);
+    if (vendorName && !rawPatterns.includes(vendorName)) rawPatterns.push(vendorName);
+
+    const serviceData = {
+      display_name: vendorName,
+      price: Number(req.body.price !== undefined ? req.body.price : req.body.amount),
+      cadence: req.body.cadence || req.body.detected_cadence || 'monthly',
+      bill_day: req.body.bill_day !== undefined ? Number(req.body.bill_day) : (new Date().getDate() || 1),
+      max_variance: req.body.max_variance !== undefined ? Number(req.body.max_variance) : 0.00,
+      status: 'active',
+      source: 'user_confirmed',
+      first_seen: req.body.first_seen || new Date().toISOString().split('T')[0],
+      category: req.body.category || 'Subscription',
+      raw_patterns: rawPatterns
+    };
+
+    validateService(serviceData);
+
+    const slug = toVendorSlug(vendorName);
+    const updatedLedger = await updateLedger(walrus, (services) => {
+      if (services[slug]) {
+        const existingPatterns = services[slug].raw_patterns || [];
+        const mergedPatterns = Array.from(new Set([...existingPatterns, ...rawPatterns]));
+        services[slug] = {
+          ...services[slug],
+          ...serviceData,
+          raw_patterns: mergedPatterns,
+          source: 'user_confirmed',
+          status: 'active'
+        };
+      } else {
+        services[slug] = serviceData;
+      }
+    });
+
+    const overlap = checkCategoryOverlap(serviceData.category, slug, updatedLedger.value.services);
+
+    return res.status(200).json({
+      success: true,
+      service: updatedLedger.value.services[slug],
+      slug,
+      overlap,
+      ledger: updatedLedger
+    });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return res.status(400).json({ error: err.message });
+    }
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Cancel Subscription (status cancelled + cancelled_on; never delete)
+ */
+app.post('/api/subscriptions/cancel', async (req, res) => {
+  try {
+    const vendorQuery = req.body.slug || req.body.vendor || req.body.merchant;
+    if (!vendorQuery) {
+      return res.status(400).json({ error: 'Vendor or slug is required.' });
+    }
+
+    const slug = toVendorSlug(vendorQuery);
+    const cancelledDate = req.body.cancelled_on || new Date().toISOString().split('T')[0];
+
+    const updatedLedger = await updateLedger(walrus, (services) => {
+      let targetKey = services[slug] ? slug : null;
+      if (!targetKey) {
+        for (const [sKey, s] of Object.entries(services)) {
+          if (
+            sKey === slug ||
+            sKey.includes(slug) ||
+            slug.includes(sKey) ||
+            (s.display_name && s.display_name.toLowerCase().includes(vendorQuery.toLowerCase()))
+          ) {
+            targetKey = sKey;
+            break;
+          }
+        }
+      }
+      if (!targetKey) {
+        throw new ValidationError(`Subscription "${vendorQuery}" not found in ledger.`);
+      }
+      services[targetKey].status = 'cancelled';
+      services[targetKey].cancelled_on = cancelledDate;
+    });
+
+    return res.json({
+      success: true,
+      message: `Subscription "${vendorQuery}" marked cancelled on ${cancelledDate}.`,
+      ledger: updatedLedger
+    });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return res.status(400).json({ error: err.message });
+    }
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Resolve Price Change (Plan Change vs Price Hike)
+ */
+app.post('/api/subscriptions/resolve-change', async (req, res) => {
+  try {
+    const { vendor, amount, choice } = req.body;
+    if (!vendor || typeof vendor !== 'string' || !vendor.trim()) {
+      return res.status(400).json({ error: 'Vendor is required.' });
+    }
+    if (!['plan_change', 'price_hike'].includes(choice)) {
+      return res.status(400).json({ error: 'Invalid choice. Must be "plan_change" or "price_hike".' });
+    }
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount < 0) {
+      return res.status(400).json({ error: 'Valid amount is required.' });
+    }
+
+    const slug = toVendorSlug(vendor);
+
+    if (choice === 'plan_change') {
+      const updatedLedger = await updateLedger(walrus, (services) => {
+        let targetKey = services[slug] ? slug : null;
+        if (!targetKey) {
+          for (const [sKey, s] of Object.entries(services)) {
+            if (
+              sKey === slug ||
+              sKey.includes(slug) ||
+              slug.includes(sKey) ||
+              (s.display_name && s.display_name.toLowerCase().includes(vendor.toLowerCase()))
+            ) {
+              targetKey = sKey;
+              break;
+            }
+          }
+        }
+        if (!targetKey) {
+          targetKey = slug;
+          services[targetKey] = {
+            display_name: vendor.trim(),
+            price: numAmount,
+            cadence: 'monthly',
+            bill_day: new Date().getDate() || 1,
+            max_variance: 0.00,
+            status: 'active',
+            source: 'user_confirmed',
+            first_seen: new Date().toISOString().split('T')[0],
+            category: 'Subscription',
+            raw_patterns: [vendor.trim()]
+          };
+        } else {
+          services[targetKey].price = numAmount;
+          services[targetKey].source = 'user_confirmed';
+          services[targetKey].status = 'active';
+          services[targetKey].updated_at = new Date().toISOString();
+        }
+      });
+
+      return res.json({
+        success: true,
+        resolution: 'plan_change',
+        price: numAmount,
+        ledger: updatedLedger
+      });
+    }
+
+    // price_hike: keep baseline, return dispute letter, write a Dispute memory
+    const store = await walrus.loadStore();
+    const ledgerMem = store.memories['subscription_ledger'];
+    const services = ledgerMem?.value?.services || {};
+    let matchedService = services[slug];
+    if (!matchedService) {
+      for (const [sKey, s] of Object.entries(services)) {
+        if (
+          sKey.includes(slug) ||
+          slug.includes(sKey) ||
+          (s.display_name && s.display_name.toLowerCase().includes(vendor.toLowerCase()))
+        ) {
+          matchedService = s;
+          break;
+        }
+      }
+    }
+
+    const baseline = matchedService?.price || 0.00;
+    const delta = Number((numAmount - baseline).toFixed(2));
+    const disputePack = watchdog.generateDisputePack(
+      {
+        merchant: vendor.trim(),
+        amount: numAmount,
+        date: new Date().toISOString().split('T')[0]
+      },
+      baseline,
+      delta,
+      ledgerMem || { id: 'MEM_01', content: 'Subscription Ledger' },
+      '$'
+    );
+
+    const disputeMemId = `MEM_DISPUTE_${Date.now().toString(16).slice(-4).toUpperCase()}`;
+    const disputeRecord = await walrus.commitMemory({
+      id: disputeMemId,
+      type: 'Dispute',
+      category: 'Dispute Trace',
+      key: `dispute_${slug}_${Date.now()}`,
+      content: `Contested unapproved price hike on ${vendor.trim()}: billed $${numAmount.toFixed(2)} vs authorized baseline $${baseline.toFixed(2)}.`,
+      effective_date: new Date().toISOString().split('T')[0],
+      source: 'user_stated',
+      sensitivity: 'public',
+      tags: ['dispute', slug, 'price_hike'],
+      value: {
+        merchant: vendor.trim(),
+        disputedAmount: numAmount,
+        baselineAmount: baseline,
+        deltaAmount: delta,
+        disputeDate: new Date().toISOString(),
+        actionPlan: 'CONTEST_PRICE_HIKE',
+        disputeLetter: disputePack.letterBody
+      }
+    });
+
+    return res.json({
+      success: true,
+      resolution: 'price_hike',
+      disputeLetter: disputePack.letterBody,
+      disputePack,
+      disputeMemory: disputeRecord
+    });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return res.status(400).json({ error: err.message });
+    }
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 /**
@@ -403,23 +758,29 @@ app.post('/api/ocr/scan', express.json({ limit: '10mb' }), async (req, res) => {
  * GET /api/feed/csv - 9-Column Live Feed for Google Sheets =IMPORTDATA
  */
 app.get('/api/feed/csv', async (req, res) => {
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename="recall_normalized_transactions.csv"');
+  try {
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="recall_normalized_transactions.csv"');
 
-  const headers = 'Date,Merchant,Category,Amount,Wallet,Envelope,Walrus_Anchor,Status,Rule_Audit\n';
-  const rows = [
-    '2026-10-21,Apex Luxury Apparel,Shopping,89.00,Primary Checking,Fun,MEM_07,ESCALATION_REQUIRED,RULE_UNKNOWN_ESCALATION',
-    '2026-10-20,Netflix Standard,Subscriptions,17.99,Primary Checking,Subscriptions,MEM_01,PRICE_CREEP_DETECTED,+$2.50 vs Baseline',
-    '2026-10-19,Amazon Web Services (AWS),Infrastructure,142.50,Primary Checking,Subscriptions,MEM_04,SUPPRESSED_BY_MEMORY,RULE_OVERRIDE_SUPPRESS',
-    '2026-10-18,DoorDash DashPass,Dining,9.99,Primary Checking,Dining Out,MEM_10,DISPUTE_TRACE,RULE_AUTO_SUB',
-    '2026-10-17,Trader Joe\'s,Groceries,78.40,Primary Checking,Groceries,MEM_ROUTINE,VERIFIED_OK,RULE_ROUTINE_EXPENSE',
-    '2026-10-16,Chevron Fuel Station,Transport,45.00,Primary Checking,Transport,MEM_ROUTINE,VERIFIED_OK,RULE_ROUTINE_EXPENSE',
-    '2026-10-15,Spotify Premium,Streaming,10.99,Primary Checking,Subscriptions,MEM_02,VERIFIED_OK,RULE_AUTO_SUB',
-    '2026-10-14,OpenAI ChatGPT Plus,AI & Cloud,20.00,Primary Checking,Subscriptions,MEM_03,VERIFIED_OK,RULE_AUTO_SUB',
-    '2026-10-10,Whole Foods Market,Groceries,64.20,Primary Checking,Groceries,MEM_OCR_RECON,VERIFIED_OK,RULE_OCR_MATCH'
-  ].join('\n');
+    const headers = 'Date,Merchant,Category,Amount,Cadence,Status,Source,Walrus_Anchor,Rule_Audit\n';
+    const data = await watchdog.getActiveSubscriptionsState();
+    const rows = (data.subscriptions || []).map(s => {
+      const date = s.first_seen || '2026-10-01';
+      const merchant = `"${(s.merchant || '').replace(/"/g, '""')}"`;
+      const cat = `"${(s.category || 'Subscription').replace(/"/g, '""')}"`;
+      const amt = (Number(s.amount) || 0).toFixed(2);
+      const cadence = s.cadence || 'monthly';
+      const status = s.status || 'active';
+      const source = s.source || 'user_stated';
+      const anchor = s.id || 'MEM_01';
+      const rule = status === 'cancelled' ? 'CANCELLED_SERVICE' : 'SUBSCRIPTION_LEDGER_BASELINE';
+      return `${date},${merchant},${cat},${amt},${cadence},${status},${source},${anchor},${rule}`;
+    }).join('\n');
 
-  res.send(headers + rows);
+    res.send(headers + rows);
+  } catch (err) {
+    res.status(500).send(`Error: ${err.message}`);
+  }
 });
 
 /**
