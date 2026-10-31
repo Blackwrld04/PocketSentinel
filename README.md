@@ -1,5 +1,5 @@
 # PocketSentinel — Autonomous Household Wealth Operating System
-### Sovereign Expense Watchdog, Zero-Based Envelopes, Cash Runway Sentinel & Cognitive Behavioral Copilot Powered by Walrus Episodic Memory (Recall), Tatum RPC & Groq AI
+### A household finance agent that remembers. PocketSentinel watches subscriptions, plans a safe-to-spend runway, rebalances budget envelopes, and learns from your corrections across sessions, using Walrus Memory (MemWal) as its long-term memory layer and Tatum RPC.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](https://opensource.org/licenses/MIT)
 [![Sui Mainnet](https://img.shields.io/badge/Network-Sui%20Mainnet-blue.svg)](https://suiscan.xyz)
@@ -10,7 +10,6 @@
 
 **Hackathon Target:** Total Recall | Tatum x Walrus Memory Hackathon  
 **Target Tracks:** Track 02: Smart Agents for Real Life · Track 03: Consumer Finance Apps  
-**Eligible Special Awards:** Best Walrus Memory ($500) · Best Tatum AI Builder App ($500) · Best Use of Agent Payments ($500)  
 **Version:** 2.0 (Consumer & Household Edition) · **Date:** October 2026 · **Status:** Production Verified  
 
 > 📖 **Master Architectural Documentation:**  
@@ -62,7 +61,7 @@ npm run dev
 ## 1. Executive Summary & Core Philosophy
 
 ### 1.1 The Problem: The Rearview Mirror Trap
-Every traditional budgeting app forces everyday households to look in the rearview mirror. They show charts of money you have **already lost**, categorize transactions days after you swiped, and shame you with red alerts when unpredictable life events push an arbitrary category over budget.
+Budgeting apps look backwards. They show what you already spent, categorize late, and forget every correction you make. PocketSentinel keeps a small, typed memory of decisions (your pay cycle, your fixed bills, your rebalances, your merchant fixes, your policies) and uses it to answer forward-looking questions like "can I afford this tonight?"
 
 Meanwhile:
 1. **Stealth Price Creep:** 83% of recurring subscriptions quietly hike prices by $1.00 to $4.00 over 18 months without transparent notice. Across an average household with 11 subscriptions, this micro-inflation silently bleeds $300 to $600 per year.
@@ -75,8 +74,7 @@ Meanwhile:
 * **Consumer-Grade Foreground:** Intuitive, zero-jargon user interface with real-time daily cash velocity, zero-based envelope rebalancing ("Roll With The Punches"), automated price creep defense, and a Groq-powered cognitive behavioral coach.
 * **Invisible Decentralization:** All complex plumbing—**Walrus onchain episodic memory commits on Sui Mainnet**, **Tatum RPC telemetry**, **client-side WebCrypto AES-256-GCM encryption**, and **autonomous logic rules**—operates **100% silently in the background**. The user never manages gas tokens or hex hashes; their data is sovereign, encrypted, and private by default.
 
-<a id="what-it-does"></a>
-### 1.3 What it does
+### What it does
 
 | Capability | How it works | Memory used |
 | :--- | :--- | :--- |
