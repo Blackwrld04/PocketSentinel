@@ -75,16 +75,18 @@ Meanwhile:
 * **Invisible Decentralization:** All complex plumbing—**Walrus onchain episodic memory commits on Sui Mainnet**, **Tatum RPC telemetry**, **client-side WebCrypto AES-256-GCM encryption**, and **autonomous logic rules**—operates **100% silently in the background**. The user never manages gas tokens or hex hashes; their data is sovereign, encrypted, and private by default.
 
 
-What it does
-Capability	How it works	Memory used
-Safe-to-spend runway	Income minus fixed commitments minus reserve, divided by days to payday	Income, Commitment, Goal
-Envelope rebalancing	One-tap move from donor envelopes to an overspent one; detects repeat overspend and proposes a new baseline	Envelope, Policy
-Merchant learning	A raw string like SQ *TST* BLUE BOTTLE is mapped to a vendor and category once you correct it	Correction
-Subscription watchdog	Price-creep detection, trial countdowns, overlap detection, dispute letter generator	Baseline, Override, Trial Watch, Dispute
-Alert-fatigue suppression	A pre-approved seasonal spike is not flagged again	Override
-Safety gate	Memories whose source is inferred can never suppress an alert; unknown merchants over $50 require approval	Policy
-AI Copilot	Three personas (Sentinel, Roast, Hype) reasoning over aggregate budget numbers	Preference
-Spreadsheet feed	/api/feed/csv works with Google Sheets =IMPORTDATA	none
+### What it does
+
+| Capability | How it works | Memory used |
+| :--- | :--- | :--- |
+| **Safe-to-spend runway** | Income minus fixed commitments minus reserve, divided by days to payday | Income, Commitment, Goal |
+| **Envelope rebalancing** | One-tap move from donor envelopes to an overspent one; detects repeat overspend and proposes a new baseline | Envelope, Policy |
+| **Merchant learning** | A raw string like `SQ *TST* BLUE BOTTLE` is mapped to a vendor and category once you correct it | Correction |
+| **Subscription watchdog** | Price-creep detection, trial countdowns, overlap detection, dispute letter generator | Baseline, Override, Trial Watch, Dispute |
+| **Alert-fatigue suppression** | A pre-approved seasonal spike is not flagged again | Override |
+| **Safety gate** | Memories whose source is `inferred` can never suppress an alert; unknown merchants over $50 require approval | Policy |
+| **AI Copilot** | Three personas (Sentinel, Roast, Hype) reasoning over aggregate budget numbers | Preference |
+| **Spreadsheet feed** | `/api/feed/csv` works with Google Sheets `=IMPORTDATA` | none |
 
 ---
 
