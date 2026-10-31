@@ -1,5 +1,5 @@
 # PocketSentinel — Autonomous Household Wealth Operating System
-### Sovereign Expense Watchdog, Zero-Based Envelopes, Cash Runway Sentinel & Cognitive Behavioral Copilot Powered by Walrus Episodic Memory (Recall), Tatum RPC & Groq AI
+### A household finance agent that remembers. PocketSentinel watches subscriptions, plans a safe-to-spend runway, rebalances budget envelopes, and learns from your corrections across sessions, using Walrus Memory (MemWal) as its long-term memory layer and Tatum RPC.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](https://opensource.org/licenses/MIT)
 [![Sui Mainnet](https://img.shields.io/badge/Network-Sui%20Mainnet-blue.svg)](https://suiscan.xyz)
@@ -10,7 +10,6 @@
 
 **Hackathon Target:** Total Recall | Tatum x Walrus Memory Hackathon  
 **Target Tracks:** Track 02: Smart Agents for Real Life · Track 03: Consumer Finance Apps  
-**Eligible Special Awards:** Best Walrus Memory ($500) · Best Tatum AI Builder App ($500) · Best Use of Agent Payments ($500)  
 **Version:** 2.0 (Consumer & Household Edition) · **Date:** October 2026 · **Status:** Production Verified  
 
 > 📖 **Master Architectural Documentation:**  
@@ -62,7 +61,7 @@ npm run dev
 ## 1. Executive Summary & Core Philosophy
 
 ### 1.1 The Problem: The Rearview Mirror Trap
-Every traditional budgeting app forces everyday households to look in the rearview mirror. They show charts of money you have **already lost**, categorize transactions days after you swiped, and shame you with red alerts when unpredictable life events push an arbitrary category over budget.
+Budgeting apps look backwards. They show what you already spent, categorize late, and forget every correction you make. PocketSentinel keeps a small, typed memory of decisions (your pay cycle, your fixed bills, your rebalances, your merchant fixes, your policies) and uses it to answer forward-looking questions like "can I afford this tonight?"
 
 Meanwhile:
 1. **Stealth Price Creep:** 83% of recurring subscriptions quietly hike prices by $1.00 to $4.00 over 18 months without transparent notice. Across an average household with 11 subscriptions, this micro-inflation silently bleeds $300 to $600 per year.
@@ -74,6 +73,18 @@ Meanwhile:
 **PocketSentinel** transforms personal finance from passive retrospection into an **autonomous household financial operating system**:
 * **Consumer-Grade Foreground:** Intuitive, zero-jargon user interface with real-time daily cash velocity, zero-based envelope rebalancing ("Roll With The Punches"), automated price creep defense, and a Groq-powered cognitive behavioral coach.
 * **Invisible Decentralization:** All complex plumbing—**Walrus onchain episodic memory commits on Sui Mainnet**, **Tatum RPC telemetry**, **client-side WebCrypto AES-256-GCM encryption**, and **autonomous logic rules**—operates **100% silently in the background**. The user never manages gas tokens or hex hashes; their data is sovereign, encrypted, and private by default.
+
+
+What it does
+Capability	How it works	Memory used
+Safe-to-spend runway	Income minus fixed commitments minus reserve, divided by days to payday	Income, Commitment, Goal
+Envelope rebalancing	One-tap move from donor envelopes to an overspent one; detects repeat overspend and proposes a new baseline	Envelope, Policy
+Merchant learning	A raw string like SQ *TST* BLUE BOTTLE is mapped to a vendor and category once you correct it	Correction
+Subscription watchdog	Price-creep detection, trial countdowns, overlap detection, dispute letter generator	Baseline, Override, Trial Watch, Dispute
+Alert-fatigue suppression	A pre-approved seasonal spike is not flagged again	Override
+Safety gate	Memories whose source is inferred can never suppress an alert; unknown merchants over $50 require approval	Policy
+AI Copilot	Three personas (Sentinel, Roast, Hype) reasoning over aggregate budget numbers	Preference
+Spreadsheet feed	/api/feed/csv works with Google Sheets =IMPORTDATA	none
 
 ---
 
