@@ -1126,20 +1126,49 @@ async function reseedMemories() {
 }
 
 // ================= ACTIVE SUBSCRIPTIONS & SPEND CALENDAR =================
+// Schema clean slate: flush stale subscription cache on v3 upgrade
+(function checkCleanSlate() {
+  const SCHEMA_KEY = 'recall_clean_slate_v3';
+  if (typeof localStorage !== 'undefined' && !localStorage.getItem(SCHEMA_KEY)) {
+    localStorage.removeItem('recall_user_subscriptions');
+    localStorage.setItem(SCHEMA_KEY, 'true');
+  }
+})();
+
+if (typeof masterSubscriptionsList === 'undefined') {
+  var masterSubscriptionsList = [];
+}
+
 async function loadSubscriptions() {
   try {
-    const saved = localStorage.getItem('recall_user_subscriptions');
-    if (saved) {
-      try {
-        state.subscriptions = JSON.parse(saved);
-      } catch (e) {
-        state.subscriptions = [];
-      }
-    } else {
+    let loadedFromApi = false;
+    try {
       const res = await fetch('/api/subscriptions');
-      const data = await res.json();
-      state.subscriptions = data.activeSubscriptions || [];
-      state.trials = data.trials || [];
+      if (res.ok) {
+        const data = await res.json();
+        const apiSubs = data.subscriptions || data.activeSubscriptions || [];
+        state.subscriptions = apiSubs;
+        state.trials = data.trials || [];
+        masterSubscriptionsList.length = 0;
+        apiSubs.forEach(s => masterSubscriptionsList.push(s));
+        localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
+        loadedFromApi = true;
+      }
+    } catch (e) {
+      console.warn('[loadSubscriptions] API fetch failed, falling back to cache:', e);
+    }
+
+    if (!loadedFromApi) {
+      const saved = localStorage.getItem('recall_user_subscriptions');
+      if (saved) {
+        try {
+          state.subscriptions = JSON.parse(saved);
+          masterSubscriptionsList.length = 0;
+          state.subscriptions.forEach(s => masterSubscriptionsList.push(s));
+        } catch (e) {
+          state.subscriptions = [];
+        }
+      }
     }
 
     if (typeof recalculateAllFinancialMetrics === 'function') {
@@ -1147,6 +1176,9 @@ async function loadSubscriptions() {
     }
     if (typeof renderSpendCalendar === 'function') {
       renderSpendCalendar();
+    }
+    if (typeof renderSubscriptionsLedger === 'function') {
+      renderSubscriptionsLedger();
     }
   } catch (err) {
     console.error('Failed to load subscriptions:', err);
@@ -3086,7 +3118,7 @@ function filterAppView(filterType) {
 window.filterAppView = filterAppView;
 
 // ================= ACTIVE SUBSCRIPTIONS LEDGER COMPONENT =================
-const masterSubscriptionsList = [
+masterSubscriptionsList = [
   {
     id: 'sub_netflix',
     merchant: 'Netflix Standard Tier',
@@ -3115,7 +3147,7 @@ const masterSubscriptionsList = [
     delta: 0,
     renewalDay: 8,
     renewalText: 'Nov 8, 2026',
-    memory: 'MEM_02',
+    memory: 'MEM_01',
     status: 'OVERLAP',
     statusBadge: '<span class="status-badge alert" style="background:#EFF6FF;color:#2563EB;border-color:#2563EB;"><i data-lucide="layers"></i> Audio Overlap</span>'
   },
@@ -3131,7 +3163,7 @@ const masterSubscriptionsList = [
     delta: 0,
     renewalDay: 12,
     renewalText: 'Nov 12, 2026',
-    memory: 'MEM_03',
+    memory: 'MEM_01',
     status: 'VERIFIED',
     statusBadge: '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Baseline Match</span>'
   },
@@ -3163,7 +3195,7 @@ const masterSubscriptionsList = [
     delta: 0,
     renewalDay: 14,
     renewalText: 'Nov 14, 2026',
-    memory: 'MEM_05',
+    memory: 'MEM_01',
     status: 'VERIFIED',
     statusBadge: '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Baseline Match</span>'
   },
@@ -3179,7 +3211,7 @@ const masterSubscriptionsList = [
     delta: 0,
     renewalDay: 21,
     renewalText: 'Oct 21, 2026',
-    memory: 'MEM_06',
+    memory: 'MEM_01',
     status: 'VERIFIED',
     statusBadge: '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Baseline Match</span>'
   },
@@ -3195,7 +3227,7 @@ const masterSubscriptionsList = [
     delta: 54.99,
     renewalDay: 25,
     renewalText: 'Oct 25, 2026 (48h left)',
-    memory: 'MEM_10',
+    memory: 'MEM_06',
     status: 'TRIAL',
     statusBadge: '<span class="status-badge urgent"><i data-lucide="clock"></i> 48h Trial Auto-Rebill</span>'
   },
@@ -3211,7 +3243,7 @@ const masterSubscriptionsList = [
     delta: 0,
     renewalDay: 1,
     renewalText: 'Nov 1, 2026',
-    memory: 'MEM_08',
+    memory: 'MEM_01',
     status: 'VERIFIED',
     statusBadge: '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Baseline Match</span>'
   },
@@ -3227,7 +3259,7 @@ const masterSubscriptionsList = [
     delta: 0,
     renewalDay: 28,
     renewalText: 'Oct 28, 2026',
-    memory: 'MEM_07',
+    memory: 'MEM_01',
     status: 'PROMO',
     statusBadge: '<span class="status-badge verified" style="background:#FAF5FF;color:#7C3AED;border-color:#DDD6FE;"><i data-lucide="tag"></i> Promo Active</span>'
   }
@@ -3258,10 +3290,25 @@ function getActiveSubscriptionsList() {
       const isTrial = Boolean(s.isTrial || s.status === 'TRIAL' || s.status === 'TRIAL_URGENT');
       const isCreep = Boolean(s.hasHike || s.status === 'CREEP_FLAG' || s.status === 'PRICE_CREEP' || (amt > base && !s.overrideApproved));
       const isOverride = Boolean(s.overrideApproved || s.status === 'OVERRIDE' || s.status === 'SUPPRESSED');
+      const isCancelled = s.status === 'cancelled' || s.status === 'CANCELLED';
+      const isPendingReview = s.status === 'pending_review' || s.status === 'PENDING_REVIEW';
+
+      let memRef = s.id || s.memory || 'MEM_01';
+      if (s.walrusMemoryRef) memRef = s.walrusMemoryRef;
+      if (s.merchant && s.merchant.toLowerCase().includes('adobe')) memRef = 'MEM_06';
+      if (s.merchant && s.merchant.toLowerCase().includes('aws')) memRef = 'MEM_04';
+      if (s.merchant && s.merchant.toLowerCase().includes('doordash')) memRef = 'MEM_10';
+      if (['MEM_02', 'MEM_03', 'MEM_05', 'MEM_08', 'MEM_09', 'MEM_12'].includes(memRef)) {
+        memRef = 'MEM_01';
+      }
 
       let statusBadge = s.statusBadge;
-      if (!statusBadge) {
-        if (isTrial) {
+      if (!statusBadge || isCancelled || isPendingReview) {
+        if (isCancelled) {
+          statusBadge = '<span class="status-badge alert" style="background:#FEE2E2;color:#991B1B;border-color:#FCA5A5;"><i data-lucide="x-circle"></i> Cancelled</span>';
+        } else if (isPendingReview) {
+          statusBadge = '<span class="status-badge alert" style="background:#FEF3C7;color:#92400E;border-color:#FCD34D;"><i data-lucide="help-circle"></i> Pending Review</span>';
+        } else if (isTrial) {
           statusBadge = '<span class="status-badge alert" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A;"><i data-lucide="clock"></i> 48h Trial Alert</span>';
         } else if (isCreep) {
           statusBadge = '<span class="status-badge alert"><i data-lucide="trending-up"></i> Price Hike Flagged</span>';
@@ -3274,18 +3321,19 @@ function getActiveSubscriptionsList() {
 
       return {
         id: s.id || `sub_${idx + 1}`,
-        merchant: s.merchant || s.name || 'Subscription',
+        merchant: s.merchant || s.name || s.display_name || 'Subscription',
         plan: s.plan || s.name || 'Standard Tier',
-        logo: s.logo || '/assets/logos/generic.svg',
+        logo: s.logo || getMerchantLogo(s.merchant || s.name || s.display_name || '') || '/assets/logos/generic.svg',
         category: (s.category || 'tools').toLowerCase(),
         categoryLabel: s.categoryLabel || s.category || 'Utility',
         cost: amt,
         baseline: base,
         delta: Number(s.delta || (amt - base)),
-        renewalDay: Number(s.renewalDay || s.dayOfMonth || s.day || 15),
-        renewalText: s.renewalText || `Day ${s.renewalDay || s.dayOfMonth || s.day || 15} of month`,
-        memory: s.memory || `MEM_${String(idx + 1).padStart(2, '0')}`,
-        status: isTrial ? 'TRIAL' : isCreep ? 'CREEP_FLAG' : isOverride ? 'OVERRIDE' : 'VERIFIED',
+        renewalDay: Number(s.renewalDay || s.dayOfMonth || s.day || s.bill_day || 15),
+        renewalText: s.renewalText || `Day ${s.renewalDay || s.dayOfMonth || s.day || s.bill_day || 15} of month`,
+        memory: memRef,
+        status: isCancelled ? 'CANCELLED' : isPendingReview ? 'PENDING_REVIEW' : isTrial ? 'TRIAL' : isCreep ? 'CREEP_FLAG' : isOverride ? 'OVERRIDE' : 'VERIFIED',
+        source: s.source || 'user_stated',
         statusBadge: statusBadge
       };
     });
@@ -3642,6 +3690,49 @@ function renderSubscriptionsLedger() {
     renderTrialSentinelPanel();
   }
 
+  const dismissed = JSON.parse(localStorage.getItem('recall_dismissed_subscription_proposals') || '[]');
+  const activeProposals = (state.subscriptionProposals || []).filter(p => !dismissed.includes(p.vendor));
+
+  let proposalsHtml = '';
+  const cur = state.userProfile?.currency || '$';
+
+  if (activeProposals.length > 0) {
+    proposalsHtml = `
+      <div class="proposals-wrapper" style="margin-bottom: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="sparkles" style="color: #3B82F6; width: 16px; height: 16px;"></i>
+          <span>Statement Proposals Detected (${activeProposals.length})</span>
+        </div>
+        ${activeProposals.map(p => `
+          <div class="proposal-card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; color: #3B82F6;">
+                <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                  <span>${escapeHtml(p.vendor)}</span>
+                  <span class="badge" style="font-size: 11px; background: rgba(59, 130, 246, 0.2); color: #2563EB; padding: 2px 8px; border-radius: 12px;">Detected ${escapeHtml(p.detected_cadence || 'monthly')} · ${cur}${Number(p.amount).toFixed(2)}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  Pattern: <code>${escapeHtml(p.raw_pattern || p.vendor)}</code> · ${p.occurrences || 2} cycles observed. Add to memory ledger?
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="btn-primary-compact btn-confirm-proposal" data-vendor="${escapeHtml(p.vendor)}" data-amount="${p.amount}" data-cadence="${escapeHtml(p.detected_cadence || 'monthly')}" data-pattern="${escapeHtml(p.raw_pattern || p.vendor)}" style="padding: 6px 14px; font-size: 12px;">
+                <i data-lucide="check" style="width: 14px; height: 14px;"></i> Confirm
+              </button>
+              <button class="btn-ghost-outline btn-dismiss-proposal" data-vendor="${escapeHtml(p.vendor)}" style="padding: 6px 12px; font-size: 12px;">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   const filtered = sourceList.filter(item => {
     const matchesCat = activeSubCategory === 'all' || item.category === activeSubCategory;
     const matchesQuery = !activeSubSearch || 
@@ -3650,7 +3741,7 @@ function renderSubscriptionsLedger() {
     return matchesCat && matchesQuery;
   });
 
-  if (filtered.length === 0) {
+  if (filtered.length === 0 && activeProposals.length === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding: 48px; color: var(--text-muted);">
         <div style="font-weight:600; margin-bottom:6px;">No subscriptions configured</div>
@@ -3664,9 +3755,7 @@ function renderSubscriptionsLedger() {
     return;
   }
 
-  const cur = state.userProfile?.currency || '$';
-
-  let html = `
+  let html = proposalsHtml + `
     <table class="subscriptions-table">
       <thead>
         <tr>
@@ -3683,28 +3772,34 @@ function renderSubscriptionsLedger() {
   `;
 
   filtered.forEach(sub => {
+    const merchantEsc = escapeHtml(sub.merchant);
+    const planEsc = escapeHtml(sub.plan);
+    const catLabelEsc = escapeHtml(sub.categoryLabel);
+    const renewalTextEsc = escapeHtml(sub.renewalText);
+    const memEsc = escapeHtml(sub.memory || 'MEM_01');
+
     let actionBtn = '';
     if (sub.status === 'CREEP_FLAG') {
       actionBtn = `
-        <button class="btn-inspect-mini text-coral" onclick="openDisputeModalForRecord('${sub.merchant}', ${sub.cost}, ${sub.baseline}, ${sub.delta}, '${sub.memory}')">
+        <button class="btn-inspect-mini text-coral btn-dispute-trigger" data-merchant="${merchantEsc}" data-cost="${sub.cost}" data-baseline="${sub.baseline}" data-delta="${sub.delta}" data-memory="${memEsc}">
           <i data-lucide="scale"></i> Dispute
         </button>
       `;
     } else if (sub.status === 'TRIAL') {
       actionBtn = `
-        <button class="btn-inspect-mini text-amber" onclick="openDisputeModalForTrial()">
+        <button class="btn-inspect-mini text-amber btn-trial-cancel-trigger" data-merchant="${merchantEsc}">
           <i data-lucide="x-circle"></i> Cancel
         </button>
       `;
     } else if (sub.status === 'OVERLAP') {
       actionBtn = `
-        <button class="btn-inspect-mini text-blue" onclick="openDisputeModalForOverlap()">
+        <button class="btn-inspect-mini text-blue btn-overlap-trigger">
           <i data-lucide="arrow-right-left"></i> Consolidate
         </button>
       `;
     } else {
       actionBtn = `
-        <button class="btn-inspect-mini" onclick="inspectMemoryDetail('${sub.memory}')">
+        <button class="btn-inspect-mini btn-policy-trigger" data-memory="${memEsc}">
           <i data-lucide="eye"></i> Policy
         </button>
       `;
@@ -3714,26 +3809,26 @@ function renderSubscriptionsLedger() {
       <tr>
         <td>
           <div class="sub-merchant-cell">
-            <img src="${sub.logo}" class="merchant-mini-logo" alt="${sub.merchant}">
+            <img src="${sub.logo}" class="merchant-mini-logo" alt="${merchantEsc}">
             <div class="sub-merchant-meta">
-              <strong>${sub.merchant}</strong>
-              <span>${sub.plan}</span>
+              <strong>${merchantEsc}</strong>
+              <span>${planEsc}</span>
             </div>
           </div>
         </td>
         <td>
-          <span class="category-chip chip-slate">${sub.categoryLabel}</span>
+          <span class="category-chip chip-slate">${catLabelEsc}</span>
         </td>
         <td class="sub-cost-cell">
           <strong>${cur}${sub.cost.toFixed(2)}</strong>
           <small>${cur}${(sub.cost * 12).toFixed(2)} / yr</small>
         </td>
         <td class="sub-date-cell">
-          <span>${sub.renewalText}</span>
+          <span>${renewalTextEsc}</span>
         </td>
         <td>
-          <strong class="memory-id-badge" onclick="inspectMemoryDetail('${sub.memory}')" style="cursor:pointer;" title="Inspect memory baseline">
-            ${sub.memory}
+          <strong class="memory-id-badge btn-policy-trigger" data-memory="${memEsc}" style="cursor:pointer;" title="Inspect memory baseline">
+            ${memEsc}
           </strong>
         </td>
         <td>
@@ -3752,9 +3847,83 @@ function renderSubscriptionsLedger() {
   `;
 
   container.innerHTML = html;
+
+  // Safe event delegation - no inline string interpolation!
+  container.querySelectorAll('.btn-dispute-trigger').forEach(btn => {
+    btn.onclick = () => {
+      openDisputeModalForRecord(
+        btn.dataset.merchant,
+        parseFloat(btn.dataset.cost || 0),
+        parseFloat(btn.dataset.baseline || 0),
+        parseFloat(btn.dataset.delta || 0),
+        btn.dataset.memory
+      );
+    };
+  });
+  container.querySelectorAll('.btn-trial-cancel-trigger').forEach(btn => {
+    btn.onclick = () => {
+      if (typeof openDisputeModalForTrial === 'function') openDisputeModalForTrial(btn.dataset.merchant);
+    };
+  });
+  container.querySelectorAll('.btn-overlap-trigger').forEach(btn => {
+    btn.onclick = () => {
+      if (typeof openDisputeModalForOverlap === 'function') openDisputeModalForOverlap();
+    };
+  });
+  container.querySelectorAll('.btn-policy-trigger').forEach(btn => {
+    btn.onclick = () => {
+      if (typeof inspectMemoryDetail === 'function') inspectMemoryDetail(btn.dataset.memory);
+    };
+  });
+  container.querySelectorAll('.btn-confirm-proposal').forEach(btn => {
+    btn.onclick = async () => {
+      await confirmProposal(
+        btn.dataset.vendor,
+        parseFloat(btn.dataset.amount || 0),
+        btn.dataset.cadence,
+        btn.dataset.pattern
+      );
+    };
+  });
+  container.querySelectorAll('.btn-dismiss-proposal').forEach(btn => {
+    btn.onclick = () => {
+      dismissProposal(btn.dataset.vendor);
+    };
+  });
+
   if (window.lucide) window.lucide.createIcons();
 }
 window.renderSubscriptionsLedger = renderSubscriptionsLedger;
+
+async function confirmProposal(vendor, amount, cadence, raw_pattern) {
+  try {
+    const res = await fetch('/api/subscriptions/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vendor, amount, cadence, raw_pattern })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to confirm proposal');
+    state.subscriptionProposals = (state.subscriptionProposals || []).filter(p => p.vendor !== vendor);
+    showToast(`Confirmed subscription for ${vendor} into sovereign ledger MEM_01!`, 'emerald');
+    await loadSubscriptions();
+  } catch (err) {
+    showToast('Failed to confirm subscription: ' + err.message, 'amber');
+  }
+}
+window.confirmProposal = confirmProposal;
+
+function dismissProposal(vendor) {
+  const dismissed = JSON.parse(localStorage.getItem('recall_dismissed_subscription_proposals') || '[]');
+  if (!dismissed.includes(vendor)) {
+    dismissed.push(vendor);
+    localStorage.setItem('recall_dismissed_subscription_proposals', JSON.stringify(dismissed));
+  }
+  state.subscriptionProposals = (state.subscriptionProposals || []).filter(p => p.vendor !== vendor);
+  renderSubscriptionsLedger();
+  showToast(`Dismissed proposal for ${vendor}`, 'slate');
+}
+window.dismissProposal = dismissProposal;
 
 function filterSubsCategory(cat, btn) {
   activeSubCategory = cat;
@@ -4420,7 +4589,7 @@ function closeNewSubscriptionModal() {
 }
 window.closeNewSubscriptionModal = closeNewSubscriptionModal;
 
-function confirmAddSubscription() {
+async function confirmAddSubscription() {
   const name = document.getElementById('newSubName')?.value.trim();
   const amt = parseFloat(document.getElementById('newSubAmount')?.value || 0);
   const cat = document.getElementById('newSubCategory')?.value || 'Streaming';
@@ -4431,38 +4600,32 @@ function confirmAddSubscription() {
     return;
   }
 
-  const logo = getMerchantLogo(name) || '/assets/logos/generic.svg';
-  const memKey = `MEM_MANUAL_${Math.floor(Math.random() * 899 + 100)}`;
   const cur = state.userProfile?.currency || '$';
 
-  const newSub = {
-    id: `sub_${Date.now()}`,
-    merchant: name,
-    plan: 'Active Subscription',
-    logo: logo,
-    category: cat.toLowerCase().includes('stream') ? 'streaming' : (cat.toLowerCase().includes('ai') ? 'ai' : 'dev'),
-    categoryLabel: cat,
-    cost: amt,
-    amount: amt,
-    baseline: amt,
-    delta: 0,
-    renewalDay: parseInt(day),
-    dayOfMonth: parseInt(day),
-    renewalText: `${day}th of month`,
-    memory: memKey,
-    status: 'VERIFIED',
-    statusBadge: '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Baseline Match</span>'
-  };
+  try {
+    const res = await fetch('/api/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vendor: name,
+        price: amt,
+        cadence: 'monthly',
+        bill_day: parseInt(day),
+        category: cat
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add subscription');
 
-  masterSubscriptionsList.unshift(newSub);
-  if (!state.subscriptions) state.subscriptions = [];
-  state.subscriptions.unshift(newSub);
-  localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
-
-  closeNewSubscriptionModal();
-  recalculateAllFinancialMetrics();
-  renderSubscriptionsLedger();
-  showToast(`Added ${name} (${cur}${amt.toFixed(2)}/mo) with policy baseline [${memKey}]!`);
+    closeNewSubscriptionModal();
+    await loadSubscriptions();
+    showToast(`Added ${name} (${cur}${amt.toFixed(2)}/mo) to sovereign ledger MEM_01!`, 'emerald');
+    if (data.overlap) {
+      showToast(`Overlap detected: active subscription already exists in category "${cat}"!`, 'amber');
+    }
+  } catch (err) {
+    showToast('Failed to add subscription: ' + err.message, 'amber');
+  }
 }
 window.confirmAddSubscription = confirmAddSubscription;
 
@@ -4482,7 +4645,7 @@ function closeAddTrialModal() {
 }
 window.closeAddTrialModal = closeAddTrialModal;
 
-function confirmAddTrial() {
+async function confirmAddTrial() {
   const name = document.getElementById('newTrialName')?.value.trim();
   const rebill = parseFloat(document.getElementById('newTrialRebillRate')?.value || 0);
   const days = parseInt(document.getElementById('newTrialDaysLeft')?.value || 7);
@@ -4493,38 +4656,33 @@ function confirmAddTrial() {
   }
 
   const cur = state.userProfile?.currency || '$';
-  const newTrial = {
-    id: `trial_${Date.now()}`,
-    merchant: name,
-    plan: '7-Day Free Trial',
-    logo: getMerchantLogo(name) || '/assets/logos/generic.svg',
-    category: 'tools',
-    categoryLabel: 'Free Trial',
-    cost: rebill,
-    amount: rebill,
-    baseline: 0.00,
-    delta: rebill,
-    dayOfMonth: 27,
-    renewalDay: 27,
-    renewalText: `Converts in ${days} days`,
-    memory: `MEM_TRIAL_${Math.floor(Math.random() * 899 + 100)}`,
-    isTrial: true,
-    status: 'TRIAL_URGENT',
-    statusBadge: '<span class="status-badge alert" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A;"><i data-lucide="clock"></i> 48h Trial Alert</span>'
-  };
+  const trialEndsIso = new Date(Date.now() + days * 86400000).toISOString();
 
-  if (!state.subscriptions) state.subscriptions = [];
-  state.subscriptions.unshift(newTrial);
-  masterSubscriptionsList.unshift(newTrial);
-  localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
+  try {
+    const res = await fetch('/api/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vendor: name,
+        price: rebill,
+        cadence: 'monthly',
+        bill_day: new Date().getDate(),
+        trial_ends: trialEndsIso
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add trial');
 
-  closeAddTrialModal();
-  recalculateAllFinancialMetrics();
-  renderTrialSentinelPanel();
-  renderSubscriptionsLedger();
-  showToast(`Free trial for ${name} (${cur}${rebill.toFixed(2)}/mo) tracked! 48h warning armed for ${days} days from now.`);
+    closeAddTrialModal();
+    await loadSubscriptions();
+    await loadWalrusMemories();
+    showToast(`Registered Trial Watch anchor for ${name} (${cur}${rebill.toFixed(2)} upcoming auto-rebill)!`, 'amber');
+  } catch (err) {
+    showToast('Failed to register trial: ' + err.message, 'amber');
+  }
 }
 window.confirmAddTrial = confirmAddTrial;
+
 
 // ================= TOAST NOTIFICATION UTILITY =================
 function showToast(message) {
@@ -4724,6 +4882,41 @@ async function confirmDisputeAction() {
     if (window.lucide) window.lucide.createIcons();
   }
 }
+
+async function resolveChangeChoice(choice) {
+  if (!state.activeDispute) return;
+  const { merchant, amount, delta } = state.activeDispute;
+  const cur = state.userProfile?.currency || '$';
+  try {
+    const res = await fetch('/api/subscriptions/resolve-change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vendor: merchant,
+        amount: amount,
+        choice: choice
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to resolve change');
+
+    if (choice === 'plan_change') {
+      showToast(`Updated ${merchant} plan baseline to ${cur}${amount.toFixed(2)} in sovereign ledger!`, 'emerald');
+      closeDisputeModal();
+      await loadSubscriptions();
+    } else {
+      showToast(`Logged formal dispute for ${merchant} (+${cur}${delta.toFixed(2)} hike)`, 'amber');
+      if (data.disputePack && data.disputePack.letter) {
+        const body = document.getElementById('disputeLetterBody');
+        if (body) body.value = data.disputePack.letter;
+      }
+      await loadWalrusMemories();
+    }
+  } catch (err) {
+    showToast('Failed to resolve change: ' + err.message, 'amber');
+  }
+}
+window.resolveChangeChoice = resolveChangeChoice;
 
 // ================= TATUM SUI RPC & x402 AGENT PAYMENTS =================
 async function executeTestAgentPayment() {

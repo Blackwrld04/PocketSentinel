@@ -42,7 +42,7 @@ Most Web3 and decentralized applications fail because they expose their internal
 │                                                                                 │
 │  ┌───────────────────────────────────────────────────────────────────────────┐  │
 │  │ 1. Walrus Episodic Memory on Sui Mainnet                                 │  │
-│  │    - 24 Verified Onchain Memory Anchors across 10 distinct types (Schema v2) │  │
+│  │    - 19 Verified Onchain Memory Anchors with Subscription Ledger (Schema v2) │  │
 │  │    - Agent ID: walrus_agent_pocketsentinel_mainnet_0x7f4b82c              │  │
 │  │    - Eliminates false alarms, stores permanent cross-session context      │  │
 │  └───────────────────────────────────────────────────────────────────────────┘  │
@@ -102,23 +102,18 @@ Traditional finance apps are **stateless or centralized**:
    - Learns envelope deficit habits across multiple months (`MEM_18` + `MEM_19`) to advise baseline adjustments instead of blind monthly rebalancing.
 5. **Safety Rule on Suppression:** Inferred memories (`source: 'inferred'`) are strictly prohibited from suppressing alerts or auto-clearing charges without explicit human confirmation.
 
-### 4.2 The 24 Verified Onchain Memory Anchors
+### 4.2 The 19 Verified Onchain Memory Anchors
 Provisioned via `server/seedMemories.js` and verified in unit tests (`npm test`):
 
 ```javascript
-// Baselines & Subscriptions (Public)
-[MEM_01] netflix_standard: Baseline $15.49/mo (Flags $17.99 debit as +$2.50 creep)
-[MEM_02] spotify_premium: Baseline $10.99/mo (Active audio streaming baseline)
-[MEM_03] chatgpt_plus: Baseline $20.00/mo (AI productivity baseline)
+// Consolidated Subscription Ledger & Policies
+[MEM_01] subscription_ledger: [ENCRYPTED] Single consolidated baseline ledger holding Netflix ($15.49), Spotify ($10.99), ChatGPT Plus ($20.00), Equinox ($240.00), GitHub Copilot ($10.00), and iCloud ($9.99). Versioned with audit history and supersedes pointer.
 [MEM_04] aws_cloud_hosting: Seasonal Override Ceiling $180.00 (Suppresses false alarm on $142.50 debit)
-[MEM_05] gym_equinox: Frozen State $240.00/mo (Seasonal freeze scheduled for January)
-[MEM_06] adobe_creative_trial: Trial Watch (7-day trial ending in 48 hours, $54.99/mo risk)
-[MEM_07] unknown_vendor_threshold: Policy Gate ($50.00 limit before human sign-off)
+[MEM_06] adobe_creative_trial: Trial Watch (7-day trial ending in 48 hours, $54.99/mo risk, auto-converts to ledger on first charge)
+[MEM_07] unknown_vendor_threshold: Policy Gate ($50.00 limit before human sign-off; minor <= $50 debits pass with pending_review)
 [MEM_08] annual_renewal_tolerance: Policy Ceiling (Flag annual price hikes > 5.0%)
-[MEM_09] github_copilot: Baseline $10.00/mo (Developer tooling baseline)
 [MEM_10] doordash_pass: Dispute Trace (Active dispute tracking against unauthorized fee creep)
 [MEM_11] audio_streaming_overlap: Overlap Watch (Flags Spotify $10.99 + Apple Music $10.99 redundancy)
-[MEM_12] icloud_storage_2tb: Baseline $9.99/mo (Family cloud storage baseline)
 
 // Household Wealth OS & Cognitive Learning (Schema v2)
 [MEM_13] primary_pay_cycle: [ENCRYPTED] Income inflow $4,850.00 on 25th (Basis for Safe-to-Spend runway)

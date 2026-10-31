@@ -6,6 +6,7 @@
 
 import { execSync } from 'child_process';
 import fs from 'fs';
+import { toVendorSlug } from './subscriptionLedger.js';
 
 export function parseStatementFile(filePath, originalFilename = '', userCurrency = '') {
   const isPdf = originalFilename.toLowerCase().endsWith('.pdf') || filePath.toLowerCase().endsWith('.pdf');
@@ -405,3 +406,118 @@ function formatDateIso(dateStr) {
   }
   return dateStr;
 }
+
+/**
+ * Detects recurring subscription proposals in a batch of transactions.
+ * Groups debits by normalized vendor + same amount.
+ * 2+ occurrences about 28 to 31 days apart (also ~7 and ~365) for a vendor not in the ledger
+ * -> returns NEW_SUBSCRIPTION_PROPOSAL { type, vendor, raw_pattern, amount, detected_cadence, occurrences, first_seen }.
+ * Writes nothing.
+ */
+export function detectSubscriptionProposals(transactions = [], existingLedgerServices = {}) {
+  let services = existingLedgerServices;
+  if (services && services.value && services.value.services) {
+    services = services.value.services;
+  } else if (services && services.subscription_ledger && services.subscription_ledger.value && services.subscription_ledger.value.services) {
+    services = services.subscription_ledger.value.services;
+  }
+
+  const isVendorInLedger = (vendorName) => {
+    if (!services || typeof services !== 'object') return false;
+    const vLower = (vendorName || '').toLowerCase().trim();
+    const vSlug = toVendorSlug(vLower);
+    if (!vSlug) return false;
+
+    if (services[vSlug]) return true;
+    for (const [slug, s] of Object.entries(services)) {
+      if (slug === vSlug) return true;
+      if (s.display_name && s.display_name.toLowerCase() === vLower) return true;
+      if (Array.isArray(s.raw_patterns) && s.raw_patterns.some(p => p.toLowerCase() === vLower || toVendorSlug(p) === vSlug)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const groups = new Map();
+
+  for (const tx of transactions) {
+    if (tx.type === 'credit') continue;
+    const amount = Number(tx.amount);
+    if (!amount || isNaN(amount) || amount <= 0) continue;
+    const rawVendor = tx.raw_merchant || tx.merchant || tx.vendor || tx.rawMerchant || '';
+    if (!rawVendor) continue;
+
+    const normVendor = rawVendor.toLowerCase().replace(/[*\\_]/g, ' ').replace(/\s+/g, ' ').trim();
+    const amtKey = amount.toFixed(2);
+    const groupKey = `${normVendor}:::${amtKey}`;
+
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, {
+        rawVendor,
+        normVendor,
+        amount,
+        transactions: []
+      });
+    }
+    groups.get(groupKey).transactions.push(tx);
+  }
+
+  const proposals = [];
+
+  for (const [, group] of groups) {
+    if (group.transactions.length < 2) continue;
+    if (isVendorInLedger(group.normVendor) || isVendorInLedger(group.rawVendor)) {
+      continue;
+    }
+
+    const sorted = [...group.transactions].sort((a, b) => {
+      const tA = new Date(a.date || a.timestamp || 0).getTime();
+      const tB = new Date(b.date || b.timestamp || 0).getTime();
+      return tA - tB;
+    });
+
+    const intervalsInDays = [];
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const d1 = new Date(sorted[i].date || sorted[i].timestamp || 0).getTime();
+      const d2 = new Date(sorted[i + 1].date || sorted[i + 1].timestamp || 0).getTime();
+      if (!isNaN(d1) && !isNaN(d2) && d2 >= d1) {
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        intervalsInDays.push(diffDays);
+      }
+    }
+
+    if (intervalsInDays.length === 0) continue;
+
+    let detectedCadence = null;
+    const hasMonthly = intervalsInDays.some(d => d >= 26 && d <= 34);
+    const hasWeekly = intervalsInDays.some(d => d >= 5 && d <= 9);
+    const hasAnnual = intervalsInDays.some(d => d >= 350 && d <= 380);
+
+    if (hasMonthly) {
+      detectedCadence = 'monthly';
+    } else if (hasWeekly) {
+      detectedCadence = 'weekly';
+    } else if (hasAnnual) {
+      detectedCadence = 'annual';
+    }
+
+    if (detectedCadence) {
+      const firstTx = sorted[0];
+      const firstSeen = firstTx.date || firstTx.timestamp || new Date().toISOString().split('T')[0];
+      proposals.push({
+        type: 'NEW_SUBSCRIPTION_PROPOSAL',
+        vendor: toVendorSlug(group.rawVendor),
+        display_name: group.rawVendor,
+        raw_pattern: group.rawVendor,
+        amount: group.amount,
+        detected_cadence: detectedCadence,
+        occurrences: sorted.length,
+        first_seen: firstSeen
+      });
+    }
+  }
+
+  return proposals;
+}
+
