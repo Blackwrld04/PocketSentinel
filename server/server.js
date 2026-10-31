@@ -14,6 +14,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import multer from 'multer';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { WalrusClient } from './walrusClient.js';
 import { TatumClient } from './tatumClient.js';
@@ -21,6 +22,7 @@ import { WatchdogEngine, evaluateOcrMatch } from './watchdogEngine.js';
 import { seedAllMemories } from './seedMemories.js';
 import { GroqClient } from './groqClient.js';
 import { GeminiVisionClient } from './geminiVision.js';
+import { parseStatementFile } from './statementParser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +60,8 @@ if (existingMemories.length < 10) {
 /**
  * System Status & Agent Info
  */
+app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));
+
 app.get('/api/status', async (req, res) => {
   const memories = await walrus.listMemories();
   const balance = await tatum.getSuiBalance();
@@ -169,6 +173,9 @@ app.post('/api/audit/transaction', async (req, res) => {
  */
 app.post('/api/audit/batch', async (req, res) => {
   try {
+    const rawHdr = req.headers['x-user-currency'];
+    const decodedHdr = rawHdr ? decodeURIComponent(rawHdr) : '';
+    const userCurrency = req.body?.currency || decodedHdr || '$';
     const txs = req.body.transactions || [
       { merchant: 'Netflix', amount: 17.99, date: '2026-10-20' }, // +$2.50 hike vs $15.49 baseline
       { merchant: 'Amazon Web Services (AWS)', amount: 142.50, date: '2026-10-19' }, // Surpassed normal $64 but < $180 override -> SUPPRESSED!
@@ -178,7 +185,7 @@ app.post('/api/audit/batch', async (req, res) => {
       { merchant: 'Spotify Premium', amount: 10.99, date: '2026-10-15' } // Baseline match
     ];
 
-    const report = await watchdog.auditBatch(txs);
+    const report = await watchdog.auditBatch(txs, userCurrency);
     res.json(report);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -186,24 +193,62 @@ app.post('/api/audit/batch', async (req, res) => {
 });
 
 /**
- * Statement CSV / Mock Receipt Ingestion
+ * Statement PDF / CSV Ingestion & Autonomous Audit
  */
-app.post('/api/audit/upload', upload.single('statement'), async (req, res) => {
-  // Mock statement parser simulating CSV / OCR ingestion
-  const sampleTransactions = [
-    { merchant: 'Netflix', amount: 18.99, date: '2026-10-21', note: 'Statement parsed charge' },
-    { merchant: 'Spotify', amount: 12.99, date: '2026-10-20', note: 'Statement parsed charge' },
-    { merchant: 'Amazon Web Services (AWS)', amount: 165.00, date: '2026-10-18', note: 'Q4 server bill' },
-    { merchant: 'Unknown Crypto VPN Service', amount: 62.00, date: '2026-10-19', note: 'New merchant' }
-  ];
+const handleStatementUpload = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ ok: false, error: 'No statement file provided in request.' });
+  }
 
-  const report = await watchdog.auditBatch(sampleTransactions);
-  res.json({
-    filename: req.file ? req.file.originalname : 'statement_october_2026.csv',
-    parsedTransactions: sampleTransactions.length,
-    report
-  });
-});
+  const uploadedPath = req.file.path;
+  const originalName = req.file.originalname || 'statement.pdf';
+  const rawHdr = req.headers['x-user-currency'];
+  const decodedHdr = rawHdr ? decodeURIComponent(rawHdr) : '';
+  const userCurrency = req.body?.currency || decodedHdr || '';
+
+  try {
+    // Parse using unified statement parser (supports PDF & CSV)
+    const parsed = parseStatementFile(uploadedPath, originalName, userCurrency);
+
+    // Cleanup temp file safely
+    try {
+      if (fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
+    } catch (e) {
+      // ignore
+    }
+
+    if (!parsed.transactions || parsed.transactions.length === 0) {
+      return res.status(422).json({
+        ok: false,
+        error: 'No valid transactions found in this statement. Please check the statement file.'
+      });
+    }
+
+    // Run batch audit against Walrus decentralized memory
+    const statementCurrency = parsed.meta?.currency || userCurrency || '$';
+    const report = await watchdog.auditBatch(parsed.transactions, statementCurrency);
+
+    res.json({
+      ok: true,
+      filename: originalName,
+      meta: parsed.meta,
+      monthlySummary: parsed.monthlySummary,
+      availableMonths: parsed.availableMonths,
+      parsedCount: parsed.transactions.length,
+      totalCountInStatement: parsed.totalCountInStatement,
+      report
+    });
+  } catch (err) {
+    console.error('[server] Statement upload error:', err);
+    if (fs.existsSync(uploadedPath)) {
+      try { fs.unlinkSync(uploadedPath); } catch (e) {}
+    }
+    res.status(500).json({ ok: false, error: err.message || 'Failed to process statement file.' });
+  }
+};
+
+app.post('/api/statement/upload', upload.single('statement'), handleStatementUpload);
+app.post('/api/audit/upload', upload.single('statement'), handleStatementUpload);
 
 /**
  * Tatum Sui Wallet & Onchain Stream
@@ -311,12 +356,15 @@ app.get('/api/feed/csv', async (req, res) => {
  */
 app.post('/api/audit', async (req, res) => {
   try {
+    const rawHdr = req.headers['x-user-currency'];
+    const decodedHdr = rawHdr ? decodeURIComponent(rawHdr) : '';
+    const userCurrency = req.body?.currency || decodedHdr || '$';
     if (req.body.transactions && Array.isArray(req.body.transactions)) {
-      const report = await watchdog.auditBatch(req.body.transactions);
+      const report = await watchdog.auditBatch(req.body.transactions, userCurrency);
       return res.json(report);
     }
     if (req.body.merchant && req.body.amount !== undefined) {
-      const result = await watchdog.auditTransaction(req.body);
+      const result = await watchdog.auditTransaction(req.body, null, userCurrency);
       return res.json(result);
     }
     return res.status(400).json({ error: 'Either transaction object or transactions array required' });
@@ -384,10 +432,20 @@ app.get('*', (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n======================================================`);
   console.log(`🛡️  RecallRamp Sentinel Live: http://localhost:${PORT}`);
   console.log(`📡 Walrus Memory Agent ID  : ${walrus.agentId}`);
   console.log(`⛓️  Tatum Sui RPC Gateway   : ${tatum.suiRpcUrl}`);
   console.log(`======================================================\n`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Error: Port ${PORT} is already in use by another process.`);
+    console.error(`💡 Tip: Run 'fuser -k ${PORT}/tcp' or 'npx kill-port ${PORT}', or launch with PORT=${Number(PORT) + 1} npm run dev\n`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });

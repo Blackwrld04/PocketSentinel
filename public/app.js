@@ -132,15 +132,22 @@ const state = {
       explanation: 'Reconciled with $10.00 baseline.'
     }
   ],
-  userProfile: {
-    name: localStorage.getItem('recall_user_name') || 'Alex Rivera',
-    currency: localStorage.getItem('recall_currency') || '$',
-    inflow: parseFloat(localStorage.getItem('recall_inflow')) || 4850.00,
-    hourlyWage: parseFloat(localStorage.getItem('recall_hourly_wage')) || 25.00,
-    cycleDays: parseInt(localStorage.getItem('recall_cycle_days')) || 10,
-    safeSpend: 482.35,
-    dailyVelocity: 48.23
-  },
+  userProfile: (() => {
+    let p = {};
+    try {
+      const saved = localStorage.getItem('recall_user_profile');
+      if (saved) p = JSON.parse(saved);
+    } catch (e) {}
+    return {
+      name: localStorage.getItem('recall_user_name') || p.name || 'Alex Rivera',
+      currency: localStorage.getItem('recall_currency') || p.currency || '$',
+      inflow: parseFloat(localStorage.getItem('recall_inflow') || p.inflow) || 4850.00,
+      hourlyWage: parseFloat(localStorage.getItem('recall_hourly_wage') || p.hourlyWage) || 25.00,
+      cycleDays: parseInt(localStorage.getItem('recall_cycle_days') || p.cycleDays, 10) || 10,
+      safeSpend: p.safeSpend || 482.35,
+      dailyVelocity: p.dailyVelocity || 48.23
+    };
+  })(),
   wallets: [
     { id: 'checking', name: 'Primary Checking', balance: 2430.00, type: 'bank', color: '#10b981', icon: 'landmark', default: true },
     { id: 'babylon', name: 'Babylon 10% Gold Reserve', balance: 500.00, type: 'vault', color: '#f59e0b', icon: 'shield-alert', locked: true, note: 'Clason & Housel Buffer' },
@@ -154,6 +161,7 @@ const state = {
     recentTxs: []
   },
   activeDispute: null,
+  spendingCeilings: [],
   vault: {
     initialized: false,
     key: null,
@@ -218,6 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     state.subscriptions = [];
     state.auditResults = [];
+    state.spendingCeilings = [];
     state.wallets = [
       { id: 'checking', name: 'Primary Checking', balance: 0.00, type: 'bank', color: '#10b981', icon: 'landmark', default: true },
       { id: 'babylon', name: 'Babylon 10% Gold Reserve', balance: 0.00, type: 'vault', color: '#f59e0b', icon: 'shield-alert', locked: true, note: 'Clason & Housel Buffer' },
@@ -225,6 +234,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       { id: 'credit', name: 'Household Credit Card', balance: 0.00, type: 'card', color: '#ef4444', icon: 'credit-card', liability: true }
     ];
   } else {
+    // Restore saved spending ceilings if available
+    const savedCeilings = localStorage.getItem('recall_spending_ceilings');
+    if (savedCeilings) {
+      try {
+        state.spendingCeilings = JSON.parse(savedCeilings);
+      } catch (e) {
+        state.spendingCeilings = [];
+      }
+    } else {
+      state.spendingCeilings = [];
+    }
     // Restore saved user wallets if available
     const savedWallets = localStorage.getItem('recall_user_wallets');
     if (savedWallets) {
@@ -235,10 +255,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     // Restore saved user transactions if available
-    const savedTxs = localStorage.getItem('recall_user_transactions');
+    const savedTxs = localStorage.getItem('recall_user_transactions') || localStorage.getItem('recall_audit_results');
     if (savedTxs) {
       try {
         state.auditResults = JSON.parse(savedTxs);
+        if (typeof applyCurrencyGlobally === 'function') {
+          applyCurrencyGlobally(state.userProfile?.currency || localStorage.getItem('recall_currency') || '₦');
+        }
+        if (typeof initStatementMonthlyReview === 'function') initStatementMonthlyReview();
       } catch (e) {
         console.warn('Failed to parse saved transactions', e);
       }
@@ -1634,6 +1658,8 @@ function switchSubsSubTab(tabName) {
     if (typeof renderSpendCalendar === 'function') renderSpendCalendar();
   } else if (tabName === 'ledger') {
     if (typeof renderSubscriptionsLedger === 'function') renderSubscriptionsLedger();
+  } else if (tabName === 'trial') {
+    if (typeof renderTrialSentinelPanel === 'function') renderTrialSentinelPanel();
   }
 
   if (window.lucide) {
@@ -1670,6 +1696,10 @@ function switchSettingsCategory(catName) {
       }
     }
   });
+
+  if (catName === 'ceilings' && typeof renderApprovedCeilingsTable === 'function') {
+    renderApprovedCeilingsTable();
+  }
 
   if (window.lucide) {
     setTimeout(() => window.lucide.createIcons(), 30);
@@ -1735,41 +1765,225 @@ async function loadSampleDemoStatement() {
   }
 }
 
-function handleStatementFile(file) {
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const text = e.target.result;
-    const transactions = parseCSVStatement(text);
-    await executeBatchAudit(transactions);
-    switchView('app');
-  };
-  reader.readAsText(file);
+function parseCSVLine(text) {
+  const result = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char === '"' || char === "'") {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(cur.trim().replace(/^["']|["']$/g, ''));
+      cur = '';
+    } else {
+      cur += char;
+    }
+  }
+  result.push(cur.trim().replace(/^["']|["']$/g, ''));
+  return result;
 }
 
 function parseCSVStatement(csvText) {
-  const lines = csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (!csvText || typeof csvText !== 'string') return [];
+  const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
   if (lines.length <= 1) return [];
 
   // Parse header
-  const header = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const dateIdx = header.findIndex(h => h.includes('date'));
-  const descIdx = header.findIndex(h => h.includes('description') || h.includes('merchant'));
-  const amtIdx = header.findIndex(h => h.includes('amount'));
+  const header = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+  const dateIdx = header.findIndex(h => h.includes('date') || h.includes('time'));
+  const descIdx = header.findIndex(h => h.includes('description') || h.includes('merchant') || h.includes('payee') || h.includes('narrative') || h.includes('details') || h.includes('name'));
+  const amtIdx = header.findIndex(h => h.includes('amount') || h.includes('debit') || h.includes('total') || h.includes('paid out'));
+  const catIdx = header.findIndex(h => h.includes('category') || h.includes('type'));
 
   const results = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-    if (cols.length >= 3) {
-      const date = cols[dateIdx >= 0 ? dateIdx : 0] || '2026-10-20';
-      const merchant = cols[descIdx >= 0 ? descIdx : 1] || 'Unknown';
-      const amount = Math.abs(parseFloat(cols[amtIdx >= 0 ? amtIdx : 2])) || 0;
+    const cols = parseCSVLine(lines[i]);
+    if (cols.length >= 2) {
+      const rawDate = (dateIdx >= 0 && cols[dateIdx]) ? cols[dateIdx] : '2026-10-20';
+      const merchant = (descIdx >= 0 && cols[descIdx]) ? cols[descIdx] : (cols[1] || 'Unknown Merchant');
+      
+      const rawAmt = (amtIdx >= 0 && cols[amtIdx]) ? cols[amtIdx] : (cols[cols.length - 1] || '0');
+      const cleanNum = parseFloat(String(rawAmt).replace(/[^0-9.-]/g, ''));
+      const amount = isNaN(cleanNum) ? 0 : Math.abs(cleanNum);
+      const category = (catIdx >= 0 && cols[catIdx]) ? cols[catIdx] : 'General';
 
-      results.push({ date, merchant, amount });
+      if (amount > 0 || merchant !== 'Unknown Merchant') {
+        results.push({
+          date: rawDate,
+          merchant,
+          amount,
+          category,
+          timestamp: new Date().toISOString()
+        });
+      }
     }
   }
 
   return results;
 }
+
+async function handleStatementFileUpload(event) {
+  const file = event?.target?.files?.[0];
+  if (!file) return;
+
+  const isPdf = file.name.toLowerCase().endsWith('.pdf');
+  showToast(`Ingesting ${isPdf ? 'PDF' : 'CSV'} bank statement: ${file.name}...`, 'info');
+
+  try {
+    const activeCur = state.userProfile?.currency || localStorage.getItem('recall_currency') || '₦';
+    const formData = new FormData();
+    formData.append('statement', file);
+    formData.append('currency', activeCur);
+
+    const res = await fetch('/api/statement/upload', {
+      method: 'POST',
+      headers: {
+        'x-user-currency': encodeURIComponent(activeCur)
+      },
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Failed to process statement file.');
+    }
+
+    // Auto-populate user profile from statement metadata
+    if (data.meta) {
+      if (data.meta.accountName) {
+        state.userProfile = state.userProfile || {};
+        state.userProfile.name = data.meta.accountName;
+        localStorage.setItem('recall_user_name', data.meta.accountName);
+      }
+      if (data.meta.currency) {
+        // Do not downgrade user-selected Naira to dollar fallback
+        const incomingCur = data.meta.currency;
+        if (incomingCur === '$' && (state.userProfile?.currency === '₦' || localStorage.getItem('recall_currency') === '₦')) {
+          // Preserve Naira
+        } else {
+          state.userProfile = state.userProfile || {};
+          state.userProfile.currency = incomingCur;
+          localStorage.setItem('recall_currency', incomingCur);
+          if (typeof applyCurrencyGlobally === 'function') {
+            applyCurrencyGlobally(incomingCur);
+          }
+        }
+      }
+    }
+
+    // Save and render audited transactions
+    state.auditResults = data.report?.items || [];
+    if (data.monthlySummary) state.statementMonthlySummary = data.monthlySummary;
+    if (data.availableMonths) state.availableStatementMonths = data.availableMonths;
+
+    // Synchronize checking wallet balance and name to statement metadata
+    if (state.wallets && state.wallets.length > 0) {
+      const bankName = data.meta?.bank || 'Primary Checking';
+      const acctNum = data.meta?.accountNumber ? ` (${data.meta.accountNumber})` : '';
+      state.wallets[0].name = `${bankName}${acctNum}`;
+      const closingVal = data.meta?.closingBalance !== undefined && data.meta.closingBalance !== ''
+        ? parseFloat(data.meta.closingBalance)
+        : (data.availableMonths && data.availableMonths[0] ? data.availableMonths[0].inflow - data.availableMonths[0].outflow : 0);
+      state.wallets[0].balance = Number(closingVal.toFixed(2));
+      try {
+        localStorage.setItem('recall_user_wallets', JSON.stringify(state.wallets));
+      } catch (e) {}
+    }
+
+    // Set initial active statement month and align user profile inflow
+    if (data.availableMonths && data.availableMonths.length > 0) {
+      const latestMonth = data.availableMonths[0];
+      state.selectedStatementMonth = latestMonth.monthKey;
+      state.userProfile.inflow = Number(latestMonth.inflow || 0);
+      try {
+        localStorage.setItem('recall_inflow', String(latestMonth.inflow));
+      } catch (e) {}
+    }
+
+    // Cache transactions safely in compact format
+    try {
+      const compactItems = (state.auditResults || []).map(r => ({
+        id: r.id,
+        merchant: r.merchant,
+        amount: r.amount,
+        currentAmount: r.currentAmount,
+        type: r.type,
+        category: r.category,
+        date: r.date,
+        displayDate: r.displayDate,
+        time: r.time,
+        monthKey: r.monthKey,
+        monthLabel: r.monthLabel,
+        status: r.status,
+        walrusMemoryRef: r.walrusMemoryRef,
+        message: r.message
+      }));
+      localStorage.setItem('recall_user_transactions', JSON.stringify(compactItems));
+    } catch (e) {
+      console.warn('Failed to cache statement transactions to localStorage', e);
+    }
+
+    // Initialize Monthly Statement Review & Switcher
+    if (typeof initStatementMonthlyReview === 'function') {
+      initStatementMonthlyReview();
+    }
+    if (data.availableMonths && data.availableMonths.length > 0) {
+      if (typeof selectStatementMonth === 'function') {
+        selectStatementMonth(data.availableMonths[0].monthKey);
+      }
+    }
+
+    // Re-render all views
+    if (typeof renderUserProfileUI === 'function') renderUserProfileUI();
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
+    if (typeof renderAuditRecords === 'function') renderAuditRecords(state.auditResults);
+    if (typeof renderHomeTxMiniPreview === 'function') renderHomeTxMiniPreview();
+    if (typeof updateTxPageMetrics === 'function') updateTxPageMetrics();
+    if (typeof renderEnvelopesPlan === 'function') renderEnvelopesPlan();
+    if (typeof renderTrialSentinelPanel === 'function') renderTrialSentinelPanel();
+    if (typeof renderDisputesLedger === 'function') renderDisputesLedger();
+
+    // Reset input
+    if (event?.target) event.target.value = '';
+
+    const bankName = data.meta?.bank || 'bank';
+    const alertCount = data.report?.alertsCount || 0;
+    showToast(`Successfully ingested and audited ${data.parsedCount} transactions from your ${bankName} statement! (${alertCount} alerts flagged)`, 'success');
+
+    // Switch to Transactions view to see the records immediately
+    if (typeof filterAppView === 'function') {
+      filterAppView('transactions');
+    } else if (typeof switchView === 'function') {
+      switchView('app');
+    }
+  } catch (err) {
+    console.error('Statement upload error:', err);
+    showToast('Failed to process bank statement: ' + (err.message || 'Unknown error'), 'error');
+  }
+}
+window.handleStatementFileUpload = handleStatementFileUpload;
+
+function handleStatementFile(file) {
+  if (!file) return;
+  const isPdf = file.name.toLowerCase().endsWith('.pdf');
+  if (isPdf) {
+    handleStatementFileUpload({ target: { files: [file] } });
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const text = e.target.result;
+    const transactions = parseCSVStatement(text);
+    if (transactions.length > 0) {
+      await executeBatchAudit(transactions);
+      showToast(`Audited ${transactions.length} transactions from ${file.name}`, 'success');
+      switchView('app');
+    }
+  };
+  reader.readAsText(file);
+}
+window.handleStatementFile = handleStatementFile;
 
 async function auditStatementData() {
   const sampleTransactions = [
@@ -1795,35 +2009,469 @@ async function executeBatchAudit(transactions) {
     const report = await res.json();
     state.auditResults = report.items || report.results || [];
 
-    renderAuditRecords(state.auditResults);
+    try {
+      localStorage.setItem('recall_user_transactions', JSON.stringify(state.auditResults));
+    } catch (e) {
+      console.warn('Failed to persist user transactions', e);
+    }
 
-    // Update KPI flags counter
+    if (typeof initStatementMonthlyReview === 'function') initStatementMonthlyReview();
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
+    if (typeof renderAuditRecords === 'function') renderAuditRecords(state.auditResults);
+    if (typeof renderHomeTxMiniPreview === 'function') renderHomeTxMiniPreview();
+    if (typeof updateTxPageMetrics === 'function') updateTxPageMetrics();
+    if (typeof renderEnvelopesPlan === 'function') renderEnvelopesPlan();
+    if (typeof renderTrialSentinelPanel === 'function') renderTrialSentinelPanel();
+    if (typeof renderDisputesLedger === 'function') renderDisputesLedger();
+
+    const cur = state.userProfile?.currency || '$';
     const kpiFlags = document.getElementById('kpiActiveFlags');
     if (kpiFlags) {
-      const alertCount = report.alertsCount !== undefined ? report.alertsCount : (report.summary ? (report.summary.priceHikesDetected + report.summary.trialsPending) : 2);
+      const alertCount = report.alertsCount !== undefined ? report.alertsCount : (report.summary ? (report.summary.priceHikesDetected + report.summary.trialsPending) : 0);
       kpiFlags.textContent = `${alertCount} Alerts`;
     }
 
     const kpiPreserved = document.getElementById('kpiPreservedLeakage');
     if (kpiPreserved && report.annualSavingsPreserved) {
-      kpiPreserved.textContent = `$${report.annualSavingsPreserved}`;
+      kpiPreserved.textContent = `${cur}${report.annualSavingsPreserved}`;
     }
+
+    return report;
   } catch (err) {
     console.error('Batch audit error:', err);
+    showToast('Failed to run batch audit on statement transactions.', 'error');
   }
 }
+window.executeBatchAudit = executeBatchAudit;
+
+function isCreditRecord(r) {
+  if (!r) return false;
+  if (r.type === 'credit' || r.txType === 'credit') return true;
+  if (r.direction === 'credit' || r.direction === 'inflow') return true;
+  if (r.transaction && (r.transaction.type === 'credit' || r.transaction.direction === 'credit')) return true;
+  const cat = (r.category || (r.transaction && r.transaction.category) || '').toLowerCase();
+  if (cat.includes('income') || cat.includes('deposit') || cat.includes('inflow')) return true;
+  return false;
+}
+window.isCreditRecord = isCreditRecord;
+
+function getTxAmount(r) {
+  if (!r) return 0;
+  const v = r.currentAmount !== undefined ? r.currentAmount : (r.amount !== undefined ? r.amount : (r.transaction && r.transaction.amount) || 0);
+  return Number(v) || 0;
+}
+window.getTxAmount = getTxAmount;
 
 let currentTxSearchQuery = '';
 let currentTxFilterMode = 'all';
 
+function formatMonthLabel(mKey) {
+  if (!mKey || typeof mKey !== 'string') return 'October 2026';
+  const parts = mKey.split('-');
+  if (parts.length === 2) {
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const idx = parseInt(parts[1], 10) - 1;
+    if (idx >= 0 && idx < 12) {
+      return `${months[idx]} ${parts[0]}`;
+    }
+  }
+  return mKey;
+}
+
+function getTxMonthKey(r) {
+  if (!r) return '2026-10';
+  if (r.monthKey && /^\d{4}-\d{2}$/.test(r.monthKey)) return r.monthKey;
+  const raw = (r.transaction && r.transaction.date) || r.date || r.displayDate || r.timestamp || '';
+  if (!raw) return '2026-10';
+
+  // 1. If contains YYYY-MM
+  const isoMatch = String(raw).match(/(\d{4})[-/](\d{1,2})/);
+  if (isoMatch) {
+    const yr = isoMatch[1];
+    const mo = isoMatch[2].padStart(2, '0');
+    if (parseInt(mo, 10) >= 1 && parseInt(mo, 10) <= 12) {
+      return `${yr}-${mo}`;
+    }
+  }
+
+  // 2. If DD Mon YYYY or Mon DD YYYY (e.g. 15 Oct 2026 or Oct 15 2026 or 15-Oct-2026)
+  const mmap = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+  const str = String(raw).toLowerCase();
+  for (const [monName, monNum] of Object.entries(mmap)) {
+    if (str.includes(monName)) {
+      const yearMatch = str.match(/\b(202\d)\b/);
+      const yr = yearMatch ? yearMatch[1] : '2026';
+      return `${yr}-${monNum}`;
+    }
+  }
+
+  return '2026-10';
+}
+window.getTxMonthKey = getTxMonthKey;
+
+function initStatementMonthlyReview() {
+  const records = state.auditResults || [];
+
+  // Group by month
+  const monthMap = {};
+  for (const r of records) {
+    const mKey = getTxMonthKey(r);
+    const mLabel = r.monthLabel || formatMonthLabel(mKey);
+    if (!monthMap[mKey]) {
+      monthMap[mKey] = {
+        monthKey: mKey,
+        monthLabel: mLabel,
+        inflow: 0,
+        outflow: 0,
+        txCount: 0,
+        debitCount: 0,
+        creditCount: 0,
+        categories: {}
+      };
+    }
+    const m = monthMap[mKey];
+    m.txCount++;
+    const amt = getTxAmount(r);
+    const isCredit = isCreditRecord(r);
+    if (isCredit) {
+      m.inflow += amt;
+      m.creditCount++;
+    } else {
+      m.outflow += amt;
+      m.debitCount++;
+      const cat = r.category || 'Discretionary';
+      m.categories[cat] = (m.categories[cat] || 0) + amt;
+    }
+  }
+
+  // Sort available months descending (newest first)
+  const sortedKeys = Object.keys(monthMap).sort((a, b) => b.localeCompare(a));
+  state.availableStatementMonths = sortedKeys.map(k => monthMap[k]);
+
+  // Set default selected month to newest month if available
+  if (!state.selectedStatementMonth || (state.selectedStatementMonth !== 'all' && !monthMap[state.selectedStatementMonth])) {
+    state.selectedStatementMonth = sortedKeys.length > 0 ? sortedKeys[0] : 'all';
+  }
+
+  renderStatementMonthPills();
+  renderOverviewMonthPills();
+  updateStatementMonthlyReviewCards();
+}
+window.initStatementMonthlyReview = initStatementMonthlyReview;
+
+function renderStatementMonthPills() {
+  const container = document.getElementById('statementMonthPillsTrack');
+  if (!container) return;
+
+  const records = state.auditResults || [];
+  if (!records || records.length === 0) {
+    container.innerHTML = `
+      <button type="button" class="month-pill-btn active" data-month="all" onclick="selectStatementMonth('all')">
+        <span>Full Year / All Months</span> <span class="pill-count">0</span>
+      </button>
+    `;
+    return;
+  }
+
+  const months = state.availableStatementMonths || [];
+  let html = `
+    <button type="button" class="month-pill-btn ${state.selectedStatementMonth === 'all' ? 'active' : ''}" data-month="all" onclick="selectStatementMonth('all')" title="Full Year / All Months statement review">
+      <span>Full Year / All Months</span> <span class="pill-count">${records.length}</span>
+    </button>
+  `;
+
+  months.forEach(m => {
+    const isActive = state.selectedStatementMonth === m.monthKey;
+    html += `
+      <button type="button" class="month-pill-btn ${isActive ? 'active' : ''}" data-month="${m.monthKey}" onclick="selectStatementMonth('${m.monthKey}')" title="${m.monthLabel}">
+        <span>${m.monthLabel}</span> <span class="pill-count">${m.txCount}</span>
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function renderOverviewMonthPills() {
+  const container = document.getElementById('overviewMonthPillsTrack');
+  if (!container) return;
+
+  const records = state.auditResults || [];
+  if (!records || records.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const months = state.availableStatementMonths || [];
+  const active = state.selectedStatementMonth || 'all';
+
+  let html = `
+    <button type="button" class="month-pill-btn ${active === 'all' ? 'active' : ''}" data-month="all" onclick="selectStatementMonth('all')" title="View all months combined">
+      <span>Year / All</span>
+    </button>
+  `;
+
+  months.forEach(m => {
+    const isActive = active === m.monthKey;
+    const parts = m.monthKey.split('-');
+    const monIdx = parseInt(parts[1], 10) - 1;
+    const monNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const shortLabel = monIdx >= 0 && monIdx < 12 ? `${monNames[monIdx]} '${parts[0].substring(2)}` : m.monthLabel;
+    html += `
+      <button type="button" class="month-pill-btn ${isActive ? 'active' : ''}" data-month="${m.monthKey}" onclick="selectStatementMonth('${m.monthKey}')" title="${m.monthLabel}">
+        <span>${shortLabel}</span>
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+window.renderOverviewMonthPills = renderOverviewMonthPills;
+
+function selectStatementMonth(monthKey) {
+  state.selectedStatementMonth = monthKey;
+
+  // 1. Sync user profile inflow to the selected month's exact inflow
+  if (state.availableStatementMonths && state.availableStatementMonths.length > 0) {
+    if (monthKey === 'all') {
+      const totalInflow = state.availableStatementMonths.reduce((sum, m) => sum + (m.inflow || 0), 0);
+      if (totalInflow > 0) state.userProfile.inflow = Number(totalInflow.toFixed(2));
+    } else {
+      const mData = state.availableStatementMonths.find(m => m.monthKey === monthKey);
+      if (mData && mData.inflow > 0) {
+        state.userProfile.inflow = Number(mData.inflow.toFixed(2));
+      }
+    }
+  }
+
+  // 2. Re-render both pill tracks so the active state is always exact
+  renderStatementMonthPills();
+  renderOverviewMonthPills();
+
+  // 3. Scroll active pills into visible view in their horizontal scrollers
+  setTimeout(() => {
+    document.querySelectorAll('.month-pill-btn.active').forEach(pill => {
+      pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    });
+  }, 30);
+
+  // 4. Update statement review cards
+  updateStatementMonthlyReviewCards();
+
+  // 5. Update Cashflow Distribution Bar, Safe-to-Spend Runway, Net Liquidity
+  if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
+
+  // 6. Update user profile displays
+  if (typeof renderUserProfileUI === 'function') renderUserProfileUI();
+
+  // 7. Update Envelopes Plan with selected month's inflow and living spend
+  if (typeof renderEnvelopesPlan === 'function') renderEnvelopesPlan();
+
+  // 8. Update Transactions feed with fast rendering
+  currentTxRenderLimit = 80;
+  renderAuditRecords(state.auditResults);
+
+  // 9. Update Transaction page volume and hourly Life Energy KPIs
+  if (typeof updateTxPageMetrics === 'function') updateTxPageMetrics();
+}
+window.selectStatementMonth = selectStatementMonth;
+
+function navigateStatementMonth(direction) {
+  const months = (state.availableStatementMonths || []).map(m => m.monthKey);
+  if (months.length === 0) return;
+
+  const current = state.selectedStatementMonth;
+  let idx = months.indexOf(current);
+
+  if (direction === -1 || direction === 'prev') {
+    // Left arrow (<): Step backward in time (e.g. Oct -> Sep -> Aug -> Jul)
+    if (idx === -1) {
+      idx = 0;
+    } else if (idx < months.length - 1) {
+      idx = idx + 1;
+    } else {
+      selectStatementMonth('all');
+      return;
+    }
+  } else {
+    // Right arrow (>): Step forward in time (e.g. Jul -> Aug -> Sep -> Oct)
+    if (idx === -1) {
+      idx = 0;
+    } else if (idx > 0) {
+      idx = idx - 1;
+    } else {
+      selectStatementMonth('all');
+      return;
+    }
+  }
+
+  selectStatementMonth(months[idx]);
+}
+window.navigateStatementMonth = navigateStatementMonth;
+
+function updateStatementMonthlyReviewCards() {
+  const cur = state.userProfile?.currency || '$';
+  const records = state.auditResults || [];
+  const selected = state.selectedStatementMonth || 'all';
+
+  let title = 'All Months / Full Year Review';
+  let inflow = 0;
+  let outflow = 0;
+  let debitCount = 0;
+  let creditCount = 0;
+  const categories = {};
+
+  if (selected === 'all') {
+    title = 'All Months / Full Year Review';
+    for (const r of records) {
+      const amt = getTxAmount(r);
+      const isCredit = isCreditRecord(r);
+      if (isCredit) {
+        inflow += amt;
+        creditCount++;
+      } else {
+        outflow += amt;
+        debitCount++;
+        const cat = r.category || 'Discretionary';
+        categories[cat] = (categories[cat] || 0) + amt;
+      }
+    }
+  } else {
+    const mData = (state.availableStatementMonths || []).find(m => m.monthKey === selected);
+    if (mData) {
+      title = `${mData.monthLabel} Statement Review`;
+      inflow = mData.inflow;
+      outflow = mData.outflow;
+      debitCount = mData.debitCount;
+      creditCount = mData.creditCount;
+      Object.assign(categories, mData.categories);
+    } else {
+      title = `${formatMonthLabel(selected)} Statement Review`;
+      for (const r of records) {
+        if (getTxMonthKey(r) === selected) {
+          const amt = getTxAmount(r);
+          const isCredit = isCreditRecord(r);
+          if (isCredit) {
+            inflow += amt;
+            creditCount++;
+          } else {
+            outflow += amt;
+            debitCount++;
+            const cat = r.category || 'Discretionary';
+            categories[cat] = (categories[cat] || 0) + amt;
+          }
+        }
+      }
+    }
+  }
+
+  const net = inflow - outflow;
+
+  // Find top destination category
+  let topCat = 'None';
+  let topCatAmt = 0;
+  for (const [cName, cAmt] of Object.entries(categories)) {
+    if (cAmt > topCatAmt) {
+      topCatAmt = cAmt;
+      topCat = cName;
+    }
+  }
+  const topPct = outflow > 0 ? Math.round((topCatAmt / outflow) * 100) : 0;
+
+  // Inflow Card
+  const elTitle = document.getElementById('statementActiveMonthTitle');
+  if (elTitle) elTitle.textContent = title;
+
+  const elInflow = document.getElementById('flowMonthInflow');
+  if (elInflow) elInflow.textContent = `+${cur}${inflow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const elInflowSub = document.getElementById('flowMonthInflowSub');
+  if (elInflowSub) elInflowSub.textContent = `${creditCount} incoming deposit${creditCount === 1 ? '' : 's'}`;
+
+  // Outflow Card
+  const elOutflow = document.getElementById('flowMonthOutflow');
+  if (elOutflow) elOutflow.textContent = `-${cur}${outflow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const elOutflowSub = document.getElementById('flowMonthOutflowSub');
+  if (elOutflowSub) elOutflowSub.textContent = `${debitCount} processed debit${debitCount === 1 ? '' : 's'}`;
+
+  // Net Card
+  const elNet = document.getElementById('flowMonthNet');
+  if (elNet) {
+    const isPos = net >= 0;
+    const absVal = Math.abs(net).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    elNet.textContent = `${isPos ? '+' : '-'}${cur}${absVal}`;
+    elNet.className = `flow-card-value ${isPos ? 'text-green' : 'text-coral'}`;
+  }
+
+  const elNetSub = document.getElementById('flowMonthNetSub');
+  if (elNetSub) {
+    elNetSub.textContent = net >= 0 ? 'Net Preserved Savings' : 'Net Deficit Outflow';
+  }
+
+  // Top Destination Card
+  const elTopDest = document.getElementById('flowMonthTopDest');
+  if (elTopDest) {
+    elTopDest.textContent = topCat !== 'None' ? topCat : 'None';
+  }
+
+  const elTopDestSub = document.getElementById('flowMonthTopDestSub');
+  if (elTopDestSub) {
+    elTopDestSub.textContent = topCatAmt > 0
+      ? `${cur}${topCatAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${topPct}% of spending)`
+      : 'Where funds left to';
+  }
+
+  // Category Allocation Chips ("Leaves to here")
+  const chipsContainer = document.getElementById('monthCategoryChips');
+  const breakdownBar = document.getElementById('monthSpendingBreakdownBar');
+  if (chipsContainer && breakdownBar) {
+    const catEntries = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+    if (catEntries.length > 0) {
+      breakdownBar.style.display = 'block';
+      chipsContainer.innerHTML = catEntries.map(([cName, cAmt]) => {
+        const pct = outflow > 0 ? Math.round((cAmt / outflow) * 100) : 0;
+        return `
+          <div class="category-spend-chip">
+            <span class="chip-dot"></span>
+            <span>${cName}</span>
+            <span class="chip-amt">${cur}${cAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span class="chip-pct">(${pct}%)</span>
+          </div>
+        `;
+      }).join('');
+    } else {
+      breakdownBar.style.display = 'none';
+    }
+  }
+
+  // Update top KPI cards to match
+  const kpiVol = document.getElementById('txKpiVolumeDisplay');
+  const kpiLabel = document.getElementById('txKpiVolumeLabel');
+  const kpiSub = document.getElementById('txKpiCountSub');
+  if (kpiVol) kpiVol.textContent = `${cur}${outflow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (kpiLabel) kpiLabel.textContent = selected === 'all' ? 'All Months Volume' : `${formatMonthLabel(selected)} Volume`;
+  if (kpiSub) kpiSub.textContent = `${debitCount} processed statement debits`;
+}
+
+let currentTxRenderLimit = 80;
+
+function loadMoreAuditRecords() {
+  currentTxRenderLimit += 80;
+  renderAuditRecords(state.auditResults);
+}
+window.loadMoreAuditRecords = loadMoreAuditRecords;
+
 function handleTxSearch(query) {
   currentTxSearchQuery = (query || '').toLowerCase().trim();
+  currentTxRenderLimit = 80;
   renderAuditRecords(state.auditResults);
 }
 window.handleTxSearch = handleTxSearch;
 
 function filterTxTable(mode) {
   currentTxFilterMode = mode || 'all';
+  currentTxRenderLimit = 80;
   document.querySelectorAll('.tx-filter-chips .chip').forEach(c => {
     c.classList.toggle('active', c.getAttribute('data-filter') === mode);
   });
@@ -1840,10 +2488,15 @@ function renderAuditRecords(records) {
       <div style="text-align:center; padding: 48px 24px; color: var(--text-muted);">
         <i data-lucide="inbox" style="width:40px; height:40px; margin-bottom:12px; stroke-width:1.5; opacity:0.6;"></i>
         <div style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">No transactions recorded yet</div>
-        <p style="font-size:13px; max-width:400px; margin:0 auto 16px auto;">Upload a bank statement or click "+ Log Expense" above to start auditing your expenses against policy baselines.</p>
-        <button class="btn-primary-compact" onclick="openLogExpenseModal()" style="display:inline-flex; align-items:center; gap:6px;">
-          <i data-lucide="plus" style="width:14px; height:14px;"></i> Log First Expense
-        </button>
+        <p style="font-size:13px; max-width:400px; margin:0 auto 16px auto;">Upload a bank statement (PDF or CSV) or click "+ Log Expense" above to start auditing your expenses against policy baselines.</p>
+        <div style="display:inline-flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+          <button class="btn-allocate-funds" onclick="document.getElementById('hiddenStatementUpload').click()" style="padding:8px 16px; font-size:13px;">
+            <i data-lucide="upload"></i> Upload Statement (PDF/CSV)
+          </button>
+          <button class="btn-rebalance-secondary" onclick="openLogExpenseModal()" style="padding:8px 16px; font-size:13px;">
+            <i data-lucide="plus"></i> Log First Expense
+          </button>
+        </div>
       </div>
     `;
     if (window.lucide) window.lucide.createIcons();
@@ -1852,14 +2505,28 @@ function renderAuditRecords(records) {
     return;
   }
 
+  // Ensure monthly breakdown navigation is initialized
+  if (!state.availableStatementMonths || state.availableStatementMonths.length === 0) {
+    initStatementMonthlyReview();
+  }
+
   const cur = state.userProfile?.currency || '$';
 
-  // Filter based on state.activeFilter and local search / chips
-  let filtered = records.filter(r => {
-    const isAlert = r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'TRIAL_CONVERTING' || r.status === 'ESCALATION_REQUIRED' || r.status === 'ESCALATION_FLAG';
-    const isSub = r.status === 'VERIFIED_OK' || r.status === 'NORMAL' || r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'SUPPRESSED_BY_MEMORY' || r.status === 'SUPPRESSED_APPROVED' || r.category === 'Streaming' || r.category === 'Software' || r.category === 'Infrastructure';
-    const isTrial = r.status === 'TRIAL_CONVERTING' || r.status === 'TRIAL_URGENT' || (r.merchant && r.merchant.toLowerCase().includes('adobe'));
+  // 1. Filter by selected month
+  let filtered = records;
+  if (state.selectedStatementMonth && state.selectedStatementMonth !== 'all') {
+    filtered = filtered.filter(r => getTxMonthKey(r) === state.selectedStatementMonth);
+  }
 
+  // 2. Filter based on currentTxFilterMode and state.activeFilter
+  filtered = filtered.filter(r => {
+    const isAlert = r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'TRIAL_CONVERTING' || r.status === 'ESCALATION_REQUIRED' || r.status === 'ESCALATION_FLAG';
+    const isSub = r.status === 'VERIFIED_OK' || r.status === 'NORMAL' || r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'SUPPRESSED_BY_MEMORY' || r.status === 'SUPPRESSED_APPROVED' || r.category === 'Streaming' || r.category === 'Software' || r.category === 'Infrastructure' || r.category === 'Subscriptions';
+    const isTrial = r.status === 'TRIAL_CONVERTING' || r.status === 'TRIAL_URGENT' || (r.merchant && r.merchant.toLowerCase().includes('adobe'));
+    const isCredit = r.type === 'credit';
+
+    if (currentTxFilterMode === 'debit' && isCredit) return false;
+    if (currentTxFilterMode === 'credit' && !isCredit) return false;
     if (currentTxFilterMode === 'subscription' && !isSub) return false;
     if (currentTxFilterMode === 'flagged' && !isAlert && !isTrial) return false;
 
@@ -1879,20 +2546,46 @@ function renderAuditRecords(records) {
     });
   }
 
-  container.innerHTML = filtered.map(r => {
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding: 40px 24px; color: var(--text-muted);">
+        <i data-lucide="filter" style="width:36px; height:36px; margin-bottom:10px; opacity:0.5;"></i>
+        <div style="font-weight:600; font-size:14px; margin-bottom:4px; color:var(--text-main);">No transactions found</div>
+        <p style="font-size:12px; margin:0 auto 12px auto;">No records match your active month and filters.</p>
+        <button class="btn-ghost-action" onclick="selectStatementMonth('all'); filterTxTable('all');" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+          <i data-lucide="rotate-ccw"></i> Reset Filters
+        </button>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
+
+  const totalMatches = filtered.length;
+  const visible = filtered.slice(0, currentTxRenderLimit);
+
+  let listHtml = visible.map(r => {
     const merchant = r.merchant || (r.transaction && r.transaction.merchant) || 'Unknown Merchant';
     const amount = r.currentAmount !== undefined ? r.currentAmount : (r.amount !== undefined ? r.amount : (r.transaction && r.transaction.amount) || 0);
     const baseline = r.baselineAmount !== undefined ? r.baselineAmount : (r.baseline !== undefined ? r.baseline : null);
     const delta = r.deltaAmount !== undefined ? r.deltaAmount : (baseline !== null && amount > baseline ? Number((amount - baseline).toFixed(2)) : 0);
     const memoryRef = r.walrusMemoryRef || r.memoryUsed || null;
     const date = (r.transaction && r.transaction.date) || r.date || '2026-10-20';
+    const isCredit = r.type === 'credit';
+    const safeMerchantArg = String(merchant).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     const statusData = getAuditStatusBadge(r.status, delta);
 
     let actionBtnHtml = '';
-    if (r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP') {
+    if (isCredit) {
       actionBtnHtml = `
-        <button class="btn-card-action-red" onclick="openDisputeModalForRecord('${merchant}', ${amount}, ${baseline || 0}, ${delta}, '${memoryRef || 'MEM_01'}')">
+        <span class="verified-badge" style="background:rgba(22,163,74,0.08); color:#16A34A; border:1px solid rgba(22,163,74,0.25);">
+          <i data-lucide="check"></i> Inflow
+        </span>
+      `;
+    } else if (r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP') {
+      actionBtnHtml = `
+        <button class="btn-card-action-red" onclick="openDisputeModalForRecord('${safeMerchantArg}', ${amount}, ${baseline || 0}, ${delta}, '${memoryRef || 'MEM_01'}')">
           <i data-lucide="shield-alert"></i> Dispute
         </button>
       `;
@@ -1910,7 +2603,7 @@ function renderAuditRecords(records) {
       `;
     } else if (r.status === 'ESCALATION_REQUIRED' || r.status === 'ESCALATION_FLAG') {
       actionBtnHtml = `
-        <button class="btn-card-action-amber" onclick="alert('Unknown merchant exceeding threshold. Policy triggered: Human escalation required.')">
+        <button class="btn-card-action-amber" onclick="showToast('Unknown merchant exceeding threshold. Policy triggered: Review required.', 'amber')">
           <i data-lucide="alert-circle"></i> Review
         </button>
       `;
@@ -1924,7 +2617,7 @@ function renderAuditRecords(records) {
 
     const logoUrl = getMerchantLogo(merchant);
     const avatarHtml = logoUrl
-      ? `<div class="merchant-avatar-wrap"><img src="${logoUrl}" class="merchant-avatar-img" alt="${merchant}"></div>`
+      ? `<div class="merchant-avatar-wrap"><img src="${logoUrl}" class="merchant-avatar-img" alt="${escapeHtml(merchant)}"></div>`
       : `<div class="merchant-avatar ${getAvatarClass(merchant)}">${merchant.charAt(0)}</div>`;
 
     const walletLabel = r.wallet ? r.wallet.replace(' Account', '').replace(' / Pocket', '') : '';
@@ -1942,39 +2635,63 @@ function renderAuditRecords(records) {
           formattedDate = `${months[mIdx]} ${d}`;
         }
       }
+    } else if (r.displayDate) {
+      formattedDate = r.displayDate;
     }
 
     let subtextParts = [formattedDate];
+    if (r.category) subtextParts.push(r.category);
     if (walletLabel) subtextParts.push(walletLabel);
     if (isHikeAlert && baseline !== null && baseline > 0) subtextParts.push(`Baseline ${cur}${baseline.toFixed(2)}`);
 
+    const badgeDisplay = isCredit
+      ? `<span class="verified-badge text-green" style="background:rgba(22,163,74,0.1); color:#16A34A; border:1px solid rgba(22,163,74,0.25);"><i data-lucide="arrow-down-left"></i> Money Enters</span>`
+      : statusData.badgeHtml;
+
+    const amountDisplay = isCredit
+      ? `<span class="billed-amount text-green" style="color:#16A34A; font-weight:800;">+${cur}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`
+      : `<span class="billed-amount">${cur}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
+
     return `
-      <div class="audit-record-row ${r.status.toLowerCase()}">
+      <div class="audit-record-row ${r.status ? r.status.toLowerCase() : ''} ${isCredit ? 'credit-row' : ''}">
         <div class="record-left">
           ${avatarHtml}
           <div class="record-details">
             <div class="record-title-row">
-              <strong>${merchant}</strong>
-              ${statusData.badgeHtml}
+              <strong>${escapeHtml(merchant)}</strong>
+              ${badgeDisplay}
             </div>
             <div class="record-subtext">
-              ${subtextParts.map((part, i) => i === 0 ? `<span>${part}</span>` : `<span>· ${part}</span>`).join('')}
+              ${subtextParts.map((part, i) => i === 0 ? `<span>${escapeHtml(part)}</span>` : `<span>· ${escapeHtml(part)}</span>`).join('')}
             </div>
           </div>
         </div>
 
         <div class="record-right">
           <div class="record-amount-block">
-            <span class="billed-amount">${cur}${amount.toFixed(2)}</span>
+            ${amountDisplay}
           </div>
           <div class="record-actions">
             ${actionBtnHtml}
-            ${r.isUserLogged ? `<button class="btn-inspect-mini text-coral" onclick="deleteUserLoggedTx('${merchant}', ${amount})" title="Delete"><i data-lucide="trash-2"></i></button>` : ''}
+            ${r.isUserLogged ? `<button class="btn-inspect-mini text-coral" onclick="deleteUserLoggedTx('${safeMerchantArg}', ${amount})" title="Delete"><i data-lucide="trash-2"></i></button>` : ''}
           </div>
         </div>
       </div>
     `;
   }).join('');
+
+  if (totalMatches > currentTxRenderLimit) {
+    listHtml += `
+      <div style="text-align:center; padding: 20px 0;">
+        <button type="button" class="btn-ghost-action" onclick="loadMoreAuditRecords()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:8px 24px; font-weight:600; font-size:12px;">
+          <i data-lucide="chevron-down"></i> Load More Transactions (Showing ${visible.length} of ${totalMatches})
+        </button>
+      </div>
+    `;
+  }
+
+  container.innerHTML = listHtml;
+  if (window.lucide) window.lucide.createIcons();
 
   if (window.lucide) window.lucide.createIcons();
 
@@ -1992,15 +2709,31 @@ function renderHomeTxMiniPreview() {
   if (lineTxBadge) lineTxBadge.textContent = `${records.length} Audited`;
   if (sidebarTxCount) sidebarTxCount.textContent = `${records.length} Txns`;
 
-  const alertsCount = records.filter(r => 
+  const subs = typeof getActiveSubscriptionsList === 'function' ? getActiveSubscriptionsList() : (state.subscriptions || []);
+  const creepSubs = subs.filter(s => Boolean(s.hasHike || s.status === 'CREEP_FLAG' || s.status === 'PRICE_CREEP' || (Number(s.cost) > Number(s.baseline) && !s.overrideApproved)));
+  const trialSubs = subs.filter(s => Boolean(s.isTrial || s.status === 'TRIAL' || s.status === 'TRIAL_URGENT'));
+
+  const selected = state.selectedStatementMonth || 'all';
+  const targetRecords = selected === 'all'
+    ? records
+    : records.filter(r => (typeof getTxMonthKey === 'function' ? getTxMonthKey(r) : (r.monthKey || '')) === selected);
+
+  const stmtAlerts = targetRecords.filter(r => 
     r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'TRIAL_CONVERTING' || r.status === 'ESCALATION_REQUIRED'
-  ).length;
-  if (lineAlertBadge) lineAlertBadge.textContent = `${alertsCount} Action Needed`;
+  );
+
+  const totalAlerts = creepSubs.length + trialSubs.length + stmtAlerts.length;
+
+  if (lineAlertBadge) lineAlertBadge.textContent = `${totalAlerts} Action Needed`;
   if (lineAlertSub) {
-    if (alertsCount === 0) {
+    if (totalAlerts === 0) {
       lineAlertSub.textContent = 'All baselines verified · Zero alerts';
     } else {
-      lineAlertSub.textContent = `${alertsCount} flagged discrepancy action(s) needed`;
+      const parts = [];
+      if (creepSubs.length > 0) parts.push(`${creepSubs.length} price creep`);
+      if (trialSubs.length > 0) parts.push(`${trialSubs.length} trial expiring`);
+      if (stmtAlerts.length > 0) parts.push(`${stmtAlerts.length} high-debit escalation(s)`);
+      lineAlertSub.textContent = parts.join(' · ') || `${totalAlerts} flagged discrepancy action(s) needed`;
     }
   }
 
@@ -2011,26 +2744,32 @@ window.renderHomeTxMiniPreview = renderHomeTxMiniPreview;
 function updateTxPageMetrics() {
   const records = state.auditResults || [];
   const cur = state.userProfile?.currency || '$';
-  const totalVolume = records.reduce((sum, r) => {
-    const amt = r.currentAmount !== undefined ? r.currentAmount : (r.amount !== undefined ? r.amount : (r.transaction && r.transaction.amount) || 0);
-    return sum + amt;
-  }, 0);
+  const selected = state.selectedStatementMonth || 'all';
+
+  const targetRecords = selected === 'all' 
+    ? records 
+    : records.filter(r => getTxMonthKey(r) === selected);
+
+  const debitRecords = targetRecords.filter(r => !isCreditRecord(r));
+  const totalVolume = debitRecords.reduce((sum, r) => sum + getTxAmount(r), 0);
 
   const wage = state.userProfile?.hourlyWage || 25;
   const totalHours = wage > 0 ? (totalVolume / wage).toFixed(1) : '0.0';
 
-  const alertsCount = records.filter(r => 
+  const alertsCount = targetRecords.filter(r => 
     r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP' || r.status === 'TRIAL_CONVERTING' || r.status === 'ESCALATION_REQUIRED'
   ).length;
 
   const volDisplay = document.getElementById('txKpiVolumeDisplay');
+  const volLabel = document.getElementById('txKpiVolumeLabel');
   const countSub = document.getElementById('txKpiCountSub');
   const hoursDisplay = document.getElementById('txKpiLifeEnergy');
   const wageSub = document.getElementById('txKpiWageSub');
   const alertDisplay = document.getElementById('txKpiAlertsCount');
 
   if (volDisplay) volDisplay.textContent = `${cur}${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (countSub) countSub.textContent = `${records.length} processed statement debits`;
+  if (volLabel) volLabel.textContent = selected === 'all' ? 'All Months Volume' : `${formatMonthLabel(selected)} Volume`;
+  if (countSub) countSub.textContent = `${debitRecords.length} processed statement debits`;
   if (hoursDisplay) hoursDisplay.textContent = `${totalHours} hrs`;
   if (wageSub) wageSub.textContent = `Calculated at ${cur}${wage.toFixed(2)}/hr wage`;
   if (alertDisplay) alertDisplay.textContent = `${alertsCount} Flagged`;
@@ -2247,11 +2986,14 @@ function filterAppView(filterType) {
   if (document.documentElement) document.documentElement.scrollTop = 0;
   if (document.body) document.body.scrollTop = 0;
 
+  applyCurrencyGlobally();
+
   // View specific loaders
   if (filterType === 'all') {
     renderHomeTxMiniPreview();
     renderUserProfileUI();
   } else if (filterType === 'transactions') {
+    if (typeof initStatementMonthlyReview === 'function') initStatementMonthlyReview();
     renderAuditRecords(state.auditResults);
     updateTxPageMetrics();
   } else if (filterType === 'wallets') {
@@ -2267,10 +3009,14 @@ function filterAppView(filterType) {
     if (state.activeSubsSubTab === 'calendar') {
       renderSpendCalendar();
     } else if (state.activeSubsSubTab === 'trial') {
-      // Trial hero panel active
+      renderTrialSentinelPanel();
     } else {
       renderSubscriptionsLedger();
     }
+  } else if (filterType === 'alerts') {
+    renderRadarAlertsView();
+  } else if (filterType === 'disputes') {
+    renderDisputesLedger();
   } else if (filterType === 'settings') {
     loadUserSettingsToForm();
     loadUserProfileToSettings();
@@ -2492,11 +3238,353 @@ function getActiveSubscriptionsList() {
 }
 window.getActiveSubscriptionsList = getActiveSubscriptionsList;
 
+// ================= GLOBAL CURRENCY & DISPUTES UTILITIES =================
+function applyCurrencyGlobally(cur = null) {
+  const currency = cur || state.userProfile?.currency || '$';
+  if (state.userProfile) {
+    state.userProfile.currency = currency;
+  }
+
+  // Sanitize and normalize any existing audit result records to active currency
+  if (Array.isArray(state.auditResults)) {
+    let changed = false;
+    state.auditResults.forEach(r => {
+      if (r.currency !== currency) {
+        r.currency = currency;
+        changed = true;
+      }
+      if (currency === '₦' || currency === 'NGN') {
+        const isNigerian = Boolean(r.merchant && /opay|owealth|kuda|gtbank|zenith|palmpay|moniepoint|firstbank|access bank|auto-save/i.test(r.merchant));
+        const amt = Number(r.amount !== undefined ? r.amount : (r.currentAmount || 0));
+        // If falsely flagged as an unknown merchant escalation gate on a small micro-spend (< 75,000 NGN)
+        if (r.status === 'ESCALATION_REQUIRED' && (isNigerian || amt < 75000)) {
+          r.status = 'VERIFIED_OK';
+          r.message = 'Normal micro-spend within discretionary limits.';
+          changed = true;
+        } else if (r.message && r.message.includes('$')) {
+          r.message = r.message.replace(/\$50(\.00)?/g, '₦75,000.00').replace(/\$([0-9,]+(\.[0-9]{2})?)/g, '₦$1');
+          changed = true;
+        }
+        if (r.title && r.title.includes('$')) {
+          r.title = r.title.replace(/\$([0-9,]+(\.[0-9]{2})?)/g, '₦$1');
+          changed = true;
+        }
+      }
+    });
+    if (changed) {
+      try {
+        localStorage.setItem('recall_user_transactions', JSON.stringify(state.auditResults));
+      } catch (e) {}
+    }
+  }
+
+  // All currency symbol spans and labels
+  document.querySelectorAll('.currency-sym, .modal-cur-sym').forEach(el => {
+    el.textContent = currency;
+  });
+
+  // Prefix elements
+  const txPrefix = document.getElementById('txCurrencyPrefix');
+  if (txPrefix) txPrefix.textContent = currency;
+  const newSubPrefix = document.getElementById('newSubCurrencyPrefix');
+  if (newSubPrefix) newSubPrefix.textContent = currency;
+  const inflowPrefix = document.getElementById('currencyPrefixInflow');
+  if (inflowPrefix) inflowPrefix.textContent = currency;
+  const wagePrefix = document.getElementById('currencyPrefixWage');
+  if (wagePrefix) wagePrefix.textContent = currency;
+
+  // Populate tx-wallet dropdown with current wallet balances in user currency
+  const txWallet = document.getElementById('tx-wallet');
+  if (txWallet && state.wallets && state.wallets.length > 0) {
+    const curVal = txWallet.value;
+    txWallet.innerHTML = state.wallets.map(w => `
+      <option value="${w.name}" ${curVal === w.name ? 'selected' : ''}>
+        ${w.name} (${currency}${Number(w.balance || 0).toFixed(2)}${w.locked ? ' Locked' : ''})
+      </option>
+    `).join('');
+  }
+
+  // Populate transfer wallets dropdown with current balances
+  const fromSel = document.getElementById('transferFromWallet');
+  const toSel = document.getElementById('transferToWallet');
+  if (fromSel && toSel && state.wallets && state.wallets.length > 0) {
+    const fromVal = fromSel.value || state.wallets[0]?.name;
+    const toVal = toSel.value || state.wallets[1]?.name || state.wallets[0]?.name;
+    const opts = state.wallets.map(w => `
+      <option value="${w.name}">
+        ${w.name} (${currency}${Number(w.balance || 0).toFixed(2)}${w.locked ? ' Locked' : ''})
+      </option>
+    `).join('');
+    fromSel.innerHTML = opts;
+    toSel.innerHTML = opts;
+    if (fromVal) fromSel.value = fromVal;
+    if (toVal) toSel.value = toVal;
+  }
+
+  // Populate newSubWallet dropdown
+  const subWallet = document.getElementById('newSubWallet');
+  if (subWallet && state.wallets && state.wallets.length > 0) {
+    const subVal = subWallet.value;
+    subWallet.innerHTML = state.wallets.map(w => `
+      <option value="${w.id}" ${subVal === w.id ? 'selected' : ''}>
+        ${w.name} (${currency}${Number(w.balance || 0).toFixed(2)})
+      </option>
+    `).join('');
+  }
+
+  // Update spend escalation slider display and ticks
+  const gateSlider = document.getElementById('gateSlider');
+  if (gateSlider && typeof updateGateDisplay === 'function') {
+    updateGateDisplay(gateSlider.value);
+  }
+  const ticks = document.getElementById('gateRangeTicks');
+  if (ticks) {
+    ticks.innerHTML = `
+      <span>${currency}10</span>
+      <span>${currency}50</span>
+      <span>${currency}100</span>
+      <span>${currency}200</span>
+    `;
+  }
+  const microSel = document.getElementById('microInflationSelect');
+  if (microSel && microSel.options.length >= 3) {
+    microSel.options[0].textContent = `Zero Tolerance (>= ${currency}0.50)`;
+    microSel.options[1].textContent = `Standard (>= ${currency}1.00)`;
+    microSel.options[2].textContent = `Relaxed (>= ${currency}2.50)`;
+  }
+
+  // Update ceiling input placeholder and re-render approved ceilings table
+  const ceilingInput = document.getElementById('newOverrideCeiling');
+  if (ceilingInput) {
+    ceilingInput.placeholder = `Ceiling (${currency})`;
+  }
+  if (typeof renderApprovedCeilingsTable === 'function') {
+    renderApprovedCeilingsTable();
+  }
+  if (typeof renderRadarAlertsView === 'function') {
+    renderRadarAlertsView();
+  }
+}
+window.applyCurrencyGlobally = applyCurrencyGlobally;
+
+function renderTrialSentinelPanel() {
+  const panel = document.getElementById('subsTabPanelTrial');
+  if (!panel) return;
+
+  const cur = state.userProfile?.currency || '$';
+  const allSubs = getActiveSubscriptionsList();
+  const trialSubs = allSubs.filter(s => Boolean(s.isTrial || s.status === 'TRIAL' || s.status === 'TRIAL_URGENT'));
+  const totalTrialRisk = trialSubs.reduce((sum, t) => sum + (Number(t.cost !== undefined ? t.cost : t.amount) || 0), 0);
+
+  const riskStat = document.getElementById('settingsTrialRisk');
+  if (riskStat) {
+    riskStat.innerHTML = `${cur}${totalTrialRisk.toFixed(2)}<small>/mo</small>`;
+  }
+
+  const trialBadge = document.querySelector('#subTabBtnTrial .subtab-badge-pill');
+  if (trialBadge) {
+    trialBadge.textContent = `${trialSubs.length}`;
+    if (trialSubs.length === 0) {
+      trialBadge.style.opacity = '0.6';
+    } else {
+      trialBadge.style.opacity = '1';
+    }
+  }
+
+  if (trialSubs.length === 0) {
+    panel.innerHTML = `
+      <div class="settings-card card-full-width" style="text-align:center; padding: 48px 24px; background:var(--bg-surface); border:2px solid var(--border-color); border-radius:12px; margin-top:14px;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #DCFCE7; color: #16A34A; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 2px solid #141413;">
+          <i data-lucide="shield-check" style="width: 30px; height: 30px;"></i>
+        </div>
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Zero Impending Free Trials</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 480px; margin: 0 auto 18px auto; line-height: 1.6;">
+          You have no recurring trials converting to paid debits. Sentinel continuously monitors your subscriptions and will arm an autonomous 48-hour defense timer before any trial converts to a paid rebill.
+        </p>
+        <button class="btn-ghost-action" onclick="openAddTrialModal()" style="display:inline-flex; align-items:center; gap:6px;">
+          <i data-lucide="plus-circle"></i> <span>+ Track a Free Trial</span>
+        </button>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
+
+  // If trial subs exist, render cards for them
+  let cardsHtml = trialSubs.map(t => {
+    const rebillAmt = Number(t.cost !== undefined ? t.cost : t.amount) || 0;
+    const merchant = t.merchant || 'Free Trial';
+    return `
+      <div class="settings-card card-full-width trial-sentinel-hero-card" id="trialSentinelCard_${t.id}">
+        <div class="trial-card-top-alert">
+          <div class="trial-alert-badge"><i data-lucide="clock"></i> 48H TRIAL CONVERSION ALERT</div>
+          <div class="trial-countdown-ticker">
+            <span class="pulse-amber-dot"></span>
+            <strong>47h : 58m : 14s remaining</strong>
+          </div>
+        </div>
+
+        <div class="trial-card-body-grid">
+          <div class="trial-info-block">
+            <div class="trial-merchant-header">
+              <img src="${t.logo || '/assets/logos/generic.svg'}" class="merchant-hero-logo" alt="${merchant}">
+              <div>
+                <h3 class="trial-merchant-title">${merchant}</h3>
+                <p class="trial-merchant-sub">Rebills ${cur}${rebillAmt.toFixed(2)}/mo on <strong>November 15, 2026</strong></p>
+              </div>
+            </div>
+
+            <div class="trial-metadata-pills">
+              <span class="trial-meta-pill"><i data-lucide="credit-card"></i> <strong>Card:</strong> Primary Rail</span>
+              <span class="trial-meta-pill"><i data-lucide="clock"></i> <strong>Cadence:</strong> 7-Day Free Trial</span>
+              <span><span class="status-pill amber"><i data-lucide="alert-triangle"></i> Action Needed · 48h to Rebill</span></span>
+            </div>
+
+            <div class="trial-decision-actions" id="trialDecisionActions_${t.id}">
+              <button class="btn-cancel-trial-danger" onclick="cancelTrialSubscription('${merchant}')">
+                <i data-lucide="x-circle"></i>
+                <span>Cancel Subscription</span>
+              </button>
+              <button class="btn-keep-trial-success" onclick="keepTrialSubscription('${merchant}')">
+                <i data-lucide="check-circle-2"></i>
+                <span>Keep Subscription</span>
+              </button>
+              <button class="btn-ghost-outline" onclick="openDisputeModalForRecord('${merchant}', ${rebillAmt}, 0, ${rebillAmt}, '${t.memory || 'MEM_TRIAL'}')">
+                <i data-lucide="file-text"></i>
+                <span>Cancellation Pack</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="trial-notifications-block">
+            <div class="trial-notif-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <i data-lucide="bell" class="text-amber"></i>
+                <h4>Trial Alert Rules</h4>
+              </div>
+            </div>
+            <div class="trial-rules-preview" style="margin-top:8px;">
+              <p class="setting-hint" style="margin:0;">🔔 48h advance alarm · Web Push & Telegram active</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  panel.innerHTML = cardsHtml;
+  if (window.lucide) window.lucide.createIcons();
+}
+window.renderTrialSentinelPanel = renderTrialSentinelPanel;
+
+function renderDisputesLedger() {
+  const tbody = document.getElementById('disputesTableBody');
+  if (!tbody) return;
+
+  const cur = state.userProfile?.currency || '$';
+  let userDisputes = [];
+  try {
+    const saved = localStorage.getItem('recall_user_disputes');
+    if (saved) userDisputes = JSON.parse(saved);
+  } catch (e) {
+    userDisputes = [];
+  }
+
+  const totalPreservedEl = document.getElementById('disputesTotalPreserved');
+  const countSubEl = document.getElementById('disputesCountSub');
+  const feeEl = document.getElementById('disputesSentinelFee');
+  const rakeEl = document.getElementById('disputesTraditionalRake');
+  const rateEl = document.getElementById('disputesSuccessRate');
+
+  if (userDisputes.length === 0) {
+    if (totalPreservedEl) totalPreservedEl.textContent = `${cur}0.00`;
+    if (countSubEl) countSubEl.textContent = '0 disputes resolved';
+    if (feeEl) feeEl.textContent = `${cur}0.00 (0% Rake)`;
+    if (rakeEl) rakeEl.textContent = `${cur}0.00`;
+    if (rateEl) rateEl.textContent = '100%';
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding: 48px 20px; color: var(--text-muted);">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #F3F4F6; color: #6B7280; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);">
+              <i data-lucide="scale" style="width:24px; height:24px; stroke-width:1.5;"></i>
+            </div>
+            <strong style="color:var(--text-main); font-size:14px;">No Disputes Filed Yet</strong>
+            <p style="font-size:12px; max-width:440px; margin:0 auto; line-height:1.5; color:var(--text-muted);">
+              When price creep is detected or you dispute an unauthorized subscription debit, Sentinel generates 1-tap objection packs and logs verified Sui resolution proofs here.
+            </p>
+          </div>
+        </td>
+      </tr>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
+
+  // If disputes exist
+  const totalPreserved = userDisputes.reduce((sum, d) => sum + (Number(d.amountSaved) || 0), 0);
+  const rakeAvoided = totalPreserved * 0.40;
+
+  if (totalPreservedEl) totalPreservedEl.textContent = `${cur}${totalPreserved.toFixed(2)}`;
+  if (countSubEl) countSubEl.textContent = `${userDisputes.length} disputes resolved`;
+  if (feeEl) feeEl.textContent = `${cur}0.00 (0% Rake)`;
+  if (rakeEl) rakeEl.textContent = `-${cur}${rakeAvoided.toFixed(2)}`;
+  if (rateEl) rateEl.textContent = '100%';
+
+  tbody.innerHTML = userDisputes.map(d => `
+    <tr>
+      <td>
+        <div class="tx-cell-merchant">
+          <img src="${d.logo || '/assets/logos/generic.svg'}" class="merchant-mini-logo" alt="${d.merchant}">
+          <strong>${d.merchant}</strong>
+        </div>
+      </td>
+      <td>${d.reason}</td>
+      <td><strong class="text-green">+${cur}${Number(d.amountSaved || 0).toFixed(2)} Saved</strong></td>
+      <td><code>${d.memory || 'MEM_PROOF'}</code></td>
+      <td>
+        <a href="https://suiscan.xyz/mainnet/tx/8Xp4v9wK2mN1bL7qR5sT3uV" target="_blank" class="sui-digest-link">
+          <i data-lucide="external-link"></i> ${d.txHash || 'Sui Mainnet Proof'}
+        </a>
+      </td>
+      <td><span class="status-pill green">${d.status || 'Resolved · Credit Kept'}</span></td>
+    </tr>
+  `).join('');
+
+  if (window.lucide) window.lucide.createIcons();
+}
+window.renderDisputesLedger = renderDisputesLedger;
+
 function renderSubscriptionsLedger() {
   const container = document.getElementById('subscriptionsContainer');
   if (!container) return;
 
   const sourceList = getActiveSubscriptionsList();
+
+  // Dynamically update filter buttons with live counts!
+  const allCount = sourceList.length;
+  const streamCount = sourceList.filter(s => s.category === 'streaming').length;
+  const aiCount = sourceList.filter(s => s.category === 'ai').length;
+  const devCount = sourceList.filter(s => s.category === 'dev').length;
+  const prodCount = sourceList.filter(s => s.category === 'productivity').length;
+
+  const btnAll = document.querySelector('.sub-filter-buttons button:nth-child(1)');
+  const btnStream = document.querySelector('.sub-filter-buttons button:nth-child(2)');
+  const btnAi = document.querySelector('.sub-filter-buttons button:nth-child(3)');
+  const btnDev = document.querySelector('.sub-filter-buttons button:nth-child(4)');
+  const btnProd = document.querySelector('.sub-filter-buttons button:nth-child(5)');
+
+  if (btnAll) btnAll.textContent = `All (${allCount})`;
+  if (btnStream) btnStream.textContent = `Streaming (${streamCount})`;
+  if (btnAi) btnAi.textContent = `AI & Cloud (${aiCount})`;
+  if (btnDev) btnDev.textContent = `Dev Tools (${devCount})`;
+  if (btnProd) btnProd.textContent = `Productivity (${prodCount})`;
+
+  if (typeof renderTrialSentinelPanel === 'function') {
+    renderTrialSentinelPanel();
+  }
+
   const filtered = sourceList.filter(item => {
     const matchesCat = activeSubCategory === 'all' || item.category === activeSubCategory;
     const matchesQuery = !activeSubSearch || 
@@ -2628,7 +3716,8 @@ window.handleSubSearch = handleSubSearch;
 // ================= USER SETTINGS & ESCALATION CONTROLS =================
 function updateGateDisplay(val) {
   const el = document.getElementById('gateValueDisplay');
-  if (el) el.textContent = `$${parseFloat(val).toFixed(2)}`;
+  const cur = state.userProfile?.currency || '$';
+  if (el) el.textContent = `${cur}${parseFloat(val).toFixed(2)}`;
 }
 window.updateGateDisplay = updateGateDisplay;
 
@@ -2744,6 +3833,65 @@ async function pingTatumRpc() {
 }
 window.pingTatumRpc = pingTatumRpc;
 
+function renderApprovedCeilingsTable() {
+  const tbody = document.getElementById('overridesTableBody');
+  const cur = state.userProfile?.currency || '$';
+
+  const ceilingInput = document.getElementById('newOverrideCeiling');
+  if (ceilingInput) {
+    ceilingInput.placeholder = `Ceiling (${cur})`;
+  }
+
+  if (!tbody) return;
+
+  if (!state.spendingCeilings || state.spendingCeilings.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">
+          No approved spending ceilings configured. Add an exception below to suppress false alerts for known merchant spikes.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = state.spendingCeilings.map((c, idx) => `
+    <tr>
+      <td>
+        <div class="tx-cell-merchant">
+          <span class="merchant-logo-fallback"><i data-lucide="shield"></i></span>
+          <strong>${escapeHtml(c.merchant)}</strong>
+        </div>
+      </td>
+      <td>${cur}${parseFloat(c.ceiling || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo</td>
+      <td>${escapeHtml(c.reason || 'Approved Ceiling')}</td>
+      <td><code>${escapeHtml(c.policy || c.id || ('POL-' + String(idx + 1).padStart(2, '0')))}</code></td>
+      <td><span class="status-pill ${c.status === 'Frozen' ? 'blue' : 'green'}">${escapeHtml(c.status || 'Active')}</span></td>
+      <td>
+        <button class="btn-inspect-mini text-coral" onclick="removeApprovedCeiling(${idx})" title="Revoke Ceiling">
+          <i data-lucide="trash-2"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  if (window.lucide) window.lucide.createIcons();
+}
+window.renderApprovedCeilingsTable = renderApprovedCeilingsTable;
+
+function removeApprovedCeiling(index) {
+  if (!state.spendingCeilings || index < 0 || index >= state.spendingCeilings.length) return;
+  const removed = state.spendingCeilings.splice(index, 1)[0];
+  try {
+    localStorage.setItem('recall_spending_ceilings', JSON.stringify(state.spendingCeilings));
+  } catch (e) {
+    console.warn('Failed to update spending ceilings', e);
+  }
+  renderApprovedCeilingsTable();
+  showToast(`Revoked spending ceiling for ${removed?.merchant || 'merchant'}. Standard baseline re-applied.`);
+}
+window.removeApprovedCeiling = removeApprovedCeiling;
+
 function removeOverrideRow(btn) {
   const row = btn.closest('tr');
   if (row) {
@@ -2755,57 +3903,367 @@ window.removeOverrideRow = removeOverrideRow;
 
 function addNewOverridePolicy() {
   const merchant = document.getElementById('newOverrideMerchant')?.value.trim();
-  const ceiling = document.getElementById('newOverrideCeiling')?.value.trim();
+  const ceilingVal = document.getElementById('newOverrideCeiling')?.value.trim();
   const reason = document.getElementById('newOverrideReason')?.value.trim();
+  const cur = state.userProfile?.currency || '$';
 
-  if (!merchant || !ceiling || !reason) {
-    alert('Please provide Merchant, Ceiling ($), and Reason for the override.');
+  if (!merchant || !ceilingVal || !reason) {
+    if (typeof showToast === 'function') {
+      showToast(`Please provide Merchant, Ceiling (${cur}), and Reason.`);
+    }
     return;
   }
 
-  const tbody = document.getElementById('overridesTableBody');
-  if (tbody) {
-    const memId = `MEM_OVR_${Math.floor(Math.random() * 899 + 100)}`;
-    const newRow = document.createElement('tr');
-    newRow.innerHTML = `
-      <td>
-        <div class="tx-cell-merchant">
-          <span class="merchant-logo-fallback"><i data-lucide="shield"></i></span>
-          <strong>${merchant}</strong>
-        </div>
-      </td>
-      <td>$${parseFloat(ceiling).toFixed(2)} / mo</td>
-      <td>${reason}</td>
-      <td><code>${memId}</code></td>
-      <td><span class="status-pill green">Active Override</span></td>
-      <td><button class="btn-inspect-mini text-coral" onclick="removeOverrideRow(this)"><i data-lucide="trash-2"></i></button></td>
-    `;
-    tbody.appendChild(newRow);
-
-    document.getElementById('newOverrideMerchant').value = '';
-    document.getElementById('newOverrideCeiling').value = '';
-    document.getElementById('newOverrideReason').value = '';
-
-    showToast(`Override policy [${memId}] committed for ${merchant}!`);
-    if (window.lucide) window.lucide.createIcons();
+  const ceiling = parseFloat(ceilingVal);
+  if (isNaN(ceiling) || ceiling < 0) {
+    if (typeof showToast === 'function') {
+      showToast('Please enter a valid positive ceiling amount.');
+    }
+    return;
   }
+
+  if (!state.spendingCeilings) {
+    state.spendingCeilings = [];
+  }
+
+  const memId = `POL-${String(state.spendingCeilings.length + 1).padStart(2, '0')}`;
+  state.spendingCeilings.push({
+    id: memId,
+    merchant,
+    ceiling,
+    reason,
+    policy: memId,
+    status: 'Active'
+  });
+
+  try {
+    localStorage.setItem('recall_spending_ceilings', JSON.stringify(state.spendingCeilings));
+  } catch (e) {
+    console.warn('Failed to persist spending ceilings', e);
+  }
+
+  if (document.getElementById('newOverrideMerchant')) document.getElementById('newOverrideMerchant').value = '';
+  if (document.getElementById('newOverrideCeiling')) document.getElementById('newOverrideCeiling').value = '';
+  if (document.getElementById('newOverrideReason')) document.getElementById('newOverrideReason').value = '';
+
+  renderApprovedCeilingsTable();
+  showToast(`Override policy [${memId}] committed for ${merchant}!`);
 }
 window.addNewOverridePolicy = addNewOverridePolicy;
 
-// ================= TRIALS & ALERTS ACTIONS =================
+// ================= TRIALS & ALERTS DYNAMIC RENDERING =================
+function renderRadarAlertsView() {
+  const container = document.getElementById('alertsCardsGrid');
+  if (!container) return;
+
+  const cur = state.userProfile?.currency || '$';
+
+  // 1. Subscription Creeps
+  const subs = typeof getActiveSubscriptionsList === 'function' ? getActiveSubscriptionsList() : (state.subscriptions || []);
+  const creepSubs = subs.filter(s => Boolean(s.hasHike || s.status === 'CREEP_FLAG' || s.status === 'PRICE_CREEP' || (Number(s.cost) > Number(s.baseline) && !s.overrideApproved)));
+
+  // 2. Subscription Free Trials
+  const trialSubs = subs.filter(s => Boolean(s.isTrial || s.status === 'TRIAL' || s.status === 'TRIAL_URGENT'));
+
+  // 3. Subscription Overlaps
+  const overlapSubs = subs.filter(s => s.status === 'OVERLAP' || (s.category && s.category.includes('streaming') && subs.filter(x => x.category === s.category).length > 1));
+  const hasOverlap = overlapSubs.length >= 2;
+
+  // 4. Statement Escalations (respecting active statement month)
+  const records = state.auditResults || [];
+  const selected = state.selectedStatementMonth || 'all';
+  const targetRecords = selected === 'all'
+    ? records
+    : records.filter(r => (typeof getTxMonthKey === 'function' ? getTxMonthKey(r) : (r.monthKey || '')) === selected);
+
+  const escalationRecords = targetRecords.filter(r => r.status === 'ESCALATION_REQUIRED' || r.status === 'MICRO_INFLATION_ALERT');
+
+  let cardsHtml = '';
+
+  // Render Subscription Creep cards
+  creepSubs.forEach(s => {
+    const cost = Number(s.cost || 0);
+    const base = Number(s.baseline || 0);
+    const delta = Number(s.delta || (cost - base));
+    const annualLeak = (delta * 12).toFixed(2);
+    cardsHtml += `
+      <div class="triage-card triage-creep">
+        <div class="triage-card-header">
+          <div class="triage-merchant-info">
+            <div class="triage-logo-wrap">
+              <img src="${s.logo || '/assets/logos/generic.svg'}" alt="${escapeHtml(s.merchant)}" class="merchant-mini-logo">
+            </div>
+            <div>
+              <h4 class="triage-name">${escapeHtml(s.merchant)}</h4>
+              <span class="triage-meta">${escapeHtml(s.plan || 'Standard Tier')} · Day ${s.renewalDay || 20} of month</span>
+            </div>
+          </div>
+          <span class="triage-badge red"><i data-lucide="trending-up"></i> +${cur}${delta.toFixed(2)} / mo Hike</span>
+        </div>
+        <div class="triage-comparison-box">
+          <div class="comp-col">
+            <span class="comp-label">Baseline</span>
+            <strong class="comp-val">${cur}${base.toFixed(2)} / mo</strong>
+            <span class="comp-sub">Approved [${s.memory || 'MEM_01'}]</span>
+          </div>
+          <div class="comp-arrow">&rarr;</div>
+          <div class="comp-col">
+            <span class="comp-label">Recent Charge</span>
+            <strong class="comp-val red">${cur}${cost.toFixed(2)} / mo</strong>
+            <span class="comp-sub">Unannounced hike</span>
+          </div>
+          <div class="comp-col highlight">
+            <span class="comp-label">Annual Leakage</span>
+            <strong class="comp-val red">+${cur}${annualLeak} / yr</strong>
+            <span class="comp-sub">Recoverable</span>
+          </div>
+        </div>
+        <p class="triage-narrative">
+          Billed +${cur}${delta.toFixed(2)}/mo above your ${cur}${base.toFixed(2)} approved baseline [${s.memory || 'MEM_01'}].
+        </p>
+        <div class="triage-actions-row">
+          <button type="button" class="btn-amber-cta" onclick="openDisputeModalForRecord('${escapeHtml(s.merchant).replace(/'/g, "\\'")}', ${cost}, ${base}, ${delta}, '${s.memory || 'MEM_01'}')">
+            <i data-lucide="scale"></i>
+            <span>Dispute Hike (${cur}${annualLeak}/yr)</span>
+          </button>
+          <button type="button" class="btn-ghost-outline" onclick="inspectMemoryDetail('${s.memory || 'MEM_01'}')">
+            <i data-lucide="eye"></i>
+            <span>View Memory</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  // Render Trial cards
+  trialSubs.forEach(t => {
+    const cost = Number(t.cost || 0);
+    const annualCommit = (cost * 12).toFixed(2);
+    cardsHtml += `
+      <div class="triage-card triage-trial">
+        <div class="triage-card-header">
+          <div class="triage-merchant-info">
+            <div class="triage-logo-wrap">
+              <img src="${t.logo || '/assets/logos/generic.svg'}" alt="${escapeHtml(t.merchant)}" class="merchant-mini-logo">
+            </div>
+            <div>
+              <h4 class="triage-name">${escapeHtml(t.merchant)}</h4>
+              <span class="triage-meta">7-Day Free Trial · Rebill in 48h</span>
+            </div>
+          </div>
+          <span class="triage-badge amber"><i data-lucide="clock"></i> 48-Hour Alarm</span>
+        </div>
+        <div class="triage-comparison-box">
+          <div class="comp-col">
+            <span class="comp-label">Trial Cost</span>
+            <strong class="comp-val">${cur}0.00</strong>
+            <span class="comp-sub">Free Period</span>
+          </div>
+          <div class="comp-arrow">&rarr;</div>
+          <div class="comp-col">
+            <span class="comp-label">Upcoming Rebill</span>
+            <strong class="comp-val coral">${cur}${cost.toFixed(2)} / mo</strong>
+            <span class="comp-sub">Auto-conversion</span>
+          </div>
+          <div class="comp-col highlight">
+            <span class="comp-label">Annual Commitment</span>
+            <strong class="comp-val coral">${cur}${annualCommit} / yr</strong>
+            <span class="comp-sub">Recurring contract</span>
+          </div>
+        </div>
+        <p class="triage-narrative">
+          Free trial ends in 48 hours. Auto-rebills at ${cur}${cost.toFixed(2)}/mo on Day ${t.renewalDay || 25}.
+        </p>
+        <div class="triage-actions-row">
+          <button type="button" class="btn-amber-cta" onclick="openDisputeModalForTrial('${escapeHtml(t.merchant).replace(/'/g, "\\'")}', ${cost}, '${t.memory || 'MEM_10'}')">
+            <i data-lucide="shield-alert"></i>
+            <span>Cancel Subscription</span>
+          </button>
+          <button type="button" class="btn-ghost-outline" onclick="copyTrialCancelTemplate()">
+            <i data-lucide="copy"></i>
+            <span>Copy Notice</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  // Render Overlap card if active
+  if (hasOverlap) {
+    cardsHtml += `
+      <div class="triage-card triage-overlap">
+        <div class="triage-card-header">
+          <div class="triage-merchant-info">
+            <div class="triage-logo-wrap">
+              <img src="/assets/logos/spotify.svg" alt="Spotify" class="merchant-mini-logo">
+            </div>
+            <div>
+              <h4 class="triage-name">Streaming Overlap Detected</h4>
+              <span class="triage-meta">Multiple active streaming services</span>
+            </div>
+          </div>
+          <span class="triage-badge blue"><i data-lucide="layers"></i> Redundant</span>
+        </div>
+        <div class="triage-comparison-box">
+          <div class="comp-col">
+            <span class="comp-label">Primary</span>
+            <strong class="comp-val">${cur}16.99 / mo</strong>
+            <span class="comp-sub">Active</span>
+          </div>
+          <div class="comp-col">
+            <span class="comp-label">Duplicate</span>
+            <strong class="comp-val">${cur}10.99 / mo</strong>
+            <span class="comp-sub">Active</span>
+          </div>
+          <div class="comp-col highlight">
+            <span class="comp-label">Potential Savings</span>
+            <strong class="comp-val text-green">Save ${cur}131.88 / yr</strong>
+            <span class="comp-sub">Consolidate tiers</span>
+          </div>
+        </div>
+        <p class="triage-narrative">
+          Multiple active audio/video streaming subscriptions detected [MEM_11]. Consolidating preserves capital.
+        </p>
+        <div class="triage-actions-row">
+          <button type="button" class="btn-amber-cta" onclick="openDisputeModalForOverlap()">
+            <i data-lucide="arrow-right-left"></i>
+            <span>Consolidate</span>
+          </button>
+          <button type="button" class="btn-ghost-outline" onclick="suppressOverlapFor90Days()">
+            <i data-lucide="clock"></i>
+            <span>Snooze</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Render Statement High-Debit Escalation cards
+  escalationRecords.forEach((r, idx) => {
+    const amt = parseFloat(r.amount || 0);
+    cardsHtml += `
+      <div class="triage-card triage-gate">
+        <div class="triage-card-header">
+          <div class="triage-merchant-info">
+            <div class="triage-logo-wrap">
+              <span class="gate-icon-placeholder"><i data-lucide="shield-alert"></i></span>
+            </div>
+            <div>
+              <h4 class="triage-name">${escapeHtml(r.merchant || 'High-Debit Transaction')}</h4>
+              <span class="triage-meta">${escapeHtml(r.date || r.displayDate || 'Recent')} · Statement Debit</span>
+            </div>
+          </div>
+          <span class="triage-badge amber"><i data-lucide="alert-triangle"></i> High-Debit Gate</span>
+        </div>
+        <div class="triage-comparison-box">
+          <div class="comp-col">
+            <span class="comp-label">Amount Debited</span>
+            <strong class="comp-val red">${cur}${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            <span class="comp-sub">Requires verification</span>
+          </div>
+          <div class="comp-col">
+            <span class="comp-label">Safety Policy</span>
+            <strong class="comp-val">[MEM_07]</strong>
+            <span class="comp-sub">Autonomous Gate</span>
+          </div>
+          <div class="comp-col highlight">
+            <span class="comp-label">Action Status</span>
+            <strong class="comp-val coral">Approval Needed</strong>
+            <span class="comp-sub">Quarantined</span>
+          </div>
+        </div>
+        <p class="triage-narrative">
+          ${escapeHtml((() => {
+            let msg = r.message || `Charge of ${cur}${amt.toFixed(2)} exceeds autonomous safety threshold.`;
+            if (cur && cur !== '$' && msg.includes('$')) {
+              if (cur === '₦' || cur === 'NGN') {
+                msg = msg.replace(/\$50(\.00)?/g, '₦75,000.00');
+              }
+              msg = msg.replace(/\$([0-9,]+(\.[0-9]{2})?)/g, `${cur}$1`);
+            }
+            return msg;
+          })())}
+        </p>
+        <div class="triage-actions-row">
+          <button type="button" class="btn-amber-cta" onclick="approveEscalationRecord(${idx})">
+            <i data-lucide="check-circle-2"></i>
+            <span>Approve Exception</span>
+          </button>
+          <button type="button" class="btn-ghost-outline" onclick="openDisputeModalForRecord('${escapeHtml(r.merchant).replace(/'/g, "\\'")}', ${amt}, 0, ${amt}, 'MEM_07')">
+            <i data-lucide="scale"></i>
+            <span>1-Tap Dispute</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  // Empty state if zero alerts
+  if (!cardsHtml) {
+    cardsHtml = `
+      <div class="empty-alerts-card" style="grid-column: 1 / -1; text-align: center; padding: 56px 24px; background: #ffffff; border: 2px solid #141413; border-radius: 14px; box-shadow: 3px 3px 0px #141413;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 2px solid #141413; box-shadow: 2px 2px 0px #141413;">
+          <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 6px; color: #141413;">Zero Discrepancy Alerts</h3>
+        <p style="font-size: 0.9rem; color: #64748b; max-width: 480px; margin: 0 auto 18px auto; line-height: 1.6;">
+          All statement debits and recurring subscriptions match approved baseline memories. Autonomous safety radar is active and protecting your runway.
+        </p>
+      </div>
+    `;
+  }
+
+  container.innerHTML = cardsHtml;
+  if (window.lucide) window.lucide.createIcons();
+}
+window.renderRadarAlertsView = renderRadarAlertsView;
+
+function approveEscalationRecord(idx) {
+  const records = state.auditResults || [];
+  const selected = state.selectedStatementMonth || 'all';
+  const targetRecords = selected === 'all'
+    ? records
+    : records.filter(r => (typeof getTxMonthKey === 'function' ? getTxMonthKey(r) : (r.monthKey || '')) === selected);
+
+  const escalationRecords = targetRecords.filter(r => r.status === 'ESCALATION_REQUIRED' || r.status === 'MICRO_INFLATION_ALERT');
+  const target = escalationRecords[idx];
+  if (target) {
+    target.status = 'VERIFIED_OK';
+    target.message = 'Approved by user exception.';
+    if (typeof addNewOverridePolicy === 'function') {
+      addNewOverridePolicy(target.merchant, target.amount, 'User Approved High-Debit Exception');
+    }
+    recalculateAllFinancialMetrics();
+    renderRadarAlertsView();
+    showToast(`Approved ${target.merchant} debit exception!`);
+  }
+}
+window.approveEscalationRecord = approveEscalationRecord;
+
 function batchDisputeAllHikes() {
-  openDisputeModalForRecord('Netflix Standard', 17.99, 15.49, 2.50, 'MEM_01');
-  showToast('1-Tap CFPB dispute generated for all uncontractual price hikes!');
+  const subs = typeof getActiveSubscriptionsList === 'function' ? getActiveSubscriptionsList() : (state.subscriptions || []);
+  const creepSubs = subs.filter(s => Boolean(s.hasHike || s.status === 'CREEP_FLAG' || s.status === 'PRICE_CREEP' || (Number(s.cost) > Number(s.baseline) && !s.overrideApproved)));
+  if (creepSubs.length > 0) {
+    const s = creepSubs[0];
+    const cost = Number(s.cost || 0);
+    const base = Number(s.baseline || 0);
+    const delta = Number(s.delta || (cost - base));
+    openDisputeModalForRecord(s.merchant, cost, base, delta, s.memory || 'MEM_01');
+    showToast(`1-Tap dispute pack generated for ${s.merchant}!`);
+  } else {
+    showToast('All subscriptions currently match authorized baselines.');
+  }
 }
 window.batchDisputeAllHikes = batchDisputeAllHikes;
 
-function openDisputeModalForTrial() {
+function openDisputeModalForTrial(merchant = 'Adobe Creative Cloud All Apps', rebillAmt = 54.99, memoryId = 'MEM_10') {
+  const cur = state.userProfile?.currency || '$';
   state.activeDispute = {
-    merchant: 'Adobe Creative Cloud All Apps',
-    amount: 54.99,
+    merchant,
+    amount: rebillAmt,
     baseline: 0.00,
-    delta: 54.99,
-    memoryId: 'MEM_10',
+    delta: rebillAmt,
+    memoryId,
     type: 'TRIAL_CANCEL'
   };
 
@@ -2816,36 +4274,36 @@ function openDisputeModalForTrial() {
   const body = document.getElementById('disputeLetterBody');
   const metaStrip = document.getElementById('disputeMetaStrip');
 
-  title.textContent = `1-Tap Trial Cancellation Pack: Adobe CC`;
-  subtitle.textContent = `48h Pre-Conversion Warning · Sovereign Memory [MEM_10] · 0% Fee Rake`;
-  subject.textContent = `Formal Notice of Immediate Cancellation: Adobe Creative Cloud 7-Day Trial`;
+  title.textContent = `1-Tap Trial Cancellation Pack: ${merchant}`;
+  subtitle.textContent = `48h Pre-Conversion Warning · Sovereign Memory [${memoryId}] · 0% Fee Rake`;
+  subject.textContent = `Formal Notice of Immediate Cancellation: ${merchant} Trial`;
 
+  const annualCommit = (rebillAmt * 12).toFixed(2);
   metaStrip.innerHTML = `
     <div class="meta-item"><span>Trial Period:</span> <strong>7-Day Free Period</strong></div>
-    <div class="meta-item red"><span>Impending Rebill:</span> <strong>$54.99 / mo ($659.88/yr)</strong></div>
-    <div class="meta-item amber"><span>Hours Remaining:</span> <strong>48 Hours (Auto-converts Oct 25)</strong></div>
-    <div class="meta-item green"><span>PocketSentinel Fee:</span> <strong>$0.00 (Zero Rake)</strong></div>
+    <div class="meta-item red"><span>Impending Rebill:</span> <strong>${cur}${rebillAmt.toFixed(2)} / mo (${cur}${annualCommit}/yr)</strong></div>
+    <div class="meta-item amber"><span>Hours Remaining:</span> <strong>48 Hours (Auto-converts)</strong></div>
+    <div class="meta-item green"><span>PocketSentinel Fee:</span> <strong>${cur}0.00 (Zero Rake)</strong></div>
   `;
 
-  body.value = `To: Adobe Systems Billing & Subscription Support
+  body.value = `To: ${merchant} Billing & Subscription Support
 Re: Immediate Cancellation Notice of Free Trial Account
 Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 To Customer Support,
 
-Please accept this formal written notice of cancellation for my 7-day Adobe Creative Cloud trial, effective immediately.
+Please accept this formal written notice of cancellation for my ${merchant} trial, effective immediately.
 
-- Account Service: Adobe Creative Cloud All Apps
-- Trial Start Date: October 18, 2026
-- Trial Expiration / Rebill Horizon: October 25, 2026
-- Scheduled Recurring Charge: $54.99 / month
+- Account Service: ${merchant}
+- Trial Expiration / Rebill Horizon: Upcoming Renewal
+- Scheduled Recurring Charge: ${cur}${rebillAmt.toFixed(2)} / month
 
 I affirmatively opt out of converting this trial to a paid subscription or recurring contract. Please ensure no debit or early termination fee is processed against my card on file.
 
 Please reply with written confirmation of cancellation and transaction reference.
 
 Sincerely,
-PocketSentinel Sovereign Account Sentinel [ID: MEM_10]`;
+PocketSentinel Sovereign Account Sentinel [ID: ${memoryId}]`;
 
   if (modal) modal.style.display = 'flex';
   if (window.lucide) window.lucide.createIcons();
@@ -2853,7 +4311,8 @@ PocketSentinel Sovereign Account Sentinel [ID: MEM_10]`;
 window.openDisputeModalForTrial = openDisputeModalForTrial;
 
 function openDisputeModalForOverlap() {
-  alert('Audio Overlap Consolidator:\n\nSovereign Memory [MEM_11] notes active subscriptions to both Spotify ($16.99/mo) and Apple Music ($10.99/mo).\n\nConsolidating to a single streaming tier preserves $131.88/year in household capital.\n\nWould you like PocketSentinel to draft a 1-tap cancellation notice for Apple Music?');
+  const cur = state.userProfile?.currency || '$';
+  alert(`Audio Overlap Consolidator:\n\nSovereign Memory [MEM_11] notes active subscriptions to both Spotify (${cur}16.99/mo) and Apple Music (${cur}10.99/mo).\n\nConsolidating to a single streaming tier preserves ${cur}131.88/year in household capital.\n\nWould you like PocketSentinel to draft a 1-tap cancellation notice for Apple Music?`);
   showToast('Prompting Apple Music cancellation pack to eliminate audio duplication.');
 }
 window.openDisputeModalForOverlap = openDisputeModalForOverlap;
@@ -2888,7 +4347,10 @@ window.suppressOverlapFor90Days = suppressOverlapFor90Days;
 // ================= MODAL CONTROLLERS (ADD SUB / ADD TRIAL) =================
 function openNewSubscriptionModal() {
   const modal = document.getElementById('newSubscriptionModal') || document.getElementById('newSubModal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    if (typeof applyCurrencyGlobally === 'function') applyCurrencyGlobally();
+    modal.style.display = 'flex';
+  }
   if (window.lucide) window.lucide.createIcons();
 }
 window.openNewSubscriptionModal = openNewSubscriptionModal;
@@ -2901,7 +4363,6 @@ function closeNewSubscriptionModal() {
 }
 window.closeNewSubscriptionModal = closeNewSubscriptionModal;
 
-
 function confirmAddSubscription() {
   const name = document.getElementById('newSubName')?.value.trim();
   const amt = parseFloat(document.getElementById('newSubAmount')?.value || 0);
@@ -2913,10 +4374,11 @@ function confirmAddSubscription() {
     return;
   }
 
-  const logo = getMerchantLogo(name) || '/assets/logos/sui.svg';
+  const logo = getMerchantLogo(name) || '/assets/logos/generic.svg';
   const memKey = `MEM_MANUAL_${Math.floor(Math.random() * 899 + 100)}`;
+  const cur = state.userProfile?.currency || '$';
 
-  masterSubscriptionsList.unshift({
+  const newSub = {
     id: `sub_${Date.now()}`,
     merchant: name,
     plan: 'Active Subscription',
@@ -2924,24 +4386,35 @@ function confirmAddSubscription() {
     category: cat.toLowerCase().includes('stream') ? 'streaming' : (cat.toLowerCase().includes('ai') ? 'ai' : 'dev'),
     categoryLabel: cat,
     cost: amt,
+    amount: amt,
     baseline: amt,
     delta: 0,
     renewalDay: parseInt(day),
+    dayOfMonth: parseInt(day),
     renewalText: `${day}th of month`,
     memory: memKey,
     status: 'VERIFIED',
     statusBadge: '<span class="status-badge verified"><i data-lucide="check-circle-2"></i> Baseline Match</span>'
-  });
+  };
+
+  masterSubscriptionsList.unshift(newSub);
+  if (!state.subscriptions) state.subscriptions = [];
+  state.subscriptions.unshift(newSub);
+  localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
 
   closeNewSubscriptionModal();
+  recalculateAllFinancialMetrics();
   renderSubscriptionsLedger();
-  showToast(`Added ${name} ($${amt.toFixed(2)}/mo) with policy baseline [${memKey}]!`);
+  showToast(`Added ${name} (${cur}${amt.toFixed(2)}/mo) with policy baseline [${memKey}]!`);
 }
 window.confirmAddSubscription = confirmAddSubscription;
 
 function openAddTrialModal() {
   const modal = document.getElementById('newTrialModal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    if (typeof applyCurrencyGlobally === 'function') applyCurrencyGlobally();
+    modal.style.display = 'flex';
+  }
   if (window.lucide) window.lucide.createIcons();
 }
 window.openAddTrialModal = openAddTrialModal;
@@ -2962,8 +4435,37 @@ function confirmAddTrial() {
     return;
   }
 
+  const cur = state.userProfile?.currency || '$';
+  const newTrial = {
+    id: `trial_${Date.now()}`,
+    merchant: name,
+    plan: '7-Day Free Trial',
+    logo: getMerchantLogo(name) || '/assets/logos/generic.svg',
+    category: 'tools',
+    categoryLabel: 'Free Trial',
+    cost: rebill,
+    amount: rebill,
+    baseline: 0.00,
+    delta: rebill,
+    dayOfMonth: 27,
+    renewalDay: 27,
+    renewalText: `Converts in ${days} days`,
+    memory: `MEM_TRIAL_${Math.floor(Math.random() * 899 + 100)}`,
+    isTrial: true,
+    status: 'TRIAL_URGENT',
+    statusBadge: '<span class="status-badge alert" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A;"><i data-lucide="clock"></i> 48h Trial Alert</span>'
+  };
+
+  if (!state.subscriptions) state.subscriptions = [];
+  state.subscriptions.unshift(newTrial);
+  masterSubscriptionsList.unshift(newTrial);
+  localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
+
   closeAddTrialModal();
-  showToast(`Free trial for ${name} tracked! 48h advance warning armed for ${days} days from now.`);
+  recalculateAllFinancialMetrics();
+  renderTrialSentinelPanel();
+  renderSubscriptionsLedger();
+  showToast(`Free trial for ${name} (${cur}${rebill.toFixed(2)}/mo) tracked! 48h warning armed for ${days} days from now.`);
 }
 window.confirmAddTrial = confirmAddTrial;
 
@@ -3039,6 +4541,7 @@ window.copyText = copyText;
 
 // ================= 1-TAP DISPUTE DRAWER MODAL =================
 function openDisputeModalForRecord(merchant, amount, baseline, delta, memoryId) {
+  const cur = state.userProfile?.currency || '$';
   state.activeDispute = {
     merchant,
     amount,
@@ -3061,10 +4564,10 @@ function openDisputeModalForRecord(merchant, amount, baseline, delta, memoryId) 
 
   const annualDrain = (delta * 12).toFixed(2);
   metaStrip.innerHTML = `
-    <div class="meta-item"><span>Current Charge:</span> <strong>$${amount.toFixed(2)}</strong></div>
-    <div class="meta-item"><span>Approved Baseline:</span> <strong>$${baseline.toFixed(2)}</strong></div>
-    <div class="meta-item red"><span>Unauthorized Delta:</span> <strong>+$${delta.toFixed(2)}/mo ($${annualDrain}/yr)</strong></div>
-    <div class="meta-item green"><span>PocketSentinel Fee:</span> <strong>$0.00 (Zero Rake)</strong></div>
+    <div class="meta-item"><span>Current Charge:</span> <strong>${cur}${amount.toFixed(2)}</strong></div>
+    <div class="meta-item"><span>Approved Baseline:</span> <strong>${cur}${baseline.toFixed(2)}</strong></div>
+    <div class="meta-item red"><span>Unauthorized Delta:</span> <strong>+${cur}${delta.toFixed(2)}/mo (${cur}${annualDrain}/yr)</strong></div>
+    <div class="meta-item green"><span>PocketSentinel Fee:</span> <strong>${cur}0.00 (Zero Rake)</strong></div>
   `;
 
   body.value = `To: ${merchant} Billing & Consumer Accounts Support
@@ -3076,16 +4579,16 @@ To Whom It May Concern,
 I am writing to formally object to the recent unnotified price increase applied to my recurring subscription account.
 
 - Merchant: ${merchant}
-- Agreed Contractual Baseline: $${baseline.toFixed(2)} / month
-- Recent Discrepant Charge: $${amount.toFixed(2)} (Billed without affirmative consent)
-- Discrepancy Delta: +$${delta.toFixed(2)} / month
+- Agreed Contractual Baseline: ${cur}${baseline.toFixed(2)} / month
+- Recent Discrepant Charge: ${cur}${amount.toFixed(2)} (Billed without affirmative consent)
+- Discrepancy Delta: +${cur}${delta.toFixed(2)} / month
 - Decentralized Ledger Anchor: Memory Proof #${memoryId} (Sui Mainnet)
 
 Under FTC Negative Option Rule guidelines and Consumer Financial Protection Bureau (CFPB) recurring charge standards, material modifications to recurring pricing require explicit affirmative consent prior to billing.
 
 Action Requested:
-1. Immediately issue a statement credit or refund of $${delta.toFixed(2)} for the excess unapproved debit.
-2. Revert my account to the pre-authorized rate of $${baseline.toFixed(2)} per month, or promptly cancel this subscription with no termination fees.
+1. Immediately issue a statement credit or refund of ${cur}${delta.toFixed(2)} for the excess unapproved debit.
+2. Revert my account to the pre-authorized rate of ${cur}${baseline.toFixed(2)} per month, or promptly cancel this subscription with no termination fees.
 
 Sincerely,
 PocketSentinel Sovereign Sentinel Policy Holder
@@ -3334,15 +4837,17 @@ function calculateAffordability() {
   if (!costInput) return;
 
   const cost = parseFloat(costInput.value) || 0;
-  const currentSafeSpend = 482.35;
-  const daysRemaining = 10;
-  const dailyBurnVelocity = 48.23;
+  const cur = state.userProfile?.currency || '$';
+  const daysRemaining = parseInt(state.userProfile?.cycleDays) || 10;
+  const currentSafeSpend = parseFloat(state.userProfile?.safeSpend) || 0;
+  const dailyBurnVelocity = parseFloat(state.userProfile?.dailyVelocity) || (daysRemaining > 0 ? (currentSafeSpend / daysRemaining) : 0);
+  const reserve = parseFloat(state.userProfile?.reserve) || 0;
 
   const remainingAfter = currentSafeSpend - cost;
-  const newVelocity = remainingAfter > 0 ? (remainingAfter / daysRemaining).toFixed(2) : '0.00';
+  const newVelocity = remainingAfter > 0 && daysRemaining > 0 ? (remainingAfter / daysRemaining).toFixed(2) : '0.00';
 
   if (remainingEl) {
-    remainingEl.textContent = `$${remainingAfter.toFixed(2)}`;
+    remainingEl.textContent = `${cur}${remainingAfter.toFixed(2)}`;
     if (remainingAfter < 0) {
       remainingEl.className = 'text-coral';
     } else {
@@ -3351,31 +4856,33 @@ function calculateAffordability() {
   }
 
   if (newVelocityEl) {
-    newVelocityEl.textContent = `$${newVelocity} / day`;
+    newVelocityEl.textContent = `${cur}${newVelocity} / day`;
   }
 
   if (verdictTag && verdictSub) {
     verdictTag.className = 'verdict-tag';
+    const burnDays = dailyBurnVelocity > 0 ? (cost / dailyBurnVelocity).toFixed(1) : '0.0';
     if (cost <= 0) {
       verdictTag.classList.add('blue');
       verdictTag.innerHTML = '<i data-lucide="info"></i> <span>Enter purchase amount to evaluate</span>';
-      verdictSub.textContent = 'Calculates real-time velocity impact across 10 remaining October cycle days.';
-    } else if (cost <= 50) {
+      verdictSub.textContent = `Calculates real-time velocity impact across ${daysRemaining} remaining cycle days.`;
+    } else if (cost <= (dailyBurnVelocity * 1.2)) {
       verdictTag.classList.add('green');
       verdictTag.innerHTML = '<i data-lucide="check-circle"></i> <span>APPROVED: Safe to Spend</span>';
-      verdictSub.textContent = `Consumes ~${(cost / dailyBurnVelocity).toFixed(1)} days of burn. Will not impact fixed subscriptions or $500 savings buffer.`;
-    } else if (cost <= 150) {
+      verdictSub.textContent = `Consumes ~${burnDays} days of burn. Will not impact fixed bills or ${cur}${reserve.toFixed(2)} savings buffer.`;
+    } else if (cost <= (dailyBurnVelocity * 3.5)) {
       verdictTag.classList.add('amber');
-      verdictTag.innerHTML = `<i data-lucide="alert-triangle"></i> <span>CAUTION: Consumes ${(cost / dailyBurnVelocity).toFixed(1)} Days of Runway</span>`;
-      verdictSub.textContent = 'Safe to spend, but requires slightly tighter discretionary spending over the next 3 days.';
+      verdictTag.innerHTML = `<i data-lucide="alert-triangle"></i> <span>CAUTION: Consumes ${burnDays} Days of Runway</span>`;
+      verdictSub.textContent = 'Safe to spend, but requires slightly tighter discretionary spending over the next few days.';
     } else if (cost <= currentSafeSpend) {
       verdictTag.classList.add('coral');
-      verdictTag.innerHTML = `<i data-lucide="alert-circle"></i> <span>HIGH IMPACT: Consumes ${(cost / dailyBurnVelocity).toFixed(1)} Days of Runway</span>`;
-      verdictSub.textContent = `Warning: Consumes ${Math.round((cost / currentSafeSpend) * 100)}% of your remaining October safe-to-spend buffer.`;
+      verdictTag.innerHTML = `<i data-lucide="alert-circle"></i> <span>HIGH IMPACT: Consumes ${burnDays} Days of Runway</span>`;
+      const pct = currentSafeSpend > 0 ? Math.round((cost / currentSafeSpend) * 100) : 100;
+      verdictSub.textContent = `Warning: Consumes ${pct}% of your remaining safe-to-spend buffer.`;
     } else {
       verdictTag.classList.add('red');
       verdictTag.innerHTML = '<i data-lucide="x-circle"></i> <span>RUNWAY BREACH: Exceeds Available Safe Cash</span>';
-      verdictSub.textContent = `Warning: Swiping for this requires taking $${(cost - currentSafeSpend).toFixed(2)} from your Emergency Buffer or bouncing bills!`;
+      verdictSub.textContent = `Warning: Swiping for this requires taking ${cur}${(cost - currentSafeSpend).toFixed(2)} from your Emergency Buffer or bouncing bills!`;
     }
     if (window.lucide) window.lucide.createIcons();
   }
@@ -3637,19 +5144,33 @@ async function handleCopilotChatSubmit(event) {
   if (copilotMode === 'hype') avatarIcon = 'trending-up';
 
   try {
+    const userPayload = {
+      ...state.userProfile,
+      subscriptionsCount: (state.subscriptions || []).length,
+      subscriptionsSum: (state.subscriptions || []).reduce((acc, s) => acc + (Number(s.amount || s.cost) || 0), 0),
+      envelopes: state.envelopeAllocations || null
+    };
+
     const res = await fetch('/api/copilot/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query,
         mode: copilotMode,
-        envelopesRebalanced: Boolean(state.envelopesRebalanced)
+        envelopesRebalanced: Boolean(state.envelopesRebalanced),
+        userProfile: userPayload
       })
     });
 
     const data = await res.json();
     const typingEl = document.getElementById('copilotTypingIndicator');
     if (typingEl) typingEl.remove();
+
+    if (!data.success && !data.reply) {
+      throw new Error(data.error || 'Inference engine unavailable');
+    }
+
+    const formattedReply = typeof formatMarkdown === 'function' ? formatMarkdown(data.reply || '') : escapeHtml(data.reply || '');
 
     const botBubble = document.createElement('div');
     botBubble.className = 'chat-bubble assistant';
@@ -3666,14 +5187,20 @@ async function handleCopilotChatSubmit(event) {
     const typingEl = document.getElementById('copilotTypingIndicator');
     if (typingEl) typingEl.remove();
 
+    const cur = state.userProfile?.currency || '$';
+    const safeSpend = parseFloat(state.userProfile?.safeSpend) || 0;
+    const dailyVel = parseFloat(state.userProfile?.dailyVelocity) || 0;
+    const cycleDays = parseInt(state.userProfile?.cycleDays) || 10;
+    const reserve = parseFloat(state.userProfile?.reserve) || 0;
+
     const errorBubble = document.createElement('div');
     errorBubble.className = 'chat-bubble assistant';
     errorBubble.innerHTML = `
       <div class="chat-avatar"><i data-lucide="shield"></i></div>
       <div class="chat-bubble-body">
         <strong>PocketSentinel AI</strong>
-        <p>Your live Safe-to-Spend runway is <strong>$482.35</strong> ($48.23/day velocity across 10 remaining cycle days). Your $500.00 emergency buffer is 100% secured.</p>
-        <span class="chat-time">Local Fallback</span>
+        <p>Your live Safe-to-Spend runway is <strong>${cur}${safeSpend.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong> (${cur}${dailyVel.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/day velocity across ${cycleDays} remaining cycle days). Your ${cur}${reserve.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} emergency buffer is 100% secured.</p>
+        <span class="chat-time">Notice</span>
       </div>
     `;
     msgs.appendChild(errorBubble);
@@ -3691,33 +5218,36 @@ function testOverviewAffordability() {
 
   if (!costInput) return;
   const cost = parseFloat(costInput.value) || 0;
-  const currentSafeSpend = 482.35;
-  const dailyBurnVelocity = 48.23;
-  const daysConsumed = (cost / dailyBurnVelocity).toFixed(1);
+  const cur = state.userProfile?.currency || '$';
+  const currentSafeSpend = parseFloat(state.userProfile?.safeSpend) || 0;
+  const daysRemaining = parseInt(state.userProfile?.cycleDays) || 10;
+  const dailyBurnVelocity = parseFloat(state.userProfile?.dailyVelocity) || (daysRemaining > 0 ? (currentSafeSpend / daysRemaining) : 0);
+  const daysConsumed = dailyBurnVelocity > 0 ? (cost / dailyBurnVelocity).toFixed(1) : '0.0';
   const remaining = (currentSafeSpend - cost).toFixed(2);
-  const newDaily = (Math.max(0, currentSafeSpend - cost) / 10).toFixed(2);
+  const newDaily = daysRemaining > 0 ? (Math.max(0, currentSafeSpend - cost) / daysRemaining).toFixed(2) : '0.00';
 
   if (tag && explainer) {
     if (cost <= 0) {
       tag.className = 'verdict-tag';
       tag.innerHTML = '<i data-lucide="info"></i> <span>Enter amount</span>';
-      explainer.textContent = 'Enter an amount to test against your $482.35 runway.';
-    } else if (cost <= 50) {
+      explainer.textContent = `Enter an amount to test against your ${cur}${currentSafeSpend.toFixed(2)} runway.`;
+    } else if (cost <= (dailyBurnVelocity * 1.2)) {
       tag.className = 'verdict-tag green';
       tag.innerHTML = `<i data-lucide="check-circle"></i> <span>Safe: ~${daysConsumed} Days</span>`;
-      explainer.textContent = `Safe to spend from your $482.35 runway, leaving $${remaining} ($${newDaily}/day).`;
-    } else if (cost <= 150) {
+      explainer.textContent = `Safe to spend from your ${cur}${currentSafeSpend.toFixed(2)} runway, leaving ${cur}${remaining} (${cur}${newDaily}/day).`;
+    } else if (cost <= (dailyBurnVelocity * 3.5)) {
       tag.className = 'verdict-tag amber';
       tag.innerHTML = `<i data-lucide="alert-triangle"></i> <span>Caution: ~${daysConsumed} Days</span>`;
-      explainer.textContent = `Consumes ~${daysConsumed} days of runway, lowering your daily burn to $${newDaily}/day.`;
+      explainer.textContent = `Consumes ~${daysConsumed} days of runway, lowering your daily burn to ${cur}${newDaily}/day.`;
     } else if (cost <= currentSafeSpend) {
       tag.className = 'verdict-tag amber';
       tag.innerHTML = `<i data-lucide="alert-circle"></i> <span>High Impact: ~${daysConsumed} Days</span>`;
-      explainer.textContent = `Warning: Consumes ${Math.round((cost / currentSafeSpend) * 100)}% of your remaining safe cash.`;
+      const pct = currentSafeSpend > 0 ? Math.round((cost / currentSafeSpend) * 100) : 100;
+      explainer.textContent = `Warning: Consumes ${pct}% of your remaining safe cash.`;
     } else {
       tag.className = 'verdict-tag red';
       tag.innerHTML = '<i data-lucide="x-circle"></i> <span>Runway Breach</span>';
-      explainer.textContent = `Over budget! Exceeds safe cash by $${(cost - currentSafeSpend).toFixed(2)}.`;
+      explainer.textContent = `Over budget! Exceeds safe cash by ${cur}${(cost - currentSafeSpend).toFixed(2)}.`;
     }
     if (window.lucide) window.lucide.createIcons();
   }
@@ -4457,10 +5987,11 @@ function handleAddNewSubscription(e) {
   };
 
   masterSubscriptionsList.unshift(newSub);
+  const cur = state.userProfile?.currency || '$';
   closeNewSubscriptionModal();
   renderSubscriptionsLedger();
   renderSpendCalendar();
-  showToast(`✅ Added ${merchant} ($${cost.toFixed(2)}/mo) to Sentinel Subscriptions!`);
+  showToast(`✅ Added ${merchant} (${cur}${cost.toFixed(2)}/mo) to Sentinel Subscriptions!`);
 }
 window.handleAddNewSubscription = handleAddNewSubscription;
 function setTxType(type) {
@@ -4475,6 +6006,10 @@ function openQuickAddModal(defaultWallet = null) {
   const modal = document.getElementById('quickAddModal');
   if (!modal) return;
   modal.style.display = 'flex';
+  
+  if (typeof applyCurrencyGlobally === 'function') {
+    applyCurrencyGlobally();
+  }
   
   const walletSelect = document.getElementById('tx-wallet');
   if (walletSelect && defaultWallet) {
@@ -4494,6 +6029,7 @@ function openQuickAddModal(defaultWallet = null) {
   if (window.lucide) window.lucide.createIcons();
 }
 window.openQuickAddModal = openQuickAddModal;
+window.openLogExpenseModal = openQuickAddModal;
 
 function closeQuickAddModal() {
   const modal = document.getElementById('quickAddModal');
@@ -4579,7 +6115,7 @@ function confirmSaveQuickAddTransaction() {
     isUserLogged: true,
     walrusMemoryRef: walrusAnchor,
     status,
-    message: `Logged to ${category} envelope via ${walletName}. Costs ${lifeEnergyHours} hrs of mortal life energy.`
+    message: `Logged to ${category} envelope via ${walletName}.`
   };
   state.auditResults.unshift(newTx);
   localStorage.setItem('recall_user_transactions', JSON.stringify(state.auditResults));
@@ -4895,26 +6431,23 @@ function renderUserProfileUI() {
   const overviewDaily = document.getElementById('overviewDailyAllowance');
 
   const cur = profile.currency || '$';
-  const safeVal = `${cur}${Number(profile.safeSpend || 482.35).toFixed(2)}`;
-  const velVal = `${cur}${Number(profile.dailyVelocity || 48.23).toFixed(2)} / day`;
+  const safeNum = Number(profile.safeSpend !== undefined ? profile.safeSpend : 0);
+  const velNum = Number(profile.dailyVelocity !== undefined ? profile.dailyVelocity : 0);
+  const safeVal = `${cur}${safeNum.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+  const velVal = `${cur}${velNum.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} / day`;
   const cycleVal = `${profile.cycleDays || 10} days remaining`;
 
   if (nameEl) nameEl.textContent = profile.name || 'Alex Rivera';
   const initials = (profile.name || 'Alex Rivera').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'AR';
   if (avatarEl) avatarEl.textContent = initials;
 
-  const wagePill = document.getElementById('userWagePillDisplay');
-  if (wagePill) wagePill.textContent = `${cur}${Number(profile.hourlyWage || 25).toFixed(2)} / hr Life Energy`;
-
   const headerName = document.getElementById('headerUserName');
-  const headerWage = document.getElementById('headerUserWage');
   const headerAvatar = document.getElementById('headerUserAvatar');
   const headerSafe = document.getElementById('headerSafeSpend');
 
   if (headerName) headerName.textContent = profile.name || 'Alex Rivera';
-  if (headerWage) headerWage.textContent = `${cur}${Number(profile.hourlyWage || 25).toFixed(0)}/hr Life Energy`;
   if (headerAvatar) headerAvatar.textContent = initials;
-  if (headerSafe) headerSafe.textContent = safeVal;
+  if (headerSafe && profile.safeSpend !== undefined) headerSafe.textContent = safeVal;
 
   if (safeSpendHero) safeSpendHero.textContent = safeVal;
   if (velocityHero) velocityHero.textContent = velVal;
@@ -4922,9 +6455,8 @@ function renderUserProfileUI() {
 
   if (kpiSafe) kpiSafe.textContent = safeVal;
   if (kpiVel) kpiVel.textContent = `${velVal} · ${cycleVal}`;
-  if (overviewSafe) overviewSafe.textContent = safeVal;
   if (overviewBurn) overviewBurn.textContent = velVal;
-  if (overviewDaily) overviewDaily.textContent = velVal;
+  if (typeof renderApprovedCeilingsTable === 'function') renderApprovedCeilingsTable();
 }
 window.renderUserProfileUI = renderUserProfileUI;
 
@@ -4943,6 +6475,7 @@ function loadUserProfileToSettings() {
   if (inflowInp) inflowInp.value = profile.inflow !== undefined ? profile.inflow : '';
   if (wageInp) wageInp.value = profile.hourlyWage !== undefined ? profile.hourlyWage : '';
   if (daysInp) daysInp.value = profile.cycleDays || 10;
+  if (typeof renderApprovedCeilingsTable === 'function') renderApprovedCeilingsTable();
 }
 window.loadUserProfileToSettings = loadUserProfileToSettings;
 
@@ -5129,7 +6662,11 @@ window.renderPlanSubscriptionsLedger = renderPlanSubscriptionsLedger;
 
 function openAddWalletModal() {
   const modal = document.getElementById('addWalletModal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    if (typeof applyCurrencyGlobally === 'function') applyCurrencyGlobally();
+    modal.style.display = 'flex';
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 window.openAddWalletModal = openAddWalletModal;
 
@@ -5158,9 +6695,10 @@ function confirmAddNewWallet() {
     icon: type === 'cash' ? 'banknote' : (type === 'vault' ? 'shield' : 'landmark')
   });
 
+  const cur = state.userProfile?.currency || '$';
   renderWalletsUI();
   closeAddWalletModal();
-  if (typeof showToast === 'function') showToast(`✅ Added wallet "${name}" with $${balance.toFixed(2)}.`);
+  if (typeof showToast === 'function') showToast(`✅ Added wallet "${name}" with ${cur}${balance.toFixed(2)}.`);
 }
 window.confirmAddNewWallet = confirmAddNewWallet;
 
@@ -5168,6 +6706,7 @@ function openTransferModal(fromWallet = null) {
   const modal = document.getElementById('transferModal');
   if (!modal) return;
   modal.style.display = 'flex';
+  if (typeof applyCurrencyGlobally === 'function') applyCurrencyGlobally();
   if (fromWallet) {
     const sel = document.getElementById('transferFromWallet');
     if (sel) sel.value = fromWallet;
@@ -5201,10 +6740,12 @@ function confirmWalletTransfer() {
   if (fromW && toW) {
     fromW.balance = Number((fromW.balance - amount).toFixed(2));
     toW.balance = Number((toW.balance + amount).toFixed(2));
+    localStorage.setItem('recall_user_wallets', JSON.stringify(state.wallets));
     renderWalletsUI();
     closeTransferModal();
+    const cur = state.userProfile?.currency || '$';
     if (typeof showToast === 'function') {
-      showToast(`🔄 Transferred $${amount.toFixed(2)} from ${fromName} to ${toName}.`);
+      showToast(`🔄 Transferred ${cur}${amount.toFixed(2)} from ${fromName} to ${toName}.`);
     }
   }
 }
@@ -5263,6 +6804,7 @@ function saveCustomEnvelopes(envelopes) {
 function openCreateCategoryModal() {
   const modal = document.getElementById('createCategoryModal');
   if (modal) {
+    if (typeof applyCurrencyGlobally === 'function') applyCurrencyGlobally();
     modal.style.display = 'flex';
     const nameInput = document.getElementById('newCategoryName');
     if (nameInput) setTimeout(() => nameInput.focus(), 50);
@@ -5324,8 +6866,9 @@ function handleCreateCategorySubmit(event) {
   document.getElementById('createCategoryForm')?.reset();
   selectCategoryIcon('heart');
 
+  const cur = state.userProfile?.currency || '$';
   if (typeof showToast === 'function') {
-    showToast(`📁 Created new envelope "${name}" with $${budget.toFixed(2)} monthly allocation!`, 'green');
+    showToast(`📁 Created new envelope "${name}" with ${cur}${budget.toFixed(2)} monthly allocation!`, 'green');
   }
 }
 window.handleCreateCategorySubmit = handleCreateCategorySubmit;
@@ -5349,45 +6892,130 @@ function renderEnvelopesPlan() {
   if (!grid) return;
 
   const cur = state.userProfile?.currency || '$';
-  const inflow = Number(state.userProfile?.inflow || 0);
-  const reserve = Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : (inflow * 0.10));
+  let inflow = Number(state.userProfile?.inflow || 0);
+  const activeMonth = state.selectedStatementMonth || 'all';
+
+  if (state.availableStatementMonths && state.availableStatementMonths.length > 0) {
+    if (activeMonth !== 'all') {
+      const mData = state.availableStatementMonths.find(m => m.monthKey === activeMonth);
+      if (mData && mData.inflow > 0) inflow = mData.inflow;
+    } else {
+      const sumInflow = state.availableStatementMonths.reduce((sum, m) => sum + (m.inflow || 0), 0);
+      if (sumInflow > 0) inflow = sumInflow;
+    }
+  }
 
   // Load custom envelopes if user created any
   const customEnvelopes = typeof getCustomEnvelopes === 'function' ? getCustomEnvelopes() : [];
   const customAllocTotal = customEnvelopes.reduce((sum, env) => sum + (Number(env.budget) || 0), 0);
 
-  // Calculate default categories from remaining pool (inflow - reserve - customAlloc)
-  const spendablePool = Math.max(0, inflow - reserve - customAllocTotal);
-  
-  // Clean default target proportions that sum exactly to spendablePool
-  const groceriesBudget = Number((spendablePool * 0.35).toFixed(2));
-  const diningBudget = Number((spendablePool * 0.20).toFixed(2));
-  const transportBudget = Number((spendablePool * 0.15).toFixed(2));
-  const utilitiesBudget = Number((spendablePool * 0.15).toFixed(2));
-  const funBudget = Number((spendablePool - groceriesBudget - diningBudget - transportBudget - utilitiesBudget).toFixed(2));
+  // Load user saved allocations if configured, otherwise calculate suggested proportional targets
+  let savedAlloc = null;
+  try {
+    const rawAlloc = localStorage.getItem('recall_envelope_allocations');
+    if (rawAlloc) savedAlloc = JSON.parse(rawAlloc);
+  } catch (e) {
+    savedAlloc = null;
+  }
 
-  // Compute actual spent from state.auditResults (zero for new users!)
-  const txList = state.auditResults || [];
+  let reserve = 0;
+  let groceriesBudget = 0;
+  let diningBudget = 0;
+  let transportBudget = 0;
+  let utilitiesBudget = 0;
+  let funBudget = 0;
+
+  if (savedAlloc) {
+    reserve = savedAlloc.reserve !== undefined ? Number(savedAlloc.reserve) : Number((inflow * 0.10).toFixed(2));
+    groceriesBudget = Number(savedAlloc.groceries || 0);
+    diningBudget = Number(savedAlloc.dining || 0);
+    transportBudget = Number(savedAlloc.transport || 0);
+    utilitiesBudget = Number(savedAlloc.utilities || 0);
+    funBudget = Number(savedAlloc.fun || 0);
+  } else {
+    reserve = Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : (inflow * 0.10));
+    const spendablePool = Math.max(0, inflow - reserve - customAllocTotal);
+    groceriesBudget = Number((spendablePool * 0.35).toFixed(2));
+    diningBudget = Number((spendablePool * 0.20).toFixed(2));
+    transportBudget = Number((spendablePool * 0.15).toFixed(2));
+    utilitiesBudget = Number((spendablePool * 0.15).toFixed(2));
+    funBudget = Number((spendablePool - groceriesBudget - diningBudget - transportBudget - utilitiesBudget).toFixed(2));
+  }
+
+  // Populate Formula & Math Breakdown Grid
+  const formulaGrid = document.getElementById('formulaMathGrid');
+  if (formulaGrid) {
+    const spendablePool = Math.max(0, inflow - reserve - customAllocTotal);
+    formulaGrid.innerHTML = `
+      <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+        <span style="font-size:11px; color:var(--text-muted); display:block; text-transform:uppercase; font-weight:700;">1. Total Monthly Inflow</span>
+        <strong style="font-size:14px; color:var(--text-main);">${cur}${inflow.toFixed(2)}</strong>
+        <small style="display:block; font-size:10px; color:var(--text-muted);">100% Allocation Base (${activeMonth === 'all' ? 'All Months' : formatMonthLabel(activeMonth)})</small>
+      </div>
+      <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+        <span style="font-size:11px; color:var(--text-muted); display:block; text-transform:uppercase; font-weight:700;">2. 10% Gold Reserve</span>
+        <strong style="font-size:14px; color:var(--amber-cta);">${cur}${reserve.toFixed(2)}</strong>
+        <small style="display:block; font-size:10px; color:var(--text-muted);">${inflow > 0 ? ((reserve / inflow) * 100).toFixed(1) : 10}% Buffer</small>
+      </div>
+      <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+        <span style="font-size:11px; color:var(--text-muted); display:block; text-transform:uppercase; font-weight:700;">3. Groceries Target</span>
+        <strong style="font-size:14px; color:var(--green);">${cur}${groceriesBudget.toFixed(2)}</strong>
+        <small style="display:block; font-size:10px; color:var(--text-muted);">${spendablePool > 0 ? ((groceriesBudget / spendablePool) * 100).toFixed(0) : 35}% of Living Pool</small>
+      </div>
+      <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+        <span style="font-size:11px; color:var(--text-muted); display:block; text-transform:uppercase; font-weight:700;">4. Dining Out Target</span>
+        <strong style="font-size:14px; color:var(--coral);">${cur}${diningBudget.toFixed(2)}</strong>
+        <small style="display:block; font-size:10px; color:var(--text-muted);">${spendablePool > 0 ? ((diningBudget / spendablePool) * 100).toFixed(0) : 20}% of Living Pool</small>
+      </div>
+      <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+        <span style="font-size:11px; color:var(--text-muted); display:block; text-transform:uppercase; font-weight:700;">5. Transport & Fuel</span>
+        <strong style="font-size:14px; color:var(--green);">${cur}${transportBudget.toFixed(2)}</strong>
+        <small style="display:block; font-size:10px; color:var(--text-muted);">${spendablePool > 0 ? ((transportBudget / spendablePool) * 100).toFixed(0) : 15}% of Living Pool</small>
+      </div>
+      <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+        <span style="font-size:11px; color:var(--text-muted); display:block; text-transform:uppercase; font-weight:700;">6. Utilities & Living</span>
+        <strong style="font-size:14px; color:var(--green);">${cur}${utilitiesBudget.toFixed(2)}</strong>
+        <small style="display:block; font-size:10px; color:var(--text-muted);">${spendablePool > 0 ? ((utilitiesBudget / spendablePool) * 100).toFixed(0) : 15}% of Living Pool</small>
+      </div>
+      <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+        <span style="font-size:11px; color:var(--text-muted); display:block; text-transform:uppercase; font-weight:700;">7. Discretionary Fun</span>
+        <strong style="font-size:14px; color:var(--blue);">${cur}${funBudget.toFixed(2)}</strong>
+        <small style="display:block; font-size:10px; color:var(--text-muted);">${spendablePool > 0 ? ((funBudget / spendablePool) * 100).toFixed(0) : 15}% of Living Pool</small>
+      </div>
+    `;
+  }
+
+  // Compute actual spent from state.auditResults for active month
+  const activeMonthKey = state.selectedStatementMonth && state.selectedStatementMonth !== 'all' 
+    ? state.selectedStatementMonth 
+    : (state.availableStatementMonths && state.availableStatementMonths.length > 0 ? state.availableStatementMonths[0].monthKey : 'all');
+
+  const monthTxs = (state.auditResults || []).filter(tx => {
+    if (isCreditRecord(tx)) return false;
+    if (activeMonthKey === 'all') return true;
+    return getTxMonthKey(tx) === activeMonthKey;
+  });
   
   function getSpentForCategory(catKeywords) {
-    return txList.reduce((acc, tx) => {
+    return monthTxs.reduce((acc, tx) => {
       const cat = (tx.category || '').toLowerCase();
       const merchant = (tx.merchant || '').toLowerCase();
       const matches = catKeywords.some(kw => cat.includes(kw) || merchant.includes(kw));
       if (matches) {
-        const amt = Number(tx.currentAmount !== undefined ? tx.currentAmount : (tx.amount || 0));
+        const amt = getTxAmount(tx);
         return acc + amt;
       }
       return acc;
     }, 0);
   }
 
-  const groceriesSpent = getSpentForCategory(['grocer', 'supermarket', 'food', 'trader joe']);
-  const diningSpent = getSpentForCategory(['dining', 'restaurant', 'cafe', 'coffee', 'doordash', 'uber eats']);
-  const transportSpent = getSpentForCategory(['transport', 'fuel', 'gas', 'chevron', 'shell', 'transit', 'uber']);
-  const utilitiesSpent = getSpentForCategory(['utilit', 'internet', 'electric', 'water', 'phone', 'bill']);
-  const funSpent = getSpentForCategory(['fun', 'entertainment', 'cinema', 'game', 'hobby']);
-  const reserveSpent = 0.00; // Locked reserve
+  const groceriesSpent = getSpentForCategory(['grocer', 'supermarket', 'food', 'trader joe', 'shoprite', 'store', 'market', 'provision']);
+  const diningSpent = getSpentForCategory(['dining', 'restaurant', 'cafe', 'coffee', 'doordash', 'uber eats', 'bukka', 'kitchen', 'eatery']);
+  const transportSpent = getSpentForCategory(['transport', 'fuel', 'gas', 'chevron', 'shell', 'transit', 'uber', 'bolt', 'ride', 'fare']);
+  const utilitiesSpent = getSpentForCategory(['utilit', 'internet', 'electric', 'water', 'phone', 'bill', 'airtime', 'data', 'recharge', 'mtn', 'airtel', 'glo', 'bank charge', 'levy', 'stamp duty', 'emtl']);
+  const funSpent = getSpentForCategory(['fun', 'entertainment', 'cinema', 'game', 'hobby', 'transfer', 'transfers']);
+  const savingsSpent = getSpentForCategory(['owealth', 'savings', 'wealth', 'piggyvest', 'cowrywise', 'invest']);
+  const reserveSpent = savingsSpent > 0 ? savingsSpent : 0.00;
 
   const standardEnvelopes = [
     {
@@ -5579,6 +7207,304 @@ window.renderEnvelopesPlan = renderEnvelopesPlan;
 function renderCustomEnvelopes() {
   renderEnvelopesPlan();
 }
+window.renderCustomEnvelopes = renderCustomEnvelopes;
+
+// ================= USER ENVELOPE ALLOCATION LOGIC =================
+function openAllocateEnvelopesModal(targetEnvId = null) {
+  const modal = document.getElementById('allocateEnvelopesModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  if (typeof applyCurrencyGlobally === 'function') applyCurrencyGlobally();
+
+  const cur = state.userProfile?.currency || '$';
+  const inflow = Number(state.userProfile?.inflow || 0);
+
+  let savedAlloc = null;
+  try {
+    const raw = localStorage.getItem('recall_envelope_allocations');
+    if (raw) savedAlloc = JSON.parse(raw);
+  } catch (e) {
+    savedAlloc = null;
+  }
+
+  const customEnvelopes = typeof getCustomEnvelopes === 'function' ? getCustomEnvelopes() : [];
+  const customAllocTotal = customEnvelopes.reduce((sum, env) => sum + (Number(env.budget) || 0), 0);
+
+  let reserve = savedAlloc?.reserve !== undefined ? Number(savedAlloc.reserve) : Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : (inflow * 0.10));
+  const spendable = Math.max(0, inflow - reserve - customAllocTotal);
+
+  const groceries = savedAlloc?.groceries !== undefined ? Number(savedAlloc.groceries) : Number((spendable * 0.35).toFixed(2));
+  const dining = savedAlloc?.dining !== undefined ? Number(savedAlloc.dining) : Number((spendable * 0.20).toFixed(2));
+  const transport = savedAlloc?.transport !== undefined ? Number(savedAlloc.transport) : Number((spendable * 0.15).toFixed(2));
+  const utilities = savedAlloc?.utilities !== undefined ? Number(savedAlloc.utilities) : Number((spendable * 0.15).toFixed(2));
+  const fun = savedAlloc?.fun !== undefined ? Number(savedAlloc.fun) : Number((spendable - groceries - dining - transport - utilities).toFixed(2));
+
+  const container = document.getElementById('modalEnvelopeInputsList');
+  if (container) {
+    const categories = [
+      { id: 'groceries', name: 'Groceries & Supermarket', icon: 'shopping-cart', val: groceries },
+      { id: 'dining', name: 'Dining Out & Restaurants', icon: 'utensils', val: dining },
+      { id: 'fun', name: 'Discretionary Fun & Entertainment', icon: 'ticket', val: fun },
+      { id: 'transport', name: 'Transportation & Fuel', icon: 'fuel', val: transport },
+      { id: 'utilities', name: 'Utilities & Household Bills', icon: 'zap', val: utilities },
+      { id: 'reserve', name: '10% Emergency Reserve Vault', icon: 'shield', val: reserve }
+    ];
+
+    let html = categories.map(c => `
+      <div class="alloc-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:8px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="width:32px; height:32px; border-radius:6px; background:var(--bg-card); display:flex; align-items:center; justify-content:center; border:1px solid var(--border-color);">
+            <i data-lucide="${c.icon}" style="width:16px; height:16px;"></i>
+          </span>
+          <div>
+            <strong style="font-size:13px; color:var(--text-main); display:block;">${c.name}</strong>
+            <small style="color:var(--text-muted); font-size:11px;">Monthly Spending Limit</small>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-weight:700; color:var(--text-main); font-size:13px;">${cur}</span>
+          <input type="number" step="0.01" min="0" id="allocInput_${c.id}" value="${c.val.toFixed(2)}"
+            class="form-input alloc-live-input" 
+            style="width:120px; padding:6px 10px; font-weight:700; border:2px solid #141413; border-radius:6px; font-size:13px;"
+            oninput="updateModalAllocLive()" />
+        </div>
+      </div>
+    `).join('');
+
+    // Custom envelopes
+    if (customEnvelopes.length > 0) {
+      html += customEnvelopes.map(env => `
+        <div class="alloc-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="width:32px; height:32px; border-radius:6px; background:var(--bg-card); display:flex; align-items:center; justify-content:center; border:1px solid var(--border-color);">
+              <i data-lucide="${env.icon || 'folder-plus'}" style="width:16px; height:16px;"></i>
+            </span>
+            <div>
+              <strong style="font-size:13px; color:var(--text-main); display:block;">${env.name} (Custom)</strong>
+              <small style="color:var(--text-muted); font-size:11px;">Monthly Spending Limit</small>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-weight:700; color:var(--text-main); font-size:13px;">${cur}</span>
+            <input type="number" step="0.01" min="0" id="allocInput_custom_${env.id}" value="${(Number(env.budget) || 0).toFixed(2)}"
+              class="form-input alloc-live-input alloc-custom-input" data-envid="${env.id}"
+              style="width:120px; padding:6px 10px; font-weight:700; border:2px solid #141413; border-radius:6px; font-size:13px;"
+              oninput="updateModalAllocLive()" />
+          </div>
+        </div>
+      `).join('');
+    }
+
+    container.innerHTML = html;
+  }
+
+  updateModalAllocLive();
+  if (window.lucide) window.lucide.createIcons();
+
+  if (targetEnvId) {
+    setTimeout(() => {
+      const targetInp = document.getElementById(`allocInput_${targetEnvId}`) || document.getElementById(`allocInput_custom_${targetEnvId}`);
+      if (targetInp) {
+        targetInp.focus();
+        targetInp.select();
+      }
+    }, 100);
+  }
+}
+window.openAllocateEnvelopesModal = openAllocateEnvelopesModal;
+
+function closeAllocateEnvelopesModal() {
+  const modal = document.getElementById('allocateEnvelopesModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeAllocateEnvelopesModal = closeAllocateEnvelopesModal;
+
+function updateModalAllocLive() {
+  const cur = state.userProfile?.currency || '$';
+  const inflow = Number(state.userProfile?.inflow || 0);
+
+  let sum = 0;
+  document.querySelectorAll('.alloc-live-input').forEach(inp => {
+    sum += parseFloat(inp.value) || 0;
+  });
+
+  const diff = Number((inflow - sum).toFixed(2));
+
+  const inflowEl = document.getElementById('modalAllocInflow');
+  const totalEl = document.getElementById('modalAllocTotal');
+  const remEl = document.getElementById('modalAllocRemaining');
+  const labelEl = document.getElementById('modalAllocStatusLabel');
+  const statusBox = document.getElementById('modalAllocStatusBox');
+  const noticeEl = document.getElementById('modalAllocAlertNotice');
+
+  if (inflowEl) inflowEl.textContent = `${cur}${inflow.toFixed(2)}`;
+  if (totalEl) totalEl.textContent = `${cur}${sum.toFixed(2)}`;
+
+  if (remEl && statusBox && labelEl) {
+    if (Math.abs(diff) < 0.01) {
+      labelEl.textContent = 'Zero-Based Status:';
+      remEl.textContent = 'Balanced (100% Assigned)';
+      statusBox.className = 'pool-stat highlight green';
+      if (noticeEl) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.background = '#DCFCE7';
+        noticeEl.style.color = '#166534';
+        noticeEl.style.border = '1px solid #86EFAC';
+        noticeEl.textContent = `✅ Perfect Zero-Based allocation! Every ${cur}1 of your ${cur}${inflow.toFixed(2)} income has a designated purpose.`;
+      }
+    } else if (diff > 0) {
+      labelEl.textContent = 'Unassigned Available:';
+      remEl.textContent = `+${cur}${diff.toFixed(2)}`;
+      statusBox.className = 'pool-stat highlight blue';
+      if (noticeEl) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.background = '#EFF6FF';
+        noticeEl.style.color = '#1E40AF';
+        noticeEl.style.border = '1px solid #BFDBFE';
+        noticeEl.textContent = `ℹ️ You have ${cur}${diff.toFixed(2)} available. Click "Auto-Balance Remainder" to assign it completely.`;
+      }
+    } else {
+      labelEl.textContent = 'Over-Allocated Deficit:';
+      remEl.textContent = `-${cur}${Math.abs(diff).toFixed(2)}`;
+      statusBox.className = 'pool-stat highlight red';
+      if (noticeEl) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.background = '#FEE2E2';
+        noticeEl.style.color = '#991B1B';
+        noticeEl.style.border = '1px solid #FCA5A5';
+        noticeEl.textContent = `⚠️ You have allocated ${cur}${Math.abs(diff).toFixed(2)} more than your monthly inflow. Reduce category targets to balance.`;
+      }
+    }
+  }
+}
+window.updateModalAllocLive = updateModalAllocLive;
+
+function autoBalanceEnvelopesInModal() {
+  const cur = state.userProfile?.currency || '$';
+  const inflow = Number(state.userProfile?.inflow || 0);
+
+  let sum = 0;
+  document.querySelectorAll('.alloc-live-input').forEach(inp => {
+    sum += parseFloat(inp.value) || 0;
+  });
+
+  const diff = Number((inflow - sum).toFixed(2));
+  if (Math.abs(diff) < 0.01) {
+    if (typeof showToast === 'function') showToast(`Envelopes are already perfectly balanced at ${cur}${inflow.toFixed(2)}!`);
+    return;
+  }
+
+  const funInp = document.getElementById('allocInput_fun');
+  if (funInp) {
+    const currentFun = parseFloat(funInp.value) || 0;
+    const newFun = Math.max(0, Number((currentFun + diff).toFixed(2)));
+    funInp.value = newFun.toFixed(2);
+    updateModalAllocLive();
+    if (typeof showToast === 'function') {
+      showToast(`✨ Assigned ${diff > 0 ? '+' : ''}${cur}${diff.toFixed(2)} to Discretionary Fun to balance budget!`, 'green');
+    }
+  }
+}
+window.autoBalanceEnvelopesInModal = autoBalanceEnvelopesInModal;
+
+function resetToSuggestedEnvelopeSplit() {
+  const inflow = Number(state.userProfile?.inflow || 0);
+  const customEnvelopes = typeof getCustomEnvelopes === 'function' ? getCustomEnvelopes() : [];
+  const customAllocTotal = customEnvelopes.reduce((sum, env) => sum + (Number(env.budget) || 0), 0);
+
+  const reserve = Number((inflow * 0.10).toFixed(2));
+  const spendable = Math.max(0, inflow - reserve - customAllocTotal);
+
+  const groceries = Number((spendable * 0.35).toFixed(2));
+  const dining = Number((spendable * 0.20).toFixed(2));
+  const transport = Number((spendable * 0.15).toFixed(2));
+  const utilities = Number((spendable * 0.15).toFixed(2));
+  const fun = Number((spendable - groceries - dining - transport - utilities).toFixed(2));
+
+  const setVal = (id, val) => {
+    const inp = document.getElementById(id);
+    if (inp) inp.value = val.toFixed(2);
+  };
+
+  setVal('allocInput_reserve', reserve);
+  setVal('allocInput_groceries', groceries);
+  setVal('allocInput_dining', dining);
+  setVal('allocInput_transport', transport);
+  setVal('allocInput_utilities', utilities);
+  setVal('allocInput_fun', fun);
+
+  updateModalAllocLive();
+  if (typeof showToast === 'function') showToast('🔄 Reset allocations to suggested 10% reserve / 35% groceries formula.');
+}
+window.resetToSuggestedEnvelopeSplit = resetToSuggestedEnvelopeSplit;
+
+function saveUserEnvelopeAllocations() {
+  const getVal = id => parseFloat(document.getElementById(id)?.value) || 0;
+
+  const allocations = {
+    groceries: getVal('allocInput_groceries'),
+    dining: getVal('allocInput_dining'),
+    fun: getVal('allocInput_fun'),
+    transport: getVal('allocInput_transport'),
+    utilities: getVal('allocInput_utilities'),
+    reserve: getVal('allocInput_reserve')
+  };
+
+  // Update any custom envelopes
+  const customEnvelopes = typeof getCustomEnvelopes === 'function' ? getCustomEnvelopes() : [];
+  document.querySelectorAll('.alloc-custom-input').forEach(inp => {
+    const envId = inp.getAttribute('data-envid');
+    const target = customEnvelopes.find(e => e.id === envId);
+    if (target) {
+      target.budget = parseFloat(inp.value) || 0;
+    }
+  });
+  if (typeof saveCustomEnvelopes === 'function') {
+    saveCustomEnvelopes(customEnvelopes);
+  }
+
+  localStorage.setItem('recall_envelope_allocations', JSON.stringify(allocations));
+  state.envelopeAllocations = allocations;
+
+  // Also update reserve in userProfile if changed
+  if (allocations.reserve !== undefined) {
+    state.userProfile.reserve = allocations.reserve;
+    localStorage.setItem('recall_user_reserve', String(allocations.reserve));
+    const babylonWallet = state.wallets.find(w => w.id === 'babylon');
+    if (babylonWallet) {
+      babylonWallet.balance = allocations.reserve;
+      localStorage.setItem('recall_user_wallets', JSON.stringify(state.wallets));
+    }
+  }
+
+  recalculateAllFinancialMetrics();
+  renderEnvelopesPlan();
+  renderWalletsUI();
+  closeAllocateEnvelopesModal();
+
+  const cur = state.userProfile?.currency || '$';
+  if (typeof showToast === 'function') {
+    showToast(`✅ Envelope allocations saved! New spending targets are live in ${cur}.`, 'green');
+  }
+}
+window.saveUserEnvelopeAllocations = saveUserEnvelopeAllocations;
+
+function toggleEnvelopeFormula() {
+  const body = document.getElementById('formulaDetailsBody');
+  const txt = document.getElementById('formulaToggleText');
+  const chev = document.getElementById('formulaChevron');
+  if (!body) return;
+
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  if (txt) txt.textContent = isHidden ? 'Hide Breakdown' : 'View Breakdown';
+  if (chev) {
+    chev.setAttribute('data-lucide', isHidden ? 'chevron-up' : 'chevron-down');
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+window.toggleEnvelopeFormula = toggleEnvelopeFormula;
 window.renderCustomEnvelopes = renderCustomEnvelopes;
 
 // Close modals when clicking outside modal-card on the backdrop or pressing Escape
@@ -6294,7 +8220,6 @@ window.startVaultProvisioningAnimation = startVaultProvisioningAnimation;
 // Central Reactive Financial Calculator
 function recalculateAllFinancialMetrics() {
   const cur = state.userProfile?.currency || '$';
-  const inflow = Number(state.userProfile?.inflow || 4850.00);
   const cycleDays = Number(state.userProfile?.cycleDays || 10);
   const reserve = Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : 500.00);
 
@@ -6302,13 +8227,40 @@ function recalculateAllFinancialMetrics() {
   const fixedBillsSum = activeSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
   const fixedBillsCount = activeSubs.length;
 
-  const variableSpent = (state.auditResults || []).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+  const records = state.auditResults || [];
+  const activeMonth = state.selectedStatementMonth || 'all';
+
+  let statementInflow = 0;
+  let statementOutflow = 0;
+  let debitCount = 0;
+  let creditCount = 0;
+
+  for (const r of records) {
+    const mKey = getTxMonthKey(r);
+    if (activeMonth !== 'all' && mKey !== activeMonth) continue;
+    const isCredit = isCreditRecord(r);
+    const amt = getTxAmount(r);
+    if (isCredit) {
+      statementInflow += amt;
+      creditCount++;
+    } else {
+      statementOutflow += amt;
+      debitCount++;
+    }
+  }
+
+  const hasStatement = records.length > 0;
+  const inflow = (hasStatement && statementInflow > 0)
+    ? statementInflow 
+    : Number(state.userProfile?.inflow || 4850.00);
+
+  const variableSpent = hasStatement ? statementOutflow : 0;
   const safeSpendRemaining = Math.max(0, inflow - fixedBillsSum - reserve - variableSpent);
   const dailyVelocity = cycleDays > 0 ? (safeSpendRemaining / cycleDays) : safeSpendRemaining;
 
-  const fixedPct = inflow > 0 ? ((fixedBillsSum / inflow) * 100) : 0;
-  const reservePct = inflow > 0 ? ((reserve / inflow) * 100) : 0;
-  const variablePct = inflow > 0 ? ((variableSpent / inflow) * 100) : 0;
+  const fixedPct = inflow > 0 ? Math.min(100, (fixedBillsSum / inflow) * 100) : 0;
+  const reservePct = inflow > 0 ? Math.min(100, (reserve / inflow) * 100) : 0;
+  const variablePct = inflow > 0 ? Math.min(100, (variableSpent / inflow) * 100) : 0;
   const safePct = Math.max(0, 100 - fixedPct - reservePct - variablePct);
 
   const totalLiquidity = (state.wallets || []).reduce((sum, w) => sum + Number(w.balance || 0), 0);
@@ -6321,18 +8273,24 @@ function recalculateAllFinancialMetrics() {
   if (elHeaderNet) elHeaderNet.textContent = `${cur}${totalLiquidity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   const elHeaderSafe = document.getElementById('headerSafeSpend');
-  if (elHeaderSafe) elHeaderSafe.textContent = `${cur}${safeSpendRemaining.toFixed(2)}`;
+  if (elHeaderSafe) elHeaderSafe.textContent = `${cur}${safeSpendRemaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   // 2. Wallets page
   const elTotalNet = document.getElementById('totalNetLiquidityDisplay');
   if (elTotalNet) elTotalNet.textContent = `${cur}${totalLiquidity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   // 3. Overview Monthly Cash Flow & Runway Distribution
+  const elCashflowSubhead = document.getElementById('overviewCashflowSubhead');
+  if (elCashflowSubhead) {
+    const timeframeLabel = activeMonth === 'all' ? 'All Months / Full Year' : formatMonthLabel(activeMonth);
+    elCashflowSubhead.textContent = `Recurring and variable spending across ${timeframeLabel}`;
+  }
+
   const elInflowBadge = document.getElementById('overviewInflowBadgeVal');
   if (elInflowBadge) elInflowBadge.textContent = `${cur}${inflow.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   const elFixedVal = document.getElementById('overviewFixedBillsVal');
-  if (elFixedVal) elFixedVal.textContent = `${cur}${fixedBillsSum.toFixed(2)}`;
+  if (elFixedVal) elFixedVal.textContent = `${cur}${fixedBillsSum.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   const elFixedSub = document.getElementById('overviewFixedBillsSub');
   if (elFixedSub) elFixedSub.textContent = `${fixedBillsCount} recurring bills`;
@@ -6341,25 +8299,30 @@ function recalculateAllFinancialMetrics() {
   if (elFixedPct) elFixedPct.textContent = `${fixedPct.toFixed(1)}%`;
 
   const elReserveVal = document.getElementById('overviewReserveVal');
-  if (elReserveVal) elReserveVal.textContent = `${cur}${reserve.toFixed(2)}`;
+  if (elReserveVal) elReserveVal.textContent = `${cur}${reserve.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   const elReservePct = document.getElementById('overviewReservePct');
   if (elReservePct) elReservePct.textContent = `${reservePct.toFixed(1)}%`;
 
   const elVarVal = document.getElementById('overviewVariableVal');
-  if (elVarVal) elVarVal.textContent = `${cur}${variableSpent.toFixed(2)}`;
+  if (elVarVal) elVarVal.textContent = `${cur}${variableSpent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+  const elVarSub = document.getElementById('overviewVariableSub');
+  if (elVarSub) {
+    elVarSub.textContent = hasStatement ? `${debitCount} statement debits` : 'Living expenses';
+  }
 
   const elVarPct = document.getElementById('overviewVariablePct');
   if (elVarPct) elVarPct.textContent = `${variablePct.toFixed(1)}%`;
 
   const elSafeVal = document.getElementById('overviewSafeSpendVal');
-  if (elSafeVal) elSafeVal.textContent = `${cur}${safeSpendRemaining.toFixed(2)}`;
+  if (elSafeVal) elSafeVal.textContent = `${cur}${safeSpendRemaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   const elSafePct = document.getElementById('overviewSafeSpendPct');
   if (elSafePct) elSafePct.textContent = `${safePct.toFixed(1)}%`;
 
   const elDaily = document.getElementById('overviewDailyAllowance');
-  if (elDaily) elDaily.textContent = `${cur}${dailyVelocity.toFixed(2)} / day`;
+  if (elDaily) elDaily.textContent = `${cur}${dailyVelocity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} / day`;
 
   const elDaysLeft = document.getElementById('overviewCycleDaysLeft');
   if (elDaysLeft) elDaysLeft.textContent = `${cycleDays}`;
@@ -6401,20 +8364,74 @@ function recalculateAllFinancialMetrics() {
   const sideSubs = document.getElementById('sidebarSubCount');
   if (sideSubs) sideSubs.textContent = `${fixedBillsCount}`;
 
+  const allSubs = typeof getActiveSubscriptionsList === 'function' ? getActiveSubscriptionsList() : (state.subscriptions || []);
+  const creepSubs = allSubs.filter(s => Boolean(s.hasHike || s.status === 'CREEP_FLAG' || s.status === 'PRICE_CREEP' || (Number(s.cost) > Number(s.baseline) && !s.overrideApproved)));
+  const trialSubs = allSubs.filter(s => Boolean(s.isTrial || s.status === 'TRIAL' || s.status === 'TRIAL_URGENT'));
+  const stmtPriceCreeps = (state.auditResults || []).filter(r => r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP');
+
   const sideAlerts = document.getElementById('sidebarAlertCount');
-  const alertCount = (state.auditResults || []).filter(r => r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP').length;
+  const alertCount = creepSubs.length + stmtPriceCreeps.length;
   if (sideAlerts) sideAlerts.textContent = `${alertCount}`;
 
   const sideTrials = document.getElementById('sidebarTrialCount');
-  const trialCount = (state.subscriptions || []).filter(s => s.isTrial).length + 
+  const trialCount = trialSubs.length + 
     (state.auditResults || []).filter(r => r.status === 'TRIAL_CONVERTING' || r.status === 'TRIAL_URGENT').length;
   if (sideTrials) sideTrials.textContent = `${trialCount}`;
 
   const sideTxs = document.getElementById('sidebarTxCount');
   if (sideTxs) sideTxs.textContent = `${(state.auditResults || []).length} Txns`;
 
+  let disputeCount = 0;
+  try {
+    const saved = localStorage.getItem('recall_user_disputes');
+    if (saved) disputeCount = JSON.parse(saved).length;
+    else if (Array.isArray(state.disputes)) disputeCount = state.disputes.length;
+  } catch (e) {
+    disputeCount = (state.disputes || []).length;
+  }
+  const sideDisputes = document.getElementById('sidebarDisputesCount');
+  if (sideDisputes) sideDisputes.textContent = `${disputeCount}`;
+
+  // 7. Settings subscriptions card banner
+  const settingsSubsBadge = document.getElementById('settingsSubsCardBadge');
+  if (settingsSubsBadge) {
+    if (alertCount > 0 || trialCount > 0) {
+      settingsSubsBadge.textContent = `${alertCount + trialCount} Urgent Alert${(alertCount + trialCount) > 1 ? 's' : ''}`;
+      settingsSubsBadge.className = 'badge-amber-pill';
+    } else {
+      settingsSubsBadge.textContent = '0 Alerts';
+      settingsSubsBadge.className = 'badge-amber-pill';
+    }
+  }
+
+  const settingsSubsSubtext = document.getElementById('settingsSubsCardSubtext');
+  if (settingsSubsSubtext) {
+    settingsSubsSubtext.textContent = `${fixedBillsCount} active subscription${fixedBillsCount === 1 ? '' : 's'} · Renewal calendar · ${trialCount} trial alert${trialCount === 1 ? '' : 's'}`;
+  }
+
+  const planRedirectSub = document.getElementById('planRedirectCardSub');
+  if (planRedirectSub) {
+    planRedirectSub.textContent = `${fixedBillsCount} recurring service${fixedBillsCount === 1 ? '' : 's'}, 48-hour trial alerts, and renewal cadence calendar.`;
+  }
+
+  if (typeof applyCurrencyGlobally === 'function') {
+    applyCurrencyGlobally(cur);
+  }
+
+  if (typeof renderTrialSentinelPanel === 'function') {
+    renderTrialSentinelPanel();
+  }
+
   if (typeof renderEnvelopesPlan === 'function') {
     renderEnvelopesPlan();
+  }
+
+  if (typeof renderRadarAlertsView === 'function') {
+    renderRadarAlertsView();
+  }
+
+  if (typeof renderHomeTxMiniPreview === 'function') {
+    renderHomeTxMiniPreview();
   }
 }
 window.recalculateAllFinancialMetrics = recalculateAllFinancialMetrics;
@@ -6509,6 +8526,9 @@ function finishOnboardingAndLaunch() {
   renderSpendCalendar();
   renderSubscriptionsLedger();
   renderPlanSubscriptionsLedger();
+  if (typeof renderDisputesLedger === 'function') renderDisputesLedger();
+  if (typeof renderTrialSentinelPanel === 'function') renderTrialSentinelPanel();
+  if (typeof applyCurrencyGlobally === 'function') applyCurrencyGlobally();
   if (typeof syncCategoryDropdowns === 'function') syncCategoryDropdowns();
   if (typeof loadUserProfileToSettings === 'function') loadUserProfileToSettings();
 
@@ -6530,12 +8550,21 @@ function signOutUser() {
   localStorage.removeItem('recall_user_subscriptions');
   localStorage.removeItem('recall_user_wallets');
   localStorage.removeItem('recall_user_transactions');
+  localStorage.removeItem('recall_envelope_allocations');
+  localStorage.removeItem('recall_user_disputes');
+  localStorage.removeItem('recall_spending_ceilings');
   localStorage.removeItem('pocketsentinel_custom_envelopes');
   sessionStorage.clear();
 
   state.userProfile.signedIn = false;
   state.subscriptions = [];
   state.auditResults = [];
+  state.disputes = [];
+  state.spendingCeilings = [];
+  state.envelopeAllocations = null;
+  state.selectedStatementMonth = 'all';
+  state.availableStatementMonths = [];
+  state.statementMonthlySummary = {};
   state.wallets = [
     { id: 'checking', name: 'Primary Checking', balance: 0.00, type: 'bank', color: '#10b981', icon: 'landmark', default: true },
     { id: 'babylon', name: 'Babylon 10% Gold Reserve', balance: 0.00, type: 'vault', color: '#f59e0b', icon: 'shield-alert', locked: true, note: 'Clason & Housel Buffer' },
@@ -6551,6 +8580,7 @@ function signOutUser() {
   onboardDraft.cycleDays = 10;
   onboardDraft.subscriptions = [];
 
+  if (typeof renderApprovedCeilingsTable === 'function') renderApprovedCeilingsTable();
   showToast('Signed out of personal vault. Ready for new user setup.', 'info');
   switchView('landing');
 }

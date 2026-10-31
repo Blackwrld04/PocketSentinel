@@ -20,8 +20,30 @@ export class WatchdogEngine {
   /**
    * Evaluates an individual transaction against Walrus Memory
    */
-  async auditTransaction(tx) {
-    const memories = await this.walrus.loadStore().memories;
+  async auditTransaction(tx, passedMemories = null, defaultCurrency = '$') {
+    const memories = passedMemories || (await this.walrus.loadStore().memories);
+    const isNigerianTx = Boolean(tx.merchant && /opay|owealth|kuda|gtbank|zenith|palmpay|moniepoint|firstbank|access bank/i.test(tx.merchant));
+    const currency = (isNigerianTx && (defaultCurrency === '₦' || defaultCurrency === 'NGN' || !tx.currency)) ? '₦' : (tx.currency || defaultCurrency || '$');
+    const isNaira = currency === '₦' || currency === 'NGN' || isNigerianTx;
+
+    // 0. Handle incoming deposits / credits (money enters)
+    if (tx.type === 'credit') {
+      return {
+        status: 'VERIFIED_OK',
+        type: 'credit',
+        merchant: tx.merchant,
+        amount: tx.amount,
+        currency,
+        date: tx.date,
+        displayDate: tx.displayDate,
+        time: tx.time,
+        category: tx.category || 'Income / Inflow',
+        monthKey: tx.monthKey,
+        monthLabel: tx.monthLabel,
+        message: 'Incoming deposit / credit into sovereign account.'
+      };
+    }
+
     const vendorSlug = tx.merchant.toLowerCase().replace(/[^a-z0-9]/g, '_');
     
     // Find matching memory or baseline
@@ -31,9 +53,10 @@ export class WatchdogEngine {
 
     const memory = matchingKey ? memories[matchingKey] : null;
 
-    // Check unknown vendor policy gate ($50 threshold)
+    // Check unknown vendor policy gate ($50 threshold, scaled for Naira)
     const policyMemory = memories['unknown_vendor_threshold'];
-    const threshold = (policyMemory && policyMemory.metadata && policyMemory.metadata.thresholdAmount) || 50.00;
+    const baseThreshold = (policyMemory && policyMemory.metadata && policyMemory.metadata.thresholdAmount) || 50.00;
+    const threshold = isNaira ? (baseThreshold * 1500) : baseThreshold;
 
     if (!memory) {
       if (tx.amount >= threshold) {
@@ -42,10 +65,11 @@ export class WatchdogEngine {
           type: 'UNKNOWN_VENDOR_GATE',
           merchant: tx.merchant,
           amount: tx.amount,
+          currency,
           date: tx.date,
           walrusMemoryRef: policyMemory ? policyMemory.id : 'MEM_07',
-          title: `⚠️ Unknown Merchant High-Debit: $${tx.amount.toFixed(2)}`,
-          message: `Charge of $${tx.amount.toFixed(2)} from "${tx.merchant}" has no baseline in Walrus Memory and exceeds the $${threshold.toFixed(2)} autonomous safety threshold.`,
+          title: `⚠️ Unknown Merchant High-Debit: ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          message: `Charge of ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from "${tx.merchant}" has no baseline in Walrus Memory and exceeds the ${currency}${threshold.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} autonomous safety threshold.`,
           actionRequired: 'HUMAN_APPROVAL',
           recommendedAction: 'Verify transaction legitimacy or approve new recurring baseline.'
         };
@@ -55,6 +79,7 @@ export class WatchdogEngine {
         type: 'ROUTINE_UNTRACKED',
         merchant: tx.merchant,
         amount: tx.amount,
+        currency,
         message: 'Normal micro-spend within discretionary limits.'
       };
     }
@@ -62,16 +87,18 @@ export class WatchdogEngine {
     // Evaluate against existing memory
     // 1. Check if an override suppresses the alert (e.g. AWS Q4 surge)
     if (memory.category === 'Override') {
-      const ceiling = memory.metadata.approvedSurgeCeiling || 180.00;
+      const baseCeiling = memory.metadata.approvedSurgeCeiling || 180.00;
+      const ceiling = isNaira ? (baseCeiling * 1500) : baseCeiling;
       if (tx.amount <= ceiling) {
         return {
           status: 'SUPPRESSED_BY_MEMORY',
           type: 'LEARNED_OVERRIDE_SUPPRESSION',
           merchant: tx.merchant,
           amount: tx.amount,
+          currency,
           walrusMemoryRef: memory.id,
           title: `🛡️ Alert Suppressed by Walrus Memory [${memory.id}]`,
-          message: `Spend of $${tx.amount.toFixed(2)} matches historical seasonal override: "${memory.content}" (Authorized ceiling: $${ceiling.toFixed(2)}). Zero alert fatigue.`,
+          message: `Spend of ${currency}${tx.amount.toFixed(2)} matches historical seasonal override: "${memory.content}" (Authorized ceiling: ${currency}${ceiling.toFixed(2)}). Zero alert fatigue.`,
           savedFromAlertFatigue: true
         };
       }
@@ -93,12 +120,13 @@ export class WatchdogEngine {
           currentAmount: tx.amount,
           baselineAmount: baseline,
           deltaAmount: delta,
+          currency,
           percentageIncrease: `${percentHike}%`,
-          annualDrainFormatted: `$${annualDrain}`,
+          annualDrainFormatted: `${currency}${annualDrain}`,
           walrusMemoryRef: memory.id,
           title: `🚨 Stealth Price Creep: ${tx.merchant} (+${percentHike}%)`,
-          message: `${tx.merchant} billed $${tx.amount.toFixed(2)}, which is +$${delta.toFixed(2)} above your stored Walrus baseline ($${baseline.toFixed(2)}). Silently drains $${annualDrain}/year.`,
-          disputePack: this.generateDisputePack(tx, baseline, delta, memory)
+          message: `${tx.merchant} billed ${currency}${tx.amount.toFixed(2)}, which is +${currency}${delta.toFixed(2)} above your stored Walrus baseline (${currency}${baseline.toFixed(2)}). Silently drains ${currency}${annualDrain}/year.`,
+          disputePack: this.generateDisputePack(tx, baseline, delta, memory, currency)
         };
       }
     }
@@ -110,10 +138,11 @@ export class WatchdogEngine {
         type: 'PRIOR_DISPUTE_RECURRENCE',
         merchant: tx.merchant,
         amount: tx.amount,
+        currency,
         walrusMemoryRef: memory.id,
         title: `⚠️ Re-bill Alert on Prior Disputed Vendor: ${tx.merchant}`,
         message: `Walrus Memory [${memory.id}] notes this merchant had a contested duplicate charge previously. Please inspect closely.`,
-        disputePack: this.generateDisputePack(tx, tx.amount, tx.amount, memory)
+        disputePack: this.generateDisputePack(tx, tx.amount, tx.amount, memory, currency)
       };
     }
 
@@ -123,15 +152,16 @@ export class WatchdogEngine {
       merchant: tx.merchant,
       amount: tx.amount,
       baseline: baseline,
+      currency,
       walrusMemoryRef: memory.id,
-      message: `Verified exact match against stored Walrus baseline ($${baseline.toFixed(2)}). Reconciled automatically.`
+      message: `Verified exact match against stored Walrus baseline (${currency}${baseline.toFixed(2)}). Reconciled automatically.`
     };
   }
 
   /**
    * Generates a 1-Tap Dispute & Cancellation Pack
    */
-  generateDisputePack(tx, baseline, delta, memory) {
+  generateDisputePack(tx, baseline, delta, memory, currency = '$') {
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const annualSavings = (delta * 12).toFixed(2);
     
@@ -141,24 +171,34 @@ export class WatchdogEngine {
       amountCharged: tx.amount,
       authorizedBaseline: baseline,
       delta: delta,
-      annualSavingsPreserved: `$${annualSavings}`,
+      currency,
+      annualSavingsPreserved: `${currency}${annualSavings}`,
       supportContactUrl: `https://${tx.merchant.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/contact`,
       letterSubject: `Formal Notice: Billing Discrepancy & Price Hike Objection - Account Inquiry`,
-      letterBody: `To the Billing & Accounts Team at ${tx.merchant},\n\nI am writing to formally contest the recent billing charge of $${tx.amount.toFixed(2)} debited on ${tx.date || today}.\n\nMy agreed baseline subscription tier is $${baseline.toFixed(2)}/month. The recent charge represents an unannounced increase of $${delta.toFixed(2)} (+${(((delta) / (baseline || 1)) * 100).toFixed(1)}%).\n\nI request an immediate refund of the $${delta.toFixed(2)} difference or a revert to my grandfathered rate of $${baseline.toFixed(2)}/month. If this adjustment cannot be honored, please treat this communication as my formal request to cancel the subscription with immediate effect without cancellation penalty.\n\nAccount Holder: User Account #RCL-${Math.floor(100000 + Math.random() * 900000)}\nReference Tx: 0x${Math.random().toString(16).substring(2, 10)}\nTimestamp: ${new Date().toISOString()}`
+      letterBody: `To the Billing & Accounts Team at ${tx.merchant},\n\nI am writing to formally contest the recent billing charge of ${currency}${tx.amount.toFixed(2)} debited on ${tx.date || today}.\n\nMy agreed baseline subscription tier is ${currency}${baseline.toFixed(2)}/month. The recent charge represents an unannounced increase of ${currency}${delta.toFixed(2)} (+${(((delta) / (baseline || 1)) * 100).toFixed(1)}%).\n\nI request an immediate refund of the ${currency}${delta.toFixed(2)} difference or a revert to my grandfathered rate of ${currency}${baseline.toFixed(2)}/month. If this adjustment cannot be honored, please treat this communication as my formal request to cancel the subscription with immediate effect without cancellation penalty.\n\nAccount Holder: User Account #RCL-${Math.floor(100000 + Math.random() * 900000)}\nReference Tx: 0x${Math.random().toString(16).substring(2, 10)}\nTimestamp: ${new Date().toISOString()}`
     };
   }
 
   /**
    * Audits an entire batch of statement transactions
    */
-  async auditBatch(transactions) {
+  async auditBatch(transactions, defaultCurrency = '$') {
     const results = [];
     let totalSavingsFlagged = 0;
     let alertsCount = 0;
     let suppressedCount = 0;
+    const memories = await this.walrus.loadStore().memories;
 
     for (const tx of transactions) {
-      const evaluation = await this.auditTransaction(tx);
+      const evaluation = await this.auditTransaction(tx, memories, tx.currency || defaultCurrency);
+      if (!evaluation.date && tx.date) evaluation.date = tx.date;
+      if (!evaluation.displayDate && tx.displayDate) evaluation.displayDate = tx.displayDate;
+      if (!evaluation.time && tx.time) evaluation.time = tx.time;
+      if (!evaluation.category && tx.category) evaluation.category = tx.category;
+      if (!evaluation.monthKey && tx.monthKey) evaluation.monthKey = tx.monthKey;
+      if (!evaluation.monthLabel && tx.monthLabel) evaluation.monthLabel = tx.monthLabel;
+      if (tx.type) evaluation.type = tx.type;
+
       results.push(evaluation);
 
       if (evaluation.status === 'MICRO_INFLATION_ALERT') {

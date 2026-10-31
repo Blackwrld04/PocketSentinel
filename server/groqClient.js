@@ -47,29 +47,28 @@ export class GroqClient {
     const daysLeft = (userProfile && userProfile.cycleDays) || 10;
     const safeSpend = (userProfile && userProfile.safeSpend !== undefined) ? Number(userProfile.safeSpend).toFixed(2) : '482.35';
     const dailyVelocity = (userProfile && userProfile.dailyVelocity !== undefined) ? Number(userProfile.dailyVelocity).toFixed(2) : '48.23';
+    const reserve = (userProfile && userProfile.reserve !== undefined) ? Number(userProfile.reserve).toFixed(2) : '0.00';
+    const subsCount = (userProfile && userProfile.subscriptionsCount !== undefined) ? userProfile.subscriptionsCount : 0;
+    const subsSum = (userProfile && userProfile.subscriptionsSum !== undefined) ? Number(userProfile.subscriptionsSum).toFixed(2) : '0.00';
 
     return `You are PocketSentinel AI, the sovereign personal financial intelligence engine of PocketSentinel (anchored to Walrus Episodic Memory on Sui Mainnet). You are advising ${userName}.
 
 ### USER LIVE FINANCIAL STATUS (REAL NUMBERS IN THE APP):
 • User Profile: ${userName} | Real Hourly Wage: ${currency}${wage}/hr (Vicki Robin Life Energy metric)
 • Monthly Direct Inflow: ${currency}${inflow} / month
-• Fixed Subscriptions: ${currency}301.46 / month across 9 active services (Netflix ${currency}17.99, Spotify ${currency}10.99, ChatGPT Plus ${currency}20.00, GitHub Copilot ${currency}10.00, etc.)
-• Walrus Savings Vault / Emergency Buffer: ${currency}500.00 (George S. Clason 10% Babylon Reserve / Morgan Housel Buffer)
-• Variable Statement Spend: ${currency}3,566.19 (Audited debits)
+• Fixed Subscriptions: ${currency}${subsSum} / month across ${subsCount} active services
+• Walrus Savings Vault / Emergency Buffer: ${currency}${reserve} (George S. Clason 10% Babylon Reserve / Morgan Housel Buffer)
 • Available Safe-to-Spend Runway: ${currency}${safeSpend}
 • Daily Burn Velocity Allowance: ${currency}${dailyVelocity} / day across the ${daysLeft} remaining days in current billing cycle
 • Digital Envelopes:
-  - Groceries & Household: +${currency}104.80 left (${currency}495.20 spent of ${currency}600 budgeted)
-  - Dining Out & Social: ${isBalanced ? `+${currency}0.00 BALANCED (${currency}395 allocated / ${currency}395 spent)` : `-${currency}45.00 DEFICIT (${currency}395 spent of ${currency}350 budgeted - NEEDS REBALANCE)`}
-  - Discretionary Fun: ${isBalanced ? `+${currency}85.00 left (${currency}120 spent of ${currency}205 allocated)` : `+${currency}130.00 SURPLUS (${currency}120 spent of ${currency}250 budgeted)`}
-  - Transportation & Fuel: ${currency}184.20 spent (${currency}250 budgeted)
-  - Utilities & Internet: ${currency}140.00 spent (${currency}150 budgeted)
-  - Emergency Reserve Vault: ${currency}500.00 untouched
+  - Groceries & Household: ${currency}0.00 spent of allocated target
+  - Dining Out & Social: ${isBalanced ? `${currency}0.00 spent (Balanced)` : `${currency}0.00 spent`}
+  - Discretionary Fun: ${currency}0.00 spent
+  - Transportation & Fuel: ${currency}0.00 spent
+  - Utilities & Internet: ${currency}0.00 spent
+  - Emergency Reserve Vault: ${currency}${reserve} untouched
 • Active Urgent Watchdog Alerts:
-  1. Adobe Creative Cloud: 7-day trial expires in 48 hours ($54.99/mo rebill risk). Recommendation: 1-tap cancel pack.
-  2. Netflix Standard: Billed $17.99 vs stored Walrus baseline $15.49 (+ $2.50 /mo price creep = $30.00 /year drain).
-  3. Overlapping Streaming: Spotify ($10.99) and Apple Music ($10.99) active concurrently (saves $131.88/yr if consolidated).
-  4. Seasonal Override: AWS surge of $142.50 auto-reconciled under historical authorized ceiling of $180.00 (MEM_04).
+  ${subsCount > 0 ? `Tracking ${subsCount} active recurring debits with Walrus memory reconciliation.` : 'Zero active alert warnings. All baselines verified and clean slate confirmed.'}
 
 ### MASTER FINANCIAL LITERATURE & PHILOSOPHY:
 Infuse your responses with timeless principles from foundational financial works:
@@ -190,89 +189,90 @@ Infuse your responses with timeless principles from foundational financial works
   /**
    * Deterministic financial reasoning engine when offline or no API key
    */
-  generateLocalReasoningResponse(query, mode, envelopesRebalanced) {
+  generateLocalReasoningResponse(query, mode, envelopesRebalanced, userProfile) {
     const qLower = query.toLowerCase();
     const isBalanced = Boolean(envelopesRebalanced);
+    const cur = (userProfile && userProfile.currency) || '$';
+    const currentSafeSpend = (userProfile && userProfile.safeSpend !== undefined) ? Number(userProfile.safeSpend) : 482.35;
+    const daysRemaining = (userProfile && userProfile.cycleDays) || 10;
+    const dailyVelocity = (userProfile && userProfile.dailyVelocity !== undefined) ? Number(userProfile.dailyVelocity) : (daysRemaining > 0 ? (currentSafeSpend / daysRemaining) : 48.23);
+    const reserve = (userProfile && userProfile.reserve !== undefined) ? Number(userProfile.reserve) : 0.00;
+    const inflow = (userProfile && userProfile.inflow !== undefined) ? Number(userProfile.inflow) : 4850.00;
+    const wage = (userProfile && userProfile.hourlyWage !== undefined) ? Number(userProfile.hourlyWage) : 25.00;
+    const subsCount = (userProfile && userProfile.subscriptionsCount !== undefined) ? userProfile.subscriptionsCount : 0;
+    const subsSum = (userProfile && userProfile.subscriptionsSum !== undefined) ? Number(userProfile.subscriptionsSum) : 0.00;
 
-    const priceMatch = query.match(/\$?\s*(\d+(\.\d{1,2})?)/);
-    const amount = priceMatch ? parseFloat(priceMatch[1]) : 0;
-
-    const currentSafeSpend = 482.35;
-    const dailyVelocity = 48.23;
-    const daysRemaining = 10;
+    const priceMatch = query.match(/(?:[$₦€£]|(?:[A-Z]{3}))?\s*(\d+(?:,\d{3})*(?:\.\d{1,2})?)/);
+    const amount = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : 0;
 
     // 1. Affordability question with price
     if (amount > 0 && (qLower.includes('afford') || qLower.includes('dinner') || qLower.includes('spend') || qLower.includes('buy') || qLower.includes('cost') || qLower.includes('trip') || qLower.includes('shopping') || qLower.includes('sushi') || qLower.includes('shoes') || qLower.includes('jacket'))) {
-      const daysBurn = (amount / dailyVelocity).toFixed(1);
+      const daysBurn = dailyVelocity > 0 ? (amount / dailyVelocity).toFixed(1) : '0.0';
       const remainingSafe = (currentSafeSpend - amount).toFixed(2);
-      const newDaily = remainingSafe > 0 ? (remainingSafe / daysRemaining).toFixed(2) : '0.00';
-      const pctBuffer = Math.round((amount / currentSafeSpend) * 100);
+      const newDaily = remainingSafe > 0 && daysRemaining > 0 ? (remainingSafe / daysRemaining).toFixed(2) : '0.00';
+      const pctBuffer = currentSafeSpend > 0 ? Math.round((amount / currentSafeSpend) * 100) : 100;
 
       if (mode === 'roast') {
         if (amount > currentSafeSpend) {
-          return `**PocketSentinel Roast:** Absolutely NOT! You want to drop **$${amount.toFixed(2)}** when your total safe cash is only **$482.35**? As Morgan Housel wrote in *The Psychology of Money*, "Spending money to show people how much money you have is the fastest way to have less money." That puts you **$${(amount - currentSafeSpend).toFixed(2)} in the red** and wipes out your savings buffer! Step away from the checkout!`;
+          return `**PocketSentinel Roast:** Absolutely NOT! You want to drop **${cur}${amount.toFixed(2)}** when your total safe cash is only **${cur}${currentSafeSpend.toFixed(2)}**? As Morgan Housel wrote in *The Psychology of Money*, "Spending money to show people how much money you have is the fastest way to have less money." That puts you **${cur}${(amount - currentSafeSpend).toFixed(2)} in the red** and wipes out your buffer! Step away from the checkout!`;
         }
-        return `**PocketSentinel Roast:** Dropping **$${amount.toFixed(2)}** eats up **${daysBurn} days of runway**, lowering your daily allowance from $48.23 down to **$${newDaily}/day**! ${!isBalanced ? 'And your Dining Out envelope is STILL -$45.00 in deficit! Rebalance your envelopes first before swiping!' : 'At least your envelopes are in balance, but do not get sloppy.'}`;
+        return `**PocketSentinel Roast:** Dropping **${cur}${amount.toFixed(2)}** eats up **${daysBurn} days of runway**, lowering your daily allowance from ${cur}${dailyVelocity.toFixed(2)} down to **${cur}${newDaily}/day**! ${!isBalanced ? 'Check your envelope allocations first before swiping!' : 'Your envelopes are in balance, but do not get reckless.'}`;
       }
 
       if (mode === 'hype') {
         if (amount <= currentSafeSpend) {
-          return `**Hype Verdict:** You are clear to swipe! Spending **$${amount.toFixed(2)}** leaves **$${remainingSafe}** in discretionary cash ($${newDaily}/day velocity), and your $500 emergency buffer is 100% locked on Walrus! In the words of Ramit Sethi: "Spend extravagantly on the things you love, as long as your numbers are dialed in." ${!isBalanced ? 'Hit 1-tap rebalance on your -$45 dining deficit and enjoy!' : 'Enjoy guilt-free!'}`;
+          return `**Hype Verdict:** You are clear to swipe! Spending **${cur}${amount.toFixed(2)}** leaves **${cur}${remainingSafe}** in discretionary cash (${cur}${newDaily}/day velocity), and your ${cur}${reserve.toFixed(2)} emergency buffer is locked and protected! In the words of Ramit Sethi: "Spend extravagantly on the things you love, as long as your numbers are dialed in." Enjoy guilt-free!`;
         }
-        return `**Hype Coaching:** Hold up superstar! **$${amount.toFixed(2)}** exceeds your safe cash by **$${(amount - currentSafeSpend).toFixed(2)}**. Let's build up that runway first so you stay in total control!`;
+        return `**Hype Coaching:** Hold up superstar! **${cur}${amount.toFixed(2)}** exceeds your safe cash by **${cur}${(amount - currentSafeSpend).toFixed(2)}**. Let's build up that runway first so you stay in total control!`;
       }
 
       // Sentinel Mode
-      if (amount <= 50) {
-        return `**Sentinel Affordability Verdict: <span class="text-green">APPROVED</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** (consumes only ~${daysBurn} days of daily velocity).\n• **Remaining Safe Runway:** **$${remainingSafe}** ($${newDaily}/day across the ${daysRemaining} remaining cycle days).\n• **Savings Buffer:** $500.00 Walrus Emergency Vault 100% protected.\n\n*Personal Finance Principle (Vicki Robin):* This purchase consumes ~${(amount / 35).toFixed(1)} hours of life energy. Well within your conscious spending baseline.\n${!isBalanced ? '\n> ⚠️ *Note: Dining Out envelope is -$45.00 in deficit. Hit 1-Tap Rebalance to restore zero-based balance before swiping.*' : ''}`;
-      } else if (amount <= 150) {
-        return `**Sentinel Affordability Verdict: <span class="text-amber">CAUTION</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** (consumes ~${daysBurn} days of runway velocity).\n• **Remaining Safe Runway:** **$${remainingSafe}** ($${newDaily}/day for ${daysRemaining} days).\n• **Recommendation:** Safe to proceed, but requires tightening discretionary spending over the next 3 days.\n\n*Adaptive Rebalancing:* If this purchase is dining or entertainment, ensure you shift surplus from Discretionary Fun before swiping.`;
+      if (amount <= (dailyVelocity * 1.2)) {
+        return `**Sentinel Affordability Verdict: <span class="text-green">APPROVED</span>**\n\n- **Purchase Amount:** **${cur}${amount.toFixed(2)}** (consumes ~${daysBurn} days of daily velocity).\n- **Remaining Safe Runway:** **${cur}${remainingSafe}** (${cur}${newDaily}/day across the ${daysRemaining} remaining cycle days).\n- **Savings Buffer:** ${cur}${reserve.toFixed(2)} Emergency Vault 100% protected.\n\n*Personal Finance Principle (Vicki Robin):* This purchase consumes ~${wage > 0 ? (amount / wage).toFixed(1) : '0'} hours of life energy. Well within your conscious spending baseline.`;
+      } else if (amount <= (dailyVelocity * 3.5)) {
+        return `**Sentinel Affordability Verdict: <span class="text-amber">CAUTION</span>**\n\n- **Purchase Amount:** **${cur}${amount.toFixed(2)}** (consumes ~${daysBurn} days of runway velocity).\n- **Remaining Safe Runway:** **${cur}${remainingSafe}** (${cur}${newDaily}/day for ${daysRemaining} days).\n- **Recommendation:** Safe to proceed, but requires tightening discretionary spending over the next 3 days.\n\n*Adaptive Rebalancing:* Ensure you have sufficient cushion in your living envelopes before swiping.`;
       } else if (amount <= currentSafeSpend) {
-        return `**Sentinel Affordability Verdict: <span class="text-coral">HIGH IMPACT</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** (burns ${pctBuffer}% of your remaining safe cash).\n• **Remaining Safe Runway:** **$${remainingSafe}** ($${newDaily}/day across ${daysRemaining} days).\n• **Warning:** Leaves very little cushion for unexpected debits. Consider delaying until your next direct deposit ($4,850.00) clears.`;
+        return `**Sentinel Affordability Verdict: <span class="text-coral">HIGH IMPACT</span>**\n\n- **Purchase Amount:** **${cur}${amount.toFixed(2)}** (burns ${pctBuffer}% of your remaining safe cash).\n- **Remaining Safe Runway:** **${cur}${remainingSafe}** (${cur}${newDaily}/day across ${daysRemaining} days).\n- **Warning:** Leaves very little cushion for unexpected debits. Consider delaying until your next direct deposit (${cur}${inflow.toFixed(2)}) clears.`;
       } else {
-        return `**Sentinel Affordability Verdict: <span class="text-coral">RUNWAY BREACH</span>**\n\n• **Purchase Amount:** **$${amount.toFixed(2)}** exceeds safe cash ($482.35) by **+$${(amount - currentSafeSpend).toFixed(2)}**.\n• **Critical Warning:** Swiping for this debit will breach your $500 emergency savings goal or cause upcoming recurring bills to bounce!`;
+        return `**Sentinel Affordability Verdict: <span class="text-coral">RUNWAY BREACH</span>**\n\n- **Purchase Amount:** **${cur}${amount.toFixed(2)}** exceeds safe cash (${cur}${currentSafeSpend.toFixed(2)}) by **+${cur}${(amount - currentSafeSpend).toFixed(2)}**.\n- **Critical Warning:** Swiping for this debit will breach your ${cur}${reserve.toFixed(2)} emergency savings goal or cause upcoming recurring bills to bounce!`;
       }
     }
 
     // 2. Roast query
     if (mode === 'roast' || qLower.includes('roast')) {
       if (isBalanced) {
-        return `**PocketSentinel Roast:** Look at you, actually balancing your envelopes before swiping! But don't pat yourself on the back too hard - you still blew **$184.20** on DoorDash fees and your Adobe CC trial ($54.99/mo) expires in 48 hours. That's $659/year in ghost software. Keep your guard up!`;
+        return `**PocketSentinel Roast:** Look at you, actually balancing your envelopes before swiping! But don't pat yourself on the back too hard. Keep your subscriptions lean and watch out for hidden delivery fees and unused apps!`;
       }
-      return `**PocketSentinel Roast:** You have spent **$184.20** on food delivery markups this month while carrying an active -$45.00 dining deficit, paying $17.99 for Netflix, and sitting on an Adobe trial you opened once ($54.99/mo)! That's over **$112/mo** in stealth subscription leakage. Put down the takeout menu and make a sandwich!`;
+      return `**PocketSentinel Roast:** You want accountability? Check your recurring subscriptions and delivery markups! Cut the phantom services you opened once and never use again. Put down the takeout menu and build that cash runway!`;
     }
 
     // 3. Cash leaks / Subscription waste
     if (qLower.includes('leak') || qLower.includes('creep') || qLower.includes('waste') || qLower.includes('cancel')) {
-      return `**Top 3 Cash Leaks Identified (October 2026):**\n\n1. **Adobe Creative Cloud ($54.99/mo):** Urgent 7-day trial conversion in 48h. Annual leakage prevented: **$659.88/yr**.\n2. **Netflix Standard ($17.99/mo):** Stealth +$2.50 price creep flagged against Walrus baseline [MEM_01] ($15.49). Annual leak: **$30.00/yr**.\n3. **Spotify + Apple Music Duplicate:** Simultaneous active streaming services. Consolidating saves **$131.88/yr**.\n\n*Wisdom (Ramit Sethi):* "Cutting back on $50/mo subscriptions you don't use does 10x more for your wealth than obsessing over $4 lattes." Use 1-Tap Dispute to wipe them out.`;
+      return `**Cash Leak & Subscription Protection:**\n\n1. **Recurring Services Monitored:** Tracking ${subsCount} active services (${cur}${subsSum.toFixed(2)}/mo total).\n2. **Free Trial Defense:** 48-hour advance alarms armed before any free trial converts to a paid renewal.\n3. **Price Creep Radar:** Continuous comparison against historical baseline memory records on Sui Mainnet.\n\n*Wisdom (Ramit Sethi):* "Cutting back on subscriptions you do not use does 10x more for your wealth than obsessing over small purchases."`;
     }
 
     // 4. Financial lessons & Authors
     if (qLower.includes('housel') || qLower.includes('psychology of money')) {
-      return `**Morgan Housel (*The Psychology of Money*) Applied to Your Numbers:**\n\n• **Room for Error is Wisdom, Not Waste:** Your $500.00 Walrus emergency buffer is not idle cash - it is insurance against life's unpredictability. As Housel wrote: *"The most important part of every plan is planning on your plan not going according to plan."*\n• **True Wealth is Unspent:** Having a safe runway of **$482.35** ($48.23/day across 10 days) gives you freedom and autonomy, which provides far more happiness than impulse purchases.\n• **Avoid Social Comparison:** Do not spend to impress others. Your 6.2% subscription ratio ($301.46 of $4,850 income) is lean and disciplined.`;
+      return `**Morgan Housel (*The Psychology of Money*) Applied to Your Numbers:**\n\n- **Room for Error is Wisdom, Not Waste:** Your ${cur}${reserve.toFixed(2)} emergency buffer is insurance against life unpredictability. As Housel wrote: *"The most important part of every plan is planning on your plan not going according to plan."*\n- **True Wealth is Unspent:** Having a safe runway of **${cur}${currentSafeSpend.toFixed(2)}** (${cur}${dailyVelocity.toFixed(2)}/day across ${daysRemaining} days) gives you freedom and autonomy, which provides far more happiness than impulse purchases.\n- **Avoid Social Comparison:** Do not spend to impress others. Living comfortably below your means is the foundation of lasting wealth.`;
     }
 
     if (qLower.includes('ramit') || qLower.includes('sethi') || qLower.includes('conscious spending')) {
-      return `**Ramit Sethi (*I Will Teach You To Be Rich*) Applied to Your Numbers:**\n\n• **The Conscious Spending Plan:** Spend extravagantly on the things you truly love, and cut costs mercilessly on the things you don't.\n• **Fix the Big Wins:** Your total fixed bills ($301.46) are only 6.2% of your $4,850 inflow (well below Ramit's 50-60% benchmark). But you have **$54.99/mo** on an Adobe CC trial and **$17.99/mo** on Netflix with a $2.50 hike. Canceling those saves **$875.88/year** - 100x more impactful than agonizing over a $4 latte.\n• **Guilt-Free Spending:** With your emergency reserve funded ($500) and bills accounted for, your remaining **$482.35 runway** is yours to spend guilt-free!`;
+      return `**Ramit Sethi (*I Will Teach You To Be Rich*) Applied to Your Numbers:**\n\n- **The Conscious Spending Plan:** Spend extravagantly on the things you truly love, and cut costs mercilessly on the things you don't.\n- **Fix the Big Wins:** Focus on optimizing recurring bills and eliminating unwanted zombie trials rather than agonizing over minor daily expenses.\n- **Guilt-Free Spending:** With your emergency reserve funded (${cur}${reserve.toFixed(2)}) and commitments accounted for, your remaining **${cur}${currentSafeSpend.toFixed(2)} runway** is yours to deploy with confidence!`;
     }
 
     if (qLower.includes('vicki') || qLower.includes('robin') || qLower.includes('life energy')) {
-      return `**Vicki Robin (*Your Money or Your Life*) Applied to Your Numbers:**\n\n• **Money = Life Energy:** Based on your $4,850 monthly inflow (~160 hours worked), your real hourly wage after fixed costs is ~$30.31/hour.\n• **Evaluating Purchases:** A $65 restaurant dinner costs you **2.1 hours of your finite life energy**. An unused $54.99/mo Adobe subscription costs you **1.8 hours every single month**.\n• **Enough Point:** Your current runway of **$482.35** keeps you in the sweet spot of fulfillment without accumulating debt or wasteful consumption.`;
+      return `**Vicki Robin (*Your Money or Your Life*) Applied to Your Numbers:**\n\n- **Money = Life Energy:** Based on your wage of ${cur}${wage.toFixed(2)}/hour, every expenditure represents hours of your finite life.\n- **Evaluating Purchases:** A ${cur}100 expense costs you **${wage > 0 ? (100 / wage).toFixed(1) : '4'} hours of your life energy**.\n- **Enough Point:** Your current runway of **${cur}${currentSafeSpend.toFixed(2)}** keeps you in control without accumulating debt or wasteful consumption.`;
     }
 
     if (qLower.includes('babylon') || qLower.includes('clason') || qLower.includes('pay yourself first')) {
-      return `**George S. Clason (*The Richest Man in Babylon*) Applied to Your Numbers:**\n\n• **A Part of All You Earn is Yours to Keep:** The first rule of gold is putting aside at least 10% of all earnings. Your $500.00 Walrus emergency reserve represents **10.3% of your $4,850 inflow** paid to yourself first before any bill is paid!\n• **Control Thy Expenditures:** Do not confuse necessary expenses with desires. Your fixed commitments are $301.46, leaving $3,566.19 in audited variable expenses and $482.35 in safe cash.`;
-    }
-
-    if (qLower.includes('ynab') || qLower.includes('rule 3') || qLower.includes('punch') || qLower.includes('rebalance')) {
-      return `**Adaptive Deficit Rebalancing ("Roll With The Punches") Applied to Your Envelopes:**\n\n• **Zero Guilt, Pure Adaptation:** Overspending in a category isn't a moral failure - it is simply life happening. Your Dining Out envelope is currently **-$45.00 in deficit** ($395 spent vs $350 allocated).\n• **Immediate Rebalance:** Your Discretionary Fun envelope has a **+$130.00 surplus** ($120 spent of $250). By shifting $45.00 from Fun to Dining, your ledger returns to a perfect zero-based balance without adding new debt.\n• **Every Dollar Has a Job:** Keep all $4,850 assigned so unbudgeted cash doesn't get spent blindly.`;
+      return `**George S. Clason (*The Richest Man in Babylon*) Applied to Your Numbers:**\n\n- **A Part of All You Earn is Yours to Keep:** The first rule of gold is putting aside at least 10% of all earnings into your reserve vault before spending begins.\n- **Control Thy Expenditures:** Do not confuse necessary expenses with desires. Keep fixed commitments controlled, leaving room for safe living cash.`;
     }
 
     if (qLower.includes('lesson') || qLower.includes('book') || qLower.includes('advice') || qLower.includes('wisdom') || qLower.includes('learn')) {
-      return `**Core Financial Lessons from Essential Finance Literature:**\n\n• **Pay Yourself First (*The Richest Man in Babylon*):** Your $500 monthly transfer to the Walrus vault ensures 10.3% of your $4,850 income is saved before spending begins.\n• **Conscious Spending (*I Will Teach You To Be Rich*):** Your fixed subscriptions ($301.46) represent only 6.2% of income - well within the recommended 50-60% fixed cost ceiling.\n• **Room for Error (*The Psychology of Money*):** A cash runway of $482.35 ($48.23/day) protects you from debt without needing to forecast the future.\n• **Roll With The Punches (Adaptive Rebalancing):** When dining out exceeds budget (-$45 deficit), adjust the ledger immediately from surplus categories. Balance is maintained dynamically, not rigidly.`;
+      return `**Core Financial Lessons from Essential Finance Literature:**\n\n- **Pay Yourself First (*The Richest Man in Babylon*):** Your ${cur}${reserve.toFixed(2)} transfer ensures capital is preserved before spending begins.\n- **Conscious Spending (*I Will Teach You To Be Rich*):** Prioritize ruthlessly: spend where it brings true joy and eliminate stealth leaks.\n- **Room for Error (*The Psychology of Money*):** A cash runway of ${cur}${currentSafeSpend.toFixed(2)} protects you from debt without needing to predict every emergency.`;
     }
 
     // 5. Default status
-    return `Audited your live Chase checking statement against your verified historical spending baselines.\n\n• **Safe-to-Spend Runway:** **$482.35** ($48.23/day velocity, 10 days remaining).\n• **Envelopes Status:** ${isBalanced ? 'All categories in zero-based balance.' : 'Dining Out has a -$45.00 deficit (1-Tap Rebalance available).'}\n• **Fixed Bills Locked:** $301.46/mo across 9 verified services.\n\nAsk me anything: *"Can I afford a $75 dinner tonight?"*, *"Where is my biggest cash leak?"*, or *"Teach me a financial lesson."*`;
+    return `Audited your live financial status against verified spending baselines.\n\n- **Safe-to-Spend Runway:** **${cur}${currentSafeSpend.toFixed(2)}** (${cur}${dailyVelocity.toFixed(2)}/day velocity, ${daysRemaining} days remaining).\n- **Envelopes Status:** ${isBalanced ? 'All categories in zero-based balance.' : 'Categories ready for adaptive rebalancing.'}\n- **Recurring Commitments:** ${cur}${subsSum.toFixed(2)}/mo across ${subsCount} verified services.\n\nAsk me anything: *"Can I afford a ${cur}50 purchase today?"*, *"How does Vicki Robin calculate life energy?"*, or *"Give me a financial roast."*`;
   }
 }

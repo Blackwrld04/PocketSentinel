@@ -14,7 +14,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
-  <link rel="stylesheet" href="/styles.css?v=2.7">
+  <link rel="stylesheet" href="/styles.css?v=2.9">
 </head>
 <body class="saas-theme in-landing-view">
 
@@ -71,11 +71,10 @@
           <span class="landing-back-text">Landing</span>
         </button>
 
-        <div class="header-user-profile" onclick="filterAppView('settings')" title="User Profile & Wage Settings">
+        <div class="header-user-profile" onclick="filterAppView('settings')" title="User Profile Settings">
           <div class="header-user-avatar" id="headerUserAvatar">AR</div>
           <div class="header-user-meta">
             <span class="header-user-name" id="headerUserName">Alex Rivera</span>
-            <span class="header-user-wage" id="headerUserWage">$25/hr Life Energy</span>
           </div>
         </div>
       </div>
@@ -1090,22 +1089,22 @@
           <button class="sidebar-item" id="sideBtnSubscriptions" onclick="filterAppView('subscriptions')">
             <i data-lucide="calendar"></i>
             <span>Active Subscriptions</span>
-            <span class="sidebar-counter-blue" id="sidebarSubCount">9</span>
+            <span class="sidebar-counter-blue" id="sidebarSubCount">0</span>
           </button>
           <button class="sidebar-item" id="sideBtnAlerts" onclick="filterAppView('alerts')">
             <i data-lucide="alert-triangle"></i>
             <span>Price Creep Alerts</span>
-            <span class="sidebar-counter" id="sidebarAlertCount">2</span>
+            <span class="sidebar-counter" id="sidebarAlertCount">0</span>
           </button>
           <button class="sidebar-item" id="sideBtnTrials" onclick="filterAppView('trials')">
             <i data-lucide="clock"></i>
             <span>Zombie Trials</span>
-            <span class="sidebar-counter urgent" id="sidebarTrialCount">1</span>
+            <span class="sidebar-counter urgent" id="sidebarTrialCount">0</span>
           </button>
           <button class="sidebar-item" id="sideBtnDisputes" onclick="filterAppView('disputes')">
             <i data-lucide="shield-check"></i>
             <span>Disputes &amp; Savings</span>
-            <span class="sidebar-counter-green">3</span>
+            <span class="sidebar-counter-green" id="sidebarDisputesCount">0</span>
           </button>
 
           <div class="sidebar-category-header">SOVEREIGNTY &amp; GOVERNANCE</div>
@@ -1140,12 +1139,12 @@
                 </div>
                 <h3 class="user-display-name" id="userDisplayName">Alex Rivera</h3>
               </div>
-              <div class="wage-life-energy-pill" onclick="filterAppView('settings')" title="Configured Hourly Wage for Vicki Robin Life Energy Calculation">
-                <i data-lucide="clock"></i>
-                <span id="userWagePillDisplay">$25.00 / hr Life Energy</span>
-              </div>
             </div>
             <div class="personal-quick-actions">
+              <button class="btn-copilot-pill" onclick="document.getElementById('hiddenStatementUpload').click()" title="Upload Bank Statement (PDF or CSV)" style="background:var(--surface-bg); border-color:var(--border-color); color:var(--text-main);">
+                <i data-lucide="upload"></i>
+                <span>Upload Statement</span>
+              </button>
               <button class="btn-copilot-pill" onclick="openCopilotFromAnywhere()" title="Open AI Copilot Coach">
                 <i data-lucide="bot"></i>
                 <span>Ask AI Copilot</span>
@@ -1159,10 +1158,13 @@
             <div class="cashflow-card-header">
               <div class="cashflow-title-group">
                 <h3><i data-lucide="pie-chart" class="text-green"></i> Monthly Cash Flow &amp; Runway Distribution</h3>
-                <p>October income allocation</p>
+                <p id="overviewCashflowSubhead">Recurring and variable spending across October 2026</p>
               </div>
-              <div class="cashflow-inflow-badge">
-                <i data-lucide="wallet"></i> Inflow: <strong id="overviewInflowBadgeVal">$4,850.00</strong>
+              <div class="cashflow-header-actions" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div class="overview-month-pills-wrap" id="overviewMonthPillsTrack"></div>
+                <div class="cashflow-inflow-badge">
+                  <i data-lucide="wallet"></i> Inflow: <strong id="overviewInflowBadgeVal">$4,850.00</strong>
+                </div>
               </div>
             </div>
 
@@ -1278,8 +1280,11 @@
               <p class="subview-page-subtitle">Debits audited against memory baselines</p>
             </div>
             <div class="subview-header-actions">
-              <button class="btn-ghost-action" onclick="loadSampleDemoStatement()" title="Re-audit sample statement against memory baselines">
-                <i data-lucide="rotate-cw"></i> <span>Audit Demo Statement</span>
+              <button class="btn-ghost-action" onclick="document.getElementById('hiddenStatementUpload').click()" title="Upload and audit bank statement (PDF or CSV)">
+                <i data-lucide="upload"></i> <span>Upload Statement</span>
+              </button>
+              <button class="btn-ghost-action" onclick="loadSampleDemoStatement()" title="Audit sample statement against memory baselines">
+                <i data-lucide="rotate-cw"></i> <span>Sample Statement</span>
               </button>
               <button class="btn-primary-action" onclick="openQuickAddModal()" title="Manually log or scan a receipt">
                 <i data-lucide="plus-circle"></i> <span>Log Expense / Scan</span>
@@ -1290,14 +1295,14 @@
           <!-- Transaction Summary KPI Metrics -->
           <div class="tx-kpi-summary-row">
             <div class="tx-kpi-card">
-              <div class="tx-kpi-label"><i data-lucide="credit-card" class="text-blue"></i> October Volume</div>
-              <div class="tx-kpi-value" id="txKpiVolumeDisplay">$3,566.19</div>
-              <div class="tx-kpi-sub" id="txKpiCountSub">8 processed statement debits</div>
+              <div class="tx-kpi-label"><i data-lucide="credit-card" class="text-blue"></i> <span id="txKpiVolumeLabel">October Volume</span></div>
+              <div class="tx-kpi-value" id="txKpiVolumeDisplay">₦0.00</div>
+              <div class="tx-kpi-sub" id="txKpiCountSub">0 processed debits</div>
             </div>
             <div class="tx-kpi-card">
               <div class="tx-kpi-label"><i data-lucide="clock" class="text-amber"></i> Life Energy Spent</div>
-              <div class="tx-kpi-value" id="txKpiLifeEnergy">142.6 hrs</div>
-              <div class="tx-kpi-sub" id="txKpiWageSub">At $25.00/hr wage</div>
+              <div class="tx-kpi-value" id="txKpiLifeEnergy">0.0 hrs</div>
+              <div class="tx-kpi-sub" id="txKpiWageSub">Calculated from wage</div>
             </div>
             <div class="tx-kpi-card">
               <div class="tx-kpi-label"><i data-lucide="shield-check" class="text-green"></i> Policy Verification</div>
@@ -1306,8 +1311,81 @@
             </div>
             <div class="tx-kpi-card">
               <div class="tx-kpi-label"><i data-lucide="alert-triangle" class="text-coral"></i> Discrepancies</div>
-              <div class="tx-kpi-value text-coral" id="txKpiAlertsCount">2 Flagged</div>
+              <div class="tx-kpi-value text-coral" id="txKpiAlertsCount">0 Flagged</div>
               <div class="tx-kpi-sub">Disputes ready</div>
+            </div>
+          </div>
+
+          <!-- Statement Monthly Review & Month Switcher Bar -->
+          <div class="statement-month-navigator" id="statementMonthNavigator">
+            <div class="month-navigator-header">
+              <div class="navigator-title-wrap">
+                <span class="navigator-badge"><i data-lucide="calendar"></i> Statement Period</span>
+                <h3 class="navigator-title" id="statementActiveMonthTitle">All Months Review</h3>
+              </div>
+              <div class="month-nav-controls-row">
+                <div class="month-arrow-btns">
+                  <button type="button" class="btn-month-arrow" onclick="navigateStatementMonth(-1)" title="Previous Month" aria-label="Previous Month"><i data-lucide="chevron-left"></i></button>
+                  <button type="button" class="btn-month-arrow" onclick="navigateStatementMonth(1)" title="Next Month" aria-label="Next Month"><i data-lucide="chevron-right"></i></button>
+                </div>
+                <div class="month-switcher-scroll" id="statementMonthPillsTrack">
+                  <!-- Dynamically populated month pills: All, Oct 2026, Sep 2026, Aug 2026 ... -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Inflow vs Outflow Cashflow Summary Cards -->
+            <div class="statement-flow-metrics-grid" id="statementFlowMetricsGrid">
+              <!-- Card 1: Money Enters (Inflow) -->
+              <div class="flow-metric-card inflow">
+                <div class="flow-card-header">
+                  <span class="flow-card-icon"><i data-lucide="arrow-down-left"></i></span>
+                  <span class="flow-card-label">Money Enters (Inflow)</span>
+                </div>
+                <div class="flow-card-value text-green" id="flowMonthInflow">₦0.00</div>
+                <span class="flow-card-sub" id="flowMonthInflowSub">0 incoming deposits</span>
+              </div>
+
+              <!-- Card 2: Money Leaves (Outflow) -->
+              <div class="flow-metric-card outflow">
+                <div class="flow-card-header">
+                  <span class="flow-card-icon"><i data-lucide="arrow-up-right"></i></span>
+                  <span class="flow-card-label">Money Leaves (Spent)</span>
+                </div>
+                <div class="flow-card-value text-coral" id="flowMonthOutflow">₦0.00</div>
+                <span class="flow-card-sub" id="flowMonthOutflowSub">0 processed debits</span>
+              </div>
+
+              <!-- Card 3: Net Preserved / Delta -->
+              <div class="flow-metric-card net">
+                <div class="flow-card-header">
+                  <span class="flow-card-icon"><i data-lucide="scale"></i></span>
+                  <span class="flow-card-label">Net Cashflow Delta</span>
+                </div>
+                <div class="flow-card-value" id="flowMonthNet">₦0.00</div>
+                <span class="flow-card-sub" id="flowMonthNetSub">Preserved balance</span>
+              </div>
+
+              <!-- Card 4: Where Money Leaves To -->
+              <div class="flow-metric-card destination">
+                <div class="flow-card-header">
+                  <span class="flow-card-icon"><i data-lucide="pie-chart"></i></span>
+                  <span class="flow-card-label">Top Outflow Channel</span>
+                </div>
+                <div class="flow-card-value text-amber" id="flowMonthTopDest">None</div>
+                <span class="flow-card-sub" id="flowMonthTopDestSub">Where funds left to</span>
+              </div>
+            </div>
+
+            <!-- Category Spending Distribution Breakdown ("Leaves to here") -->
+            <div class="month-spending-breakdown-bar" id="monthSpendingBreakdownBar">
+              <div class="breakdown-bar-header">
+                <span class="breakdown-label"><i data-lucide="trending-down"></i> Outflow Allocation ("Leaves to here"):</span>
+                <span class="breakdown-hint" id="monthBreakdownHint">Categorized spending</span>
+              </div>
+              <div class="breakdown-category-chips" id="monthCategoryChips">
+                <!-- Dynamically populated: Transfers, Airtime, etc. -->
+              </div>
             </div>
           </div>
 
@@ -1328,6 +1406,8 @@
               </div>
               <div class="tx-filter-chips">
                 <button type="button" class="chip active" data-filter="all" onclick="filterTxTable('all')">All</button>
+                <button type="button" class="chip" data-filter="debit" onclick="filterTxTable('debit')">Money Leaves (Debits)</button>
+                <button type="button" class="chip" data-filter="credit" onclick="filterTxTable('credit')">Money Enters (Credits)</button>
                 <button type="button" class="chip" data-filter="subscription" onclick="filterTxTable('subscription')">Subscriptions</button>
                 <button type="button" class="chip" data-filter="flagged" onclick="filterTxTable('flagged')">Flagged</button>
               </div>
@@ -1463,13 +1543,13 @@
                 <span class="import-icon"><i data-lucide="file-spreadsheet"></i></span>
                 <div>
                   <h4>Statement Import &amp; Live Feed</h4>
-                  <p>Import CSV statements or sync live with Google Sheets</p>
+                  <p>Import PDF or CSV statements or sync live with Google Sheets</p>
                 </div>
               </div>
               <button class="btn-amber-card-action" onclick="document.getElementById('hiddenStatementUpload').click()">
-                <i data-lucide="upload"></i> Upload CSV
+                <i data-lucide="upload"></i> Upload Statement (PDF/CSV)
               </button>
-              <input type="file" id="hiddenStatementUpload" accept=".csv" style="display:none;" onchange="handleStatementFileUpload(event)">
+              <input type="file" id="hiddenStatementUpload" accept=".csv,.pdf,text/csv,application/pdf" style="display:none;" onchange="handleStatementFileUpload(event)">
             </div>
             <div class="import-formula-box">
               <div class="formula-box-header">
@@ -1498,7 +1578,11 @@
               <p class="subview-subtitle">Category budgets, deficit rebalancing, and spending cadence</p>
             </div>
             <div class="subview-actions-cluster">
-              <button class="btn-amber-card-action" onclick="rebalanceEnvelopesWithPunch()">
+              <button class="btn-allocate-funds" onclick="openAllocateEnvelopesModal()">
+                <i data-lucide="sliders-horizontal"></i>
+                <span>Allocate Funds</span>
+              </button>
+              <button class="btn-rebalance-secondary" onclick="rebalanceEnvelopesWithPunch()">
                 <i data-lucide="refresh-cw"></i>
                 <span>Rebalance Deficit</span>
               </button>
@@ -1523,12 +1607,12 @@
             <div class="envelope-pool-banner">
               <div class="pool-stat">
                 <span>Inflow:</span>
-                <strong id="planInflowPoolDisplay">$4,850.00</strong>
+                <strong id="planInflowPoolDisplay">$0.00</strong>
               </div>
               <div class="pool-divider">→</div>
               <div class="pool-stat">
                 <span>Allocated:</span>
-                <strong id="planAllocatedPoolDisplay">$4,850.00</strong>
+                <strong id="planAllocatedPoolDisplay">$0.00</strong>
               </div>
               <div class="pool-divider">→</div>
               <div class="pool-stat highlight green">
@@ -1537,138 +1621,36 @@
               </div>
             </div>
 
-            <!-- Envelopes Cards Grid -->
-            <div class="envelopes-cards-grid" id="envelopesCardsGrid">
-              <!-- Envelope 1: Groceries -->
-              <div class="envelope-card">
-                <div class="env-header">
-                  <div class="env-title-wrap">
-                    <span class="env-icon"><i data-lucide="shopping-cart"></i></span>
-                    <div>
-                      <strong>Groceries</strong>
-                      <span class="env-meta">Target: $600.00 / mo</span>
-                    </div>
-                  </div>
-                  <span class="env-remaining-pill green">+$104.80 Left</span>
+            <!-- Calculation Breakdown & Formula Explainer -->
+            <div class="envelope-formula-callout" id="envelopeFormulaCallout" style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:10px; padding:12px 16px; margin: 12px 0 16px 0;">
+              <div class="formula-header" onclick="toggleEnvelopeFormula()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <i data-lucide="calculator" class="text-amber" style="width:16px;height:16px;"></i>
+                  <strong style="font-size:13px; color:var(--text-main);">Zero-Based Allocation Formula &amp; Math Breakdown</strong>
                 </div>
-                <div class="env-progress-bar">
-                  <div class="env-fill green" style="width: 82%;"></div>
-                </div>
-                <div class="env-footer">
-                  <span>Spent: $495.20</span>
-                  <span>Allocated: $600.00</span>
+                <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+                  <span id="formulaToggleText">View Breakdown</span>
+                  <i data-lucide="chevron-down" id="formulaChevron" style="width:14px;height:14px;"></i>
                 </div>
               </div>
-
-              <!-- Envelope 2: Dining Out (Deficit) -->
-              <div class="envelope-card alert-deficit" id="planEnvDiningCard">
-                <div class="env-header">
-                  <div class="env-title-wrap">
-                    <span class="env-icon"><i data-lucide="utensils"></i></span>
-                    <div>
-                      <strong>Dining Out</strong>
-                      <span class="env-meta">Target: $350.00 / mo</span>
-                    </div>
-                  </div>
-                  <span class="env-remaining-pill red" id="planEnvDiningPill">-$45.00 Deficit</span>
+              <div class="formula-details-body" id="formulaDetailsBody" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--border-color);">
+                <p style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; line-height:1.5;">
+                  How your income is calculated and distributed across envelopes:
+                </p>
+                <div class="formula-math-grid" id="formulaMathGrid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+                  <!-- Injected dynamically in renderEnvelopesPlan -->
                 </div>
-                <div class="env-progress-bar">
-                  <div class="env-fill red" id="planEnvDiningBar" style="width: 112%;"></div>
-                </div>
-                <div class="env-footer">
-                  <span id="planEnvDiningSpent">Spent: $395.00</span>
-                  <span id="planEnvDiningAlloc">Allocated: $350.00</span>
-                </div>
-                <div class="env-rebalance-callout" id="planEnvDiningCallout">
-                  <span>⚠️ Overspent by $45.00</span>
-                  <button class="btn-mini-rebalance" onclick="rebalanceEnvelopesWithPunch()">Rebalance from Fun</button>
-                </div>
-              </div>
-
-              <!-- Envelope 3: Fun (Surplus) -->
-              <div class="envelope-card" id="planEnvFunCard">
-                <div class="env-header">
-                  <div class="env-title-wrap">
-                    <span class="env-icon"><i data-lucide="ticket"></i></span>
-                    <div>
-                      <strong>Discretionary Fun</strong>
-                      <span class="env-meta">Target: $250.00 / mo</span>
-                    </div>
-                  </div>
-                  <span class="env-remaining-pill blue" id="planEnvFunPill">+$130.00 Surplus</span>
-                </div>
-                <div class="env-progress-bar">
-                  <div class="env-fill blue" id="planEnvFunBar" style="width: 48%;"></div>
-                </div>
-                <div class="env-footer">
-                  <span id="planEnvFunSpent">Spent: $120.00</span>
-                  <span id="planEnvFunAlloc">Allocated: $250.00</span>
-                </div>
-              </div>
-
-              <!-- Envelope 4: Transport -->
-              <div class="envelope-card">
-                <div class="env-header">
-                  <div class="env-title-wrap">
-                    <span class="env-icon"><i data-lucide="fuel"></i></span>
-                    <div>
-                      <strong>Transport &amp; Fuel</strong>
-                      <span class="env-meta">Target: $250.00 / mo</span>
-                    </div>
-                  </div>
-                  <span class="env-remaining-pill green">+$65.80 Left</span>
-                </div>
-                <div class="env-progress-bar">
-                  <div class="env-fill green" style="width: 74%;"></div>
-                </div>
-                <div class="env-footer">
-                  <span>Spent: $184.20</span>
-                  <span>Allocated: $250.00</span>
-                </div>
-              </div>
-
-              <!-- Envelope 5: Utilities -->
-              <div class="envelope-card">
-                <div class="env-header">
-                  <div class="env-title-wrap">
-                    <span class="env-icon"><i data-lucide="zap"></i></span>
-                    <div>
-                      <strong>Utilities &amp; Internet</strong>
-                      <span class="env-meta">Target: $150.00 / mo</span>
-                    </div>
-                  </div>
-                  <span class="env-remaining-pill green">+$10.00 Left</span>
-                </div>
-                <div class="env-progress-bar">
-                  <div class="env-fill green" style="width: 93%;"></div>
-                </div>
-                <div class="env-footer">
-                  <span>Spent: $140.00</span>
-                  <span>Allocated: $150.00</span>
-                </div>
-              </div>
-
-              <!-- Envelope 6: Babylon Sinking Reserve -->
-              <div class="envelope-card reserve-card">
-                <div class="env-header">
-                  <div class="env-title-wrap">
-                    <span class="env-icon amber"><i data-lucide="shield"></i></span>
-                    <div>
-                      <strong>10% Emergency Reserve</strong>
-                      <span class="env-meta">Locked reserve</span>
-                    </div>
-                  </div>
-                  <span class="env-remaining-pill amber"><i data-lucide="lock"></i> $500.00 Locked</span>
-                </div>
-                <div class="env-progress-bar">
-                  <div class="env-fill amber" style="width: 100%;"></div>
-                </div>
-                <div class="env-footer">
-                  <span>Spent: $0.00</span>
-                  <span>Target: $500.00</span>
+                <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:10px; border-top:1px solid var(--border-subtle);">
+                  <span style="font-size:12px; color:var(--text-muted);">You can customize these targets anytime. Click below to allocate custom figures:</span>
+                  <button class="btn-allocate-funds-compact" onclick="openAllocateEnvelopesModal()">
+                    <i data-lucide="sliders-horizontal" style="width:13px;height:13px;"></i> Allocate Custom Budgets
+                  </button>
                 </div>
               </div>
             </div>
+
+            <!-- Envelopes Cards Grid -->
+            <div class="envelopes-cards-grid" id="envelopesCardsGrid"></div>
           </div>
 
           <!-- RECURRING SUBSCRIPTIONS REDIRECT TO SETTINGS -->
@@ -1746,184 +1728,7 @@
           </div>
         </div>
 
-        <!-- SUBVIEW: ZERO-BASED ENVELOPES & ROLL WITH PUNCHES (PARADIGM 1) -->
-        <div class="subview-panel" id="subviewEnvelopes" style="display:none;">
-          <div class="subview-header-bar">
-            <div>
-              <h2 class="subview-title">Digital Envelopes</h2>
-              <p class="subview-subtitle">Category allocations and rebalancing</p>
-            </div>
-            <div class="subview-actions-cluster">
-              <button class="btn-amber-card-action" onclick="rebalanceEnvelopesWithPunch()">
-                <i data-lucide="refresh-cw"></i>
-                <span>1-Tap Rebalance Deficit</span>
-              </button>
-            </div>
-          </div>
 
-          <!-- Zero-Based Balance Status Strip -->
-          <div class="envelope-pool-banner">
-            <div class="pool-stat">
-              <span>Total Monthly Cash Pool:</span>
-              <strong>$4,850.00</strong>
-            </div>
-            <div class="pool-divider">→</div>
-            <div class="pool-stat">
-              <span>Allocated to Digital Envelopes:</span>
-              <strong>$4,850.00</strong>
-            </div>
-            <div class="pool-divider">→</div>
-            <div class="pool-stat highlight green">
-              <span>Unassigned ("To Be Budgeted"):</span>
-              <strong id="toBeBudgetedDisplay">$0.00 (Balanced · Every Dollar Assigned)</strong>
-            </div>
-          </div>
-
-          <!-- Envelopes Grid -->
-          <div class="envelopes-cards-grid">
-            
-            <!-- Envelope 1: Groceries -->
-            <div class="envelope-card">
-              <div class="env-header">
-                <div class="env-title-wrap">
-                  <span class="env-icon"><i data-lucide="shopping-cart"></i></span>
-                  <div>
-                    <strong>Groceries & Household</strong>
-                    <span class="env-meta">Target: $600.00 / mo</span>
-                  </div>
-                </div>
-                <span class="env-remaining-pill green">+$104.80 Left</span>
-              </div>
-              <div class="env-progress-bar">
-                <div class="env-fill green" style="width: 82%;"></div>
-              </div>
-              <div class="env-footer">
-                <span>Spent: $495.20</span>
-                <span>Allocated: $600.00</span>
-              </div>
-            </div>
-
-            <!-- Envelope 2: Dining Out (Overspent Deficit) -->
-            <div class="envelope-card alert-deficit" id="envDiningCard">
-              <div class="env-header">
-                <div class="env-title-wrap">
-                  <span class="env-icon"><i data-lucide="utensils"></i></span>
-                  <div>
-                    <strong>Dining Out & Social</strong>
-                    <span class="env-meta">Target: $350.00 / mo</span>
-                  </div>
-                </div>
-                <span class="env-remaining-pill red" id="envDiningPill">-$45.00 DEFICIT!</span>
-              </div>
-              <div class="env-progress-bar">
-                <div class="env-fill red" id="envDiningFill" style="width: 112%;"></div>
-              </div>
-              <div class="env-footer">
-                <span id="envDiningSpent">Spent: $395.00</span>
-                <span id="envDiningAllocated">Allocated: $350.00</span>
-              </div>
-            </div>
-
-            <!-- Envelope 3: Transport & Fuel -->
-            <div class="envelope-card">
-              <div class="env-header">
-                <div class="env-title-wrap">
-                  <span class="env-icon"><i data-lucide="fuel"></i></span>
-                  <div>
-                    <strong>Transport & Fuel</strong>
-                    <span class="env-meta">Target: $180.00 / mo</span>
-                  </div>
-                </div>
-                <span class="env-remaining-pill green">+$67.60 Left</span>
-              </div>
-              <div class="env-progress-bar">
-                <div class="env-fill green" style="width: 62%;"></div>
-              </div>
-              <div class="env-footer">
-                <span>Spent: $112.40</span>
-                <span>Allocated: $180.00</span>
-              </div>
-            </div>
-
-            <!-- Envelope 4: Utilities & Mobile -->
-            <div class="envelope-card">
-              <div class="env-header">
-                <div class="env-title-wrap">
-                  <span class="env-icon"><i data-lucide="zap"></i></span>
-                  <div>
-                    <strong>Utilities & Internet</strong>
-                    <span class="env-meta">Target: $220.00 / mo</span>
-                  </div>
-                </div>
-                <span class="env-remaining-pill green">+$31.50 Left</span>
-              </div>
-              <div class="env-progress-bar">
-                <div class="env-fill green" style="width: 85%;"></div>
-              </div>
-              <div class="env-footer">
-                <span>Spent: $188.50</span>
-                <span>Allocated: $220.00</span>
-              </div>
-            </div>
-
-            <!-- Envelope 5: Discretionary Fun -->
-            <div class="envelope-card" id="envFunCard">
-              <div class="env-header">
-                <div class="env-title-wrap">
-                  <span class="env-icon"><i data-lucide="ticket"></i></span>
-                  <div>
-                    <strong>Discretionary Fun</strong>
-                    <span class="env-meta">Target: $250.00 / mo</span>
-                  </div>
-                </div>
-                <span class="env-remaining-pill blue" id="envFunPill">+$130.00 Surplus</span>
-              </div>
-              <div class="env-progress-bar">
-                <div class="env-fill blue" id="envFunFill" style="width: 48%;"></div>
-              </div>
-              <div class="env-footer">
-                <span id="envFunSpent">Spent: $120.00</span>
-                <span id="envFunAllocated">Allocated: $250.00</span>
-              </div>
-            </div>
-
-            <!-- Envelope 6: Emergency Reserve -->
-            <div class="envelope-card">
-              <div class="env-header">
-                <div class="env-title-wrap">
-                  <span class="env-icon"><i data-lucide="shield-check"></i></span>
-                  <div>
-                    <strong>Emergency Buffer (Encrypted)</strong>
-                    <span class="env-meta">Target: $500.00 / mo</span>
-                  </div>
-                </div>
-                <span class="env-remaining-pill green">+$500.00 Protected</span>
-              </div>
-              <div class="env-progress-bar">
-                <div class="env-fill green" style="width: 0%;"></div>
-              </div>
-              <div class="env-footer">
-                <span>Spent: $0.00</span>
-                <span>Allocated: $500.00</span>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Roll With The Punches Interactive Rebalance Callout -->
-          <div class="app-panel roll-punches-panel" id="rollPunchesBox">
-            <div class="punch-left">
-              <span class="status-pill red"><i data-lucide="alert-octagon"></i> Deficit Detected</span>
-              <h4>Deficit Rebalance</h4>
-              <p>Dining Out is overspent by <strong>-$45.00</strong>. Shift $45.00 from Fun (+$130 available) to balance category.</p>
-            </div>
-            <button class="btn-amber-cta" onclick="rebalanceEnvelopesWithPunch()">
-              <i data-lucide="arrow-right-left"></i>
-              <span>Transfer $45.00 from Fun → Dining</span>
-            </button>
-          </div>
-
-        </div>
 
         <!-- (Sentinel AI Copilot is now merged into subviewSafeSpend) -->
 
@@ -2060,178 +1865,9 @@
             </button>
           </div>
 
-          <!-- Active Alert Cards Grid -->
-          <div class="alerts-cards-grid">
-            
-            <!-- Alert Card 1: Netflix Price Creep -->
-            <div class="triage-card triage-creep">
-              <div class="triage-card-header">
-                <div class="triage-merchant-info">
-                  <div class="triage-logo-wrap">
-                    <img src="/assets/logos/netflix.svg" alt="Netflix" class="merchant-mini-logo">
-                  </div>
-                  <div>
-                    <h4 class="triage-name">Netflix Standard</h4>
-                    <span class="triage-meta">Chase Sapphire · Oct 20, 2026</span>
-                  </div>
-                </div>
-                <span class="triage-badge red"><i data-lucide="trending-up"></i> +$2.50 / mo Hike</span>
-              </div>
-              <div class="triage-comparison-box">
-                <div class="comp-col">
-                  <span class="comp-label">Baseline</span>
-                  <strong class="comp-val">$15.49 / mo</strong>
-                  <span class="comp-sub">Approved [MEM_01]</span>
-                </div>
-                <div class="comp-arrow">→</div>
-                <div class="comp-col">
-                  <span class="comp-label">Recent Charge</span>
-                  <strong class="comp-val red">$17.99 / mo</strong>
-                  <span class="comp-sub">Unannounced hike</span>
-                </div>
-                <div class="comp-col highlight">
-                  <span class="comp-label">Annual Leakage</span>
-                  <strong class="comp-val red">+$30.00 / yr</strong>
-                  <span class="comp-sub">Recoverable</span>
-                </div>
-              </div>
-              <p class="triage-narrative">
-                Billed +$2.50/mo above your $15.49 approved baseline [MEM_01].
-              </p>
-              <div class="triage-actions-row">
-                <button class="btn-amber-cta" onclick="openDisputeModalForRecord('Netflix', 17.99, 15.49, 2.50, 'MEM_01')">
-                  <i data-lucide="scale"></i>
-                  <span>Dispute Hike ($30/yr)</span>
-                </button>
-                <button class="btn-ghost-outline" onclick="inspectMemoryDetail('MEM_01')">
-                  <i data-lucide="eye"></i>
-                  <span>View Memory</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Alert Card 2: Adobe CC Trial Expiration -->
-            <div class="triage-card triage-trial">
-              <div class="triage-card-header">
-                <div class="triage-merchant-info">
-                  <div class="triage-logo-wrap">
-                    <img src="/assets/logos/adobe.svg" alt="Adobe" class="merchant-mini-logo">
-                  </div>
-                  <div>
-                    <h4 class="triage-name">Adobe Creative Cloud</h4>
-                    <span class="triage-meta">7-Day Trial · Rebill in 48h</span>
-                  </div>
-                </div>
-                <span class="triage-badge amber"><i data-lucide="clock"></i> 48-Hour Alarm</span>
-              </div>
-              <div class="triage-comparison-box">
-                <div class="comp-col">
-                  <span class="comp-label">Trial Cost</span>
-                  <strong class="comp-val">$0.00</strong>
-                  <span class="comp-sub">7-Day Free Period</span>
-                </div>
-                <div class="comp-arrow">→</div>
-                <div class="comp-col">
-                  <span class="comp-label">Upcoming Rebill</span>
-                  <strong class="comp-val coral">$54.99 / mo</strong>
-                  <span class="comp-sub">Starts Oct 25, 2026</span>
-                </div>
-                <div class="comp-col highlight">
-                  <span class="comp-label">Annual Commitment</span>
-                  <strong class="comp-val coral">$659.88 / yr</strong>
-                  <span class="comp-sub">12-month contract</span>
-                </div>
-              </div>
-              <p class="triage-narrative">
-                Free trial ends in 48 hours. Auto-rebills at $54.99/mo on Oct 25.
-              </p>
-              <div class="triage-actions-row">
-                <button class="btn-amber-cta" onclick="openDisputeModalForTrial()">
-                  <i data-lucide="shield-alert"></i>
-                  <span>Cancel Subscription</span>
-                </button>
-                <button class="btn-ghost-outline" onclick="copyTrialCancelTemplate()">
-                  <i data-lucide="copy"></i>
-                  <span>Copy Notice</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Alert Card 3: Spotify + Apple Music Overlap -->
-            <div class="triage-card triage-overlap">
-              <div class="triage-card-header">
-                <div class="triage-merchant-info">
-                  <div class="triage-logo-wrap">
-                    <img src="/assets/logos/spotify.svg" alt="Spotify" class="merchant-mini-logo">
-                  </div>
-                  <div>
-                    <h4 class="triage-name">Spotify + Apple Music</h4>
-                    <span class="triage-meta">Active duplicate streaming accounts</span>
-                  </div>
-                </div>
-                <span class="triage-badge blue"><i data-lucide="layers"></i> Redundant</span>
-              </div>
-              <div class="triage-comparison-box">
-                <div class="comp-col">
-                  <span class="comp-label">Spotify Family</span>
-                  <strong class="comp-val">$16.99 / mo</strong>
-                  <span class="comp-sub">Active</span>
-                </div>
-                <div class="comp-col">
-                  <span class="comp-label">Apple Music</span>
-                  <strong class="comp-val">$10.99 / mo</strong>
-                  <span class="comp-sub">Active</span>
-                </div>
-                <div class="comp-col highlight">
-                  <span class="comp-label">Potential Savings</span>
-                  <strong class="comp-val text-green">Save $131.88 / yr</strong>
-                  <span class="comp-sub">Consolidate tiers</span>
-                </div>
-              </div>
-              <p class="triage-narrative">
-                Two active music streaming subscriptions detected [MEM_11]. Consolidating saves $131.88/yr.
-              </p>
-              <div class="triage-actions-row">
-                <button class="btn-amber-cta" onclick="openDisputeModalForOverlap()">
-                  <i data-lucide="arrow-right-left"></i>
-                  <span>Consolidate</span>
-                </button>
-                <button class="btn-ghost-outline" onclick="suppressOverlapFor90Days()">
-                  <i data-lucide="clock"></i>
-                  <span>Snooze</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Alert Card 4: Unknown Merchant Spend Gate Simulator -->
-            <div class="triage-card triage-gate">
-              <div class="triage-card-header">
-                <div class="triage-merchant-info">
-                  <div class="triage-logo-wrap">
-                    <span class="gate-icon-placeholder"><i data-lucide="shield"></i></span>
-                  </div>
-                  <div>
-                    <h4 class="triage-name">Unknown Merchant Gate</h4>
-                    <span class="triage-meta">Threshold: $50.00 [MEM_07]</span>
-                  </div>
-                </div>
-                <span class="triage-badge green"><i data-lucide="shield-check"></i> Armed</span>
-              </div>
-              <p class="triage-narrative">
-                Quarantines first-time charges above $50.00 for your approval.
-              </p>
-              <div class="triage-actions-row">
-                <button class="btn-ghost-outline" onclick="simulateUnknownMerchantDebit()">
-                  <i data-lucide="zap"></i>
-                  <span>Simulate $79.99 Charge</span>
-                </button>
-                <button class="btn-ghost-outline" onclick="filterAppView('settings')">
-                  <i data-lucide="sliders"></i>
-                  <span>Adjust Gate</span>
-                </button>
-              </div>
-            </div>
-
+          <!-- Active Alert Cards Grid (Dynamically Populated by renderRadarAlertsView) -->
+          <div class="alerts-cards-grid" id="alertsCardsGrid">
+            <!-- Dynamically rendered by renderRadarAlertsView() -->
           </div>
         </div>
 
@@ -2328,29 +1964,29 @@
           <div class="disputes-kpi-grid">
             <div class="dispute-kpi-card highlight">
               <span class="kpi-label">Total Preserved</span>
-              <strong class="kpi-val text-green">$348.00</strong>
-              <span class="kpi-sub">3 disputes resolved</span>
+              <strong class="kpi-val text-green" id="disputesTotalPreserved">$0.00</strong>
+              <span class="kpi-sub" id="disputesCountSub">0 disputes resolved</span>
             </div>
             <div class="dispute-kpi-card">
               <span class="kpi-label">Sentinel Fee</span>
-              <strong class="kpi-val text-green">$0.00 (0% Rake)</strong>
+              <strong class="kpi-val text-green" id="disputesSentinelFee">$0.00 (0% Rake)</strong>
               <span class="kpi-sub">100% funds kept</span>
             </div>
             <div class="dispute-kpi-card">
               <span class="kpi-label">Traditional Rake Avoided</span>
-              <strong class="kpi-val text-coral">-$139.20</strong>
+              <strong class="kpi-val text-coral" id="disputesTraditionalRake">$0.00</strong>
               <span class="kpi-sub">vs 40% competitor fee</span>
             </div>
             <div class="dispute-kpi-card">
               <span class="kpi-label">Dispute Success Rate</span>
-              <strong class="kpi-val text-blue">100%</strong>
+              <strong class="kpi-val text-blue" id="disputesSuccessRate">100%</strong>
               <span class="kpi-sub">Verified on-chain</span>
             </div>
           </div>
 
           <!-- Disputes Ledger Table -->
           <div class="app-panel">
-            <h4 class="panel-title" style="margin-bottom:16px;">Verified Dispute & Reversal History</h4>
+            <h4 class="panel-title" style="margin-bottom:16px;">Verified Dispute &amp; Reversal History</h4>
             <div class="table-responsive">
               <table class="disputes-table">
                 <thead>
@@ -2363,58 +1999,8 @@
                     <th>Resolution Status</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <div class="tx-cell-merchant">
-                        <img src="/assets/logos/netflix.svg" class="merchant-mini-logo" alt="Netflix">
-                        <strong>Netflix Standard</strong>
-                      </div>
-                    </td>
-                    <td>+$2.50 price hike</td>
-                    <td><strong class="text-green">+$30.00 / yr</strong></td>
-                    <td><code>MEM_09</code></td>
-                    <td>
-                      <a href="https://suiscan.xyz/mainnet/tx/8Xp4v9wK2mN1bL7qR5sT3uV" target="_blank" class="sui-digest-link">
-                        <i data-lucide="external-link"></i> 8Xp4...v9wK
-                      </a>
-                    </td>
-                    <td><span class="status-pill green">Won · Credit Issued</span></td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <div class="tx-cell-merchant">
-                        <img src="/assets/logos/adobe.svg" class="merchant-mini-logo" alt="Adobe">
-                        <strong>Adobe CC Trial</strong>
-                      </div>
-                    </td>
-                    <td>Cancelled before rebill</td>
-                    <td><strong class="text-green">+$54.99 Saved</strong></td>
-                    <td><code>MEM_10</code></td>
-                    <td>
-                      <a href="https://suiscan.xyz/mainnet/tx/3bL7qR5sT3uV8Xp4v9wK2mN" target="_blank" class="sui-digest-link">
-                        <i data-lucide="external-link"></i> 3bL7...R5sT
-                      </a>
-                    </td>
-                    <td><span class="status-pill green">Pre-empted · $0 Billed</span></td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <div class="tx-cell-merchant">
-                        <span class="merchant-logo-fallback"><i data-lucide="activity"></i></span>
-                        <strong>Planet Fitness</strong>
-                      </div>
-                    </td>
-                    <td>Annual fee objection</td>
-                    <td><strong class="text-green">+$59.00 Saved</strong></td>
-                    <td><code>MEM_06</code></td>
-                    <td>
-                      <a href="https://suiscan.xyz/mainnet/tx/5sT3uV8Xp4v9wK2mN1bL7qR" target="_blank" class="sui-digest-link">
-                        <i data-lucide="external-link"></i> 5sT3...4v9w
-                      </a>
-                    </td>
-                    <td><span class="status-pill green">Fee Waived</span></td>
-                  </tr>
+                <tbody id="disputesTableBody">
+                  <!-- Dynamically populated in renderDisputesLedger -->
                 </tbody>
               </table>
             </div>
@@ -2724,9 +2310,9 @@
               <div class="settings-nav-card-text">
                 <div class="settings-nav-card-header-row">
                   <h4>Manage Subscriptions &amp; Spend Calendar</h4>
-                  <span class="badge-amber-pill">1 Urgent Alert</span>
+                  <span class="badge-amber-pill" id="settingsSubsCardBadge">0 Alerts</span>
                 </div>
-                <p>9 active subscriptions · Renewal calendar · 1 trial alert</p>
+                <p id="settingsSubsCardSubtext">0 active subscriptions · Renewal calendar · 0 trial alerts</p>
               </div>
             </div>
             <div class="settings-nav-card-right">
@@ -2857,7 +2443,7 @@
                     </div>
                     <p class="setting-hint">Requires review for new merchants above this amount</p>
                     <input type="range" class="range-slider" id="gateSlider" min="10" max="200" step="5" value="50" oninput="updateGateDisplay(this.value)">
-                    <div class="range-ticks">
+                    <div class="range-ticks" id="gateRangeTicks">
                       <span>$10</span>
                       <span>$50</span>
                       <span>$100</span>
@@ -2988,32 +2574,6 @@
                       </tr>
                     </thead>
                     <tbody id="overridesTableBody">
-                      <tr>
-                        <td>
-                          <div class="tx-cell-merchant">
-                            <img src="/assets/logos/aws.svg" class="merchant-mini-logo" alt="AWS">
-                            <strong>Amazon Web Services</strong>
-                          </div>
-                        </td>
-                        <td>$180.00 / mo (Normal: $64)</td>
-                        <td>Q4 Machine Learning Surge</td>
-                        <td><code>POL-04</code></td>
-                        <td><span class="status-pill green">Active</span></td>
-                        <td><button class="btn-inspect-mini text-coral" onclick="removeOverrideRow(this)"><i data-lucide="trash-2"></i></button></td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <div class="tx-cell-merchant">
-                            <span class="merchant-logo-fallback"><i data-lucide="activity"></i></span>
-                            <strong>Equinox Gym</strong>
-                          </div>
-                        </td>
-                        <td>$0.00 / mo (Normal: $240)</td>
-                        <td>Temporary Freeze</td>
-                        <td><code>POL-05</code></td>
-                        <td><span class="status-pill blue">Frozen</span></td>
-                        <td><button class="btn-inspect-mini text-coral" onclick="removeOverrideRow(this)"><i data-lucide="trash-2"></i></button></td>
-                      </tr>
                     </tbody>
                   </table>
 
@@ -3021,7 +2581,7 @@
                     <h5 class="add-override-title">+ Add Approved Exception</h5>
                     <div class="override-form-row">
                       <input type="text" class="text-input" id="newOverrideMerchant" placeholder="Merchant">
-                      <input type="number" class="text-input" id="newOverrideCeiling" placeholder="Ceiling ($)">
+                      <input type="number" class="text-input" id="newOverrideCeiling" placeholder="Ceiling">
                       <input type="text" class="text-input" id="newOverrideReason" placeholder="Reason">
                       <button class="btn-amber-card-action" onclick="addNewOverridePolicy()">
                         <i data-lucide="plus"></i> Add
@@ -3330,7 +2890,7 @@
         <div class="form-group">
           <label>Transaction Amount</label>
           <div class="amount-input-wrap">
-            <span class="amount-currency-prefix" id="txCurrencyPrefix">$</span>
+            <span class="amount-currency-prefix" id="txCurrencyPrefix">₦</span>
             <input type="number" id="tx-amount" step="0.01" class="text-input amount-input" placeholder="0.00">
           </div>
         </div>
@@ -3339,10 +2899,7 @@
         <div class="form-group">
           <label>Paying Wallet / Account</label>
           <select id="tx-wallet" class="settings-select">
-            <option value="Primary Checking" selected>Primary Checking ($2,430.00)</option>
-            <option value="Physical Cash">Physical Cash / Pocket ($185.00)</option>
-            <option value="Credit Card">Household Credit Card (-$420.00)</option>
-            <option value="Babylon 10% Reserve">Babylon 10% Reserve ($500.00 Locked)</option>
+            <!-- Dynamically populated from state.wallets in openQuickAddModal -->
           </select>
         </div>
 
@@ -3403,21 +2960,17 @@
         <div class="form-group">
           <label>From Wallet</label>
           <select id="transferFromWallet" class="settings-select">
-            <option value="Primary Checking">Primary Checking ($2,430.00)</option>
-            <option value="Physical Cash">Physical Cash ($185.00)</option>
-            <option value="Babylon 10% Reserve">Babylon 10% Reserve ($500.00)</option>
+            <!-- Dynamically populated from state.wallets in openTransferModal -->
           </select>
         </div>
         <div class="form-group">
           <label>To Wallet</label>
           <select id="transferToWallet" class="settings-select">
-            <option value="Physical Cash">Physical Cash ($185.00)</option>
-            <option value="Primary Checking">Primary Checking ($2,430.00)</option>
-            <option value="Babylon 10% Reserve">Babylon 10% Reserve ($500.00)</option>
+            <!-- Dynamically populated from state.wallets in openTransferModal -->
           </select>
         </div>
         <div class="form-group">
-          <label>Transfer Amount ($)</label>
+          <label>Transfer Amount (<span class="currency-sym">₦</span>)</label>
           <input type="number" id="transferAmount" class="text-input" placeholder="50.00" step="5">
         </div>
       </div>
@@ -3456,7 +3009,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Starting Balance ($)</label>
+          <label>Starting Balance (<span class="currency-sym">₦</span>)</label>
           <input type="number" id="newWalletBalance" class="text-input" placeholder="500.00" step="10">
         </div>
       </div>
@@ -3649,7 +3202,7 @@
           <input type="text" id="newSubName" class="text-input" placeholder="e.g. Netflix, ChatGPT Plus, Figma...">
         </div>
         <div class="form-group">
-          <label>Monthly Baseline Amount ($)</label>
+          <label>Monthly Baseline Amount (<span class="currency-sym">₦</span>)</label>
           <input type="number" id="newSubAmount" step="0.01" class="text-input" placeholder="e.g. 15.49">
         </div>
         <div class="form-group">
@@ -3697,7 +3250,7 @@
           <input type="text" id="newTrialName" class="text-input" placeholder="e.g. Notion AI, Coursera, Loom...">
         </div>
         <div class="form-group">
-          <label>Upcoming Recurring Rebill Rate ($/mo)</label>
+          <label>Upcoming Recurring Rebill Rate (<span class="currency-sym">₦</span>/mo)</label>
           <input type="number" id="newTrialRebillRate" step="0.01" class="text-input" placeholder="e.g. 49.00">
         </div>
         <div class="form-group">
@@ -3741,7 +3294,7 @@
             <div class="form-group">
               <label class="setting-label">Monthly Cost</label>
               <div class="input-with-icon">
-                <span class="input-prefix">$</span>
+                <span class="input-prefix" id="newSubCurrencyPrefix">₦</span>
                 <input type="number" step="0.01" class="text-input" id="newSubCost" placeholder="19.99" required>
               </div>
             </div>
@@ -3764,9 +3317,7 @@
             <div class="form-group">
               <label class="setting-label">Payment Wallet</label>
               <select class="settings-select" id="newSubWallet">
-                <option value="checking" selected>Chase Sapphire Checking</option>
-                <option value="credit">Amex Card</option>
-                <option value="babylon">Babylon Reserve</option>
+                <!-- Dynamically populated from state.wallets -->
               </select>
             </div>
           </div>
@@ -3861,12 +3412,12 @@
 
           <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
             <div class="form-group">
-              <label class="form-label" for="newCategoryBudget" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Monthly Target ($)</label>
+              <label class="form-label" for="newCategoryBudget" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Monthly Target (<span class="currency-sym">₦</span>)</label>
               <input type="number" step="0.01" min="1" id="newCategoryBudget" class="form-input" placeholder="200.00" required style="width: 100%; padding: 10px 12px; border: 2px solid #141413; border-radius: 8px;" />
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="newCategoryInitialSpent" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Initial Spent ($)</label>
+              <label class="form-label" for="newCategoryInitialSpent" style="font-weight: 700; margin-bottom: 6px; display: block; font-size: 0.85rem;">Initial Spent (<span class="currency-sym">₦</span>)</label>
               <input type="number" step="0.01" min="0" id="newCategoryInitialSpent" class="form-input" value="0.00" style="width: 100%; padding: 10px 12px; border: 2px solid #141413; border-radius: 8px;" />
             </div>
           </div>
@@ -3905,6 +3456,68 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= ALLOCATE ENVELOPES MODAL ================= -->
+  <div class="modal-backdrop" id="allocateEnvelopesModal" style="display:none; z-index: 10050;">
+    <div class="modal-card" style="max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon"><i data-lucide="sliders-horizontal"></i></span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #141413;">Allocate Envelope Budgets</h3>
+            <p style="margin: 2px 0 0; font-size: 0.78rem; color: #78716c; font-weight: 500;">Customize exact spending targets across your digital envelopes</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeAllocateEnvelopesModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px;">
+        <!-- Live Zero-Based Pool Strip in Modal -->
+        <div class="envelope-pool-banner" style="margin-bottom: 16px;">
+          <div class="pool-stat">
+            <span>Monthly Inflow:</span>
+            <strong id="modalAllocInflow">$0.00</strong>
+          </div>
+          <div class="pool-divider">→</div>
+          <div class="pool-stat">
+            <span>Total Allocated:</span>
+            <strong id="modalAllocTotal">$0.00</strong>
+          </div>
+          <div class="pool-divider">→</div>
+          <div class="pool-stat highlight" id="modalAllocStatusBox">
+            <span id="modalAllocStatusLabel">Remaining:</span>
+            <strong id="modalAllocRemaining">$0.00</strong>
+          </div>
+        </div>
+
+        <div id="modalAllocAlertNotice" style="display:none; font-size:12px; margin-bottom:14px; padding:8px 12px; border-radius:6px;"></div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;">
+          <strong style="font-size:13px; color:var(--text-main);">Category Target Budgets (<span class="currency-sym">₦</span>)</strong>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn-ghost-action" onclick="autoBalanceEnvelopesInModal()" style="font-size:11px; padding:4px 8px;">
+              <i data-lucide="sparkles" style="width:12px;height:12px;"></i> Auto-Balance Remainder
+            </button>
+            <button type="button" class="btn-ghost-action" onclick="resetToSuggestedEnvelopeSplit()" style="font-size:11px; padding:4px 8px;">
+              <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> Reset Suggested
+            </button>
+          </div>
+        </div>
+
+        <div id="modalEnvelopeInputsList" style="display:flex; flex-direction:column; gap:10px;">
+          <!-- Injected dynamically in openAllocateEnvelopesModal -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 16px 20px;">
+        <button class="btn-ghost" onclick="closeAllocateEnvelopesModal()">Cancel</button>
+        <button class="btn-amber-cta" onclick="saveUserEnvelopeAllocations()">
+          <i data-lucide="check"></i>
+          <span>Save &amp; Apply Allocations</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -4484,6 +4097,6 @@
 
 
 
-  <script src="/app.js?v=2.8"></script>
+  <script src="/app.js?v=2.9"></script>
 </body>
 </html>
