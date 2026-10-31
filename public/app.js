@@ -172,7 +172,7 @@ window.RecallState = state;
 
 // ================= THEME MANAGER (LIGHT / DARK) =================
 function initTheme() {
-  const savedTheme = localStorage.getItem('recallramp-theme') || 'light';
+  const savedTheme = localStorage.getItem('pocketsentinel-theme') || 'light';
   applyTheme(savedTheme);
 }
 
@@ -180,7 +180,7 @@ function toggleTheme() {
   const isDark = document.body.classList.contains('dark-theme');
   const newTheme = isDark ? 'light' : 'dark';
   applyTheme(newTheme);
-  localStorage.setItem('recallramp-theme', newTheme);
+  localStorage.setItem('pocketsentinel-theme', newTheme);
 }
 
 function applyTheme(theme) {
@@ -208,10 +208,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const CLEAN_SLATE_KEY = 'recall_fresh_user_v7';
   if (!localStorage.getItem(CLEAN_SLATE_KEY)) {
     console.log('[RESET] Wiping stored data for clean new user onboarding...');
-    const savedTheme = localStorage.getItem('recallramp-theme');
+    const savedTheme = localStorage.getItem('pocketsentinel-theme');
     localStorage.clear();
     sessionStorage.clear();
-    if (savedTheme) localStorage.setItem('recallramp-theme', savedTheme);
+    if (savedTheme) localStorage.setItem('pocketsentinel-theme', savedTheme);
     localStorage.setItem(CLEAN_SLATE_KEY, 'true');
 
     state.userProfile = {
@@ -777,9 +777,15 @@ function closeKeyVaultModal() {
 
 async function exportKeyBundleFile() {
   const passInput = document.getElementById('vaultPassphraseInput');
-  const phrase = passInput && passInput.value.trim().length >= 12 
-    ? passInput.value.trim() 
-    : 'recallramp-master-key-sovereign-node-2026';
+  const phrase = passInput ? passInput.value.trim() : '';
+  if (!phrase || phrase.length < 12) {
+    if (typeof showToast === 'function') {
+      showToast('Please enter a sovereign passphrase of at least 12 characters.');
+    } else {
+      alert('Please enter a sovereign passphrase of at least 12 characters.');
+    }
+    return;
+  }
 
   await initWebCryptoVault(phrase);
 
@@ -794,7 +800,7 @@ async function exportKeyBundleFile() {
     iterations: 100000,
     saltHex: saltHex,
     exportedRawKeyHex: keyHex,
-    agentId: 'walrus_agent_recallramp_mainnet_0x7f4b82c',
+    agentId: 'walrus_agent_pocketsentinel_mainnet_0x7f4b82c',
     network: 'Sui Mainnet',
     createdAt: new Date().toISOString(),
     securityNotice: 'Client-side encrypted. Store this file securely. PocketSentinel servers cannot decrypt your encrypted records without it.'
@@ -841,6 +847,23 @@ function importKeyBundleFile(event) {
   reader.readAsText(file);
 }
 
+async function loadRunwayFromMemory() {
+  try {
+    const res = await fetch('/api/memories/runway');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.safeToSpendDaily) {
+        state.userProfile.safeSpend = data.safeToSpendTotal;
+        state.userProfile.dailyVelocity = data.safeToSpendDaily;
+        state.userProfile.cycleDays = data.runwayDays;
+        if (typeof renderUserProfileUI === 'function') renderUserProfileUI();
+      }
+    }
+  } catch (err) {
+    console.warn('Could not reach /api/memories/runway:', err.message);
+  }
+}
+
 // ================= BACKEND STATUS & WALLET TELEMETRY =================
 async function loadSystemStatus() {
   try {
@@ -853,6 +876,9 @@ async function loadSystemStatus() {
     if (networkBadge && data.walrus) {
       networkBadge.title = `Agent: ${data.walrus.agentId} (${data.walrus.memoriesCommittedCount} Anchored Memories)`;
     }
+
+    // Load dynamic runway computed from Walrus memory anchors
+    await loadRunwayFromMemory();
   } catch (err) {
     console.warn('Could not reach /api/status, using cached mainnet telemetry:', err.message);
   }
@@ -994,7 +1020,7 @@ function inspectMemoryDetail(memId) {
         id: memId,
         category: sub.category || 'Baseline',
         key: sub.merchant ? sub.merchant.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'sovereign_memory',
-        agentId: 'walrus_agent_recallramp_mainnet_0x7f4b82c',
+        agentId: 'walrus_agent_pocketsentinel_mainnet_0x7f4b82c',
         suiTxDigest: 'Deterministic Sui Mainnet Anchor',
         walrusBlobId: 'N/A',
         content: `$${Number(sub.amount).toFixed(2)}/mo baseline for ${sub.merchant}. Auto-audit enabled.`
@@ -1004,7 +1030,7 @@ function inspectMemoryDetail(memId) {
         id: memId,
         category: 'Baseline',
         key: 'sovereign_memory_node',
-        agentId: 'walrus_agent_recallramp_mainnet_0x7f4b82c',
+        agentId: 'walrus_agent_pocketsentinel_mainnet_0x7f4b82c',
         suiTxDigest: 'Deterministic Sui Mainnet Anchor',
         walrusBlobId: 'N/A',
         content: `Sovereign memory node [${memId}] verified on Sui Mainnet.`
@@ -1034,7 +1060,7 @@ function openMemoryNodeModal(m) {
   if (titleEl) titleEl.textContent = `Memory Node [${m.id}]`;
   if (categoryEl) categoryEl.textContent = `${m.type || m.category || 'Baseline'} (${m.sensitivity === 'encrypted' ? '🔒 AES-256-GCM Encrypted' : '🌐 Public Policy'})`;
   if (keyEl) keyEl.textContent = m.key || 'memory_node';
-  if (agentEl) agentEl.textContent = m.agentId || 'walrus_agent_recallramp_mainnet_0x7f4b82c';
+  if (agentEl) agentEl.textContent = m.agentId || 'walrus_agent_pocketsentinel_mainnet_0x7f4b82c';
   const suiDigest = m.suiTxDigest || m.metadata?.suiTxDigest || '0x77616c7275735f6167656e745f726563616c6c72616d';
   if (txEl) txEl.textContent = suiDigest;
   if (blobEl) blobEl.textContent = m.metadata?.memwalBlobId || m.walrusBlobId || 'Blob Committed to Walrus Relayer';
@@ -5686,7 +5712,7 @@ async function runLandingPlayground() {
     console.warn('[PLAYGROUND] Fallback used:', err.message);
     if (output) {
       output.innerHTML = `<strong>Safe-to-Spend Runway Analysis:</strong><br><br>
-Your current cash runway is <strong>$482.35</strong> with 10 days remaining in the cycle, giving you an exact safe spending velocity of <strong>$48.23 / day</strong>.
+Your current cash runway is <strong>$1,847.84</strong> with 10 days remaining in the cycle, giving you an exact safe spending velocity of <strong>$184.78 / day</strong>.
 All fixed bills ($301.46) and your $500 emergency buffer are 100% funded. With adaptive deficit rebalancing, any category variance is dynamically absorbed without breaking your household plan.`;
     }
   } finally {
@@ -6487,6 +6513,8 @@ function renderUserProfileUI() {
   if (kpiSafe) kpiSafe.textContent = safeVal;
   if (kpiVel) kpiVel.textContent = `${velVal} · ${cycleVal}`;
   if (overviewBurn) overviewBurn.textContent = velVal;
+  if (overviewDaily) overviewDaily.textContent = velVal;
+  if (overviewSafe) overviewSafe.textContent = safeVal;
   if (typeof renderApprovedCeilingsTable === 'function') renderApprovedCeilingsTable();
 }
 window.renderUserProfileUI = renderUserProfileUI;

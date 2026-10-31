@@ -42,8 +42,8 @@ Most Web3 and decentralized applications fail because they expose their internal
 │                                                                                 │
 │  ┌───────────────────────────────────────────────────────────────────────────┐  │
 │  │ 1. Walrus Episodic Memory on Sui Mainnet                                 │  │
-│  │    - 12 Verified Onchain Memory Anchors (Baselines, Overrides, Watches)    │  │
-│  │    - Agent ID: walrus_agent_recallramp_mainnet_0x7f4b82c                  │  │
+│  │    - 24 Verified Onchain Memory Anchors across 10 distinct types (Schema v2) │  │
+│  │    - Agent ID: walrus_agent_pocketsentinel_mainnet_0x7f4b82c              │  │
 │  │    - Eliminates false alarms, stores permanent cross-session context      │  │
 │  └───────────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────────┐  │

@@ -19,6 +19,7 @@ Thumbs.db
 # User uploads & cache
 data/uploads/*
 !data/uploads/.gitkeep
+data/walrus_memory_store.json
 scratch/
 .system_generated/
 .agents/

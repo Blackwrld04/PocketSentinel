@@ -41,6 +41,25 @@ app.use(express.static(path.join(__dirname, '../public'), {
 // File upload handler for statements and receipts
 const upload = multer({ dest: path.join(__dirname, '../data/uploads') });
 
+/**
+ * Admin Authentication Middleware
+ * Protects administrative routes (seed, config, purge) when in production or when ADMIN_TOKEN is set.
+ */
+const requireAdmin = (req, res, next) => {
+  const adminToken = process.env.ADMIN_TOKEN;
+  if (process.env.NODE_ENV === 'production' || adminToken) {
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : req.headers['x-admin-token'];
+    if (!adminToken || token !== adminToken) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Forbidden: Admin authorization required in production. Please supply ADMIN_TOKEN.'
+      });
+    }
+  }
+  next();
+};
+
 // Initialize Core Clients
 const walrus = new WalrusClient();
 const tatum = new TatumClient();
@@ -106,11 +125,12 @@ app.get('/api/memories', async (req, res) => {
 /**
  * Re-seed the 12 Verified Memories
  */
-app.post('/api/memories/seed', async (req, res) => {
+app.post('/api/memories/seed', requireAdmin, async (req, res) => {
   const results = await seedAllMemories(walrus);
   res.json({
-    message: 'Successfully seeded verified memories to Walrus on Sui Mainnet',
+    message: `Successfully seeded verified memories to Walrus (${walrus.isLive ? 'Live Sui Mainnet' : 'Local Mock'})`,
     count: results.length,
+    mode: walrus.isLive ? 'live' : 'mock',
     items: results
   });
 });
@@ -294,7 +314,21 @@ app.get('/api/tatum/wallet', async (req, res) => {
   const balance = await tatum.getSuiBalance();
   const txs = await tatum.getRecentTransactions();
   const rate = await tatum.getSuiRate();
-  res.json({ balance, transactions: txs, rate });
+  const gas = await tatum.estimateGasPrice();
+  res.json({ balance, transactions: txs, rate, gas });
+});
+
+/**
+ * Tatum Anomaly Webhook Subscription
+ */
+app.post('/api/tatum/subscribe', async (req, res) => {
+  try {
+    const { webhookUrl, address } = req.body || {};
+    const sub = await tatum.createAnomalySubscription(webhookUrl, address);
+    res.json({ success: true, subscription: sub });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /**
@@ -321,7 +355,7 @@ const handleAudioPulse = async (req, res) => {
   const state = await watchdog.getActiveSubscriptionsState();
   const memories = await walrus.listMemories();
 
-  const script = `Good morning. RecallRamp audit complete. Your active monthly subscription run rate is $${state.totalMonthlyRunRate}. We detected one urgent alert: your Adobe Creative Cloud seven-day trial expires in 48 hours, risking a $54.99 rebill. We also flagged Netflix billing $2.50 above your Walrus baseline, draining $30 annually. An AWS charge of $142.50 was safely auto-reconciled based on your October seasonal override. One tap to file your Netflix refund pack now.`;
+  const script = `Good morning. PocketSentinel audit complete. Your active monthly subscription run rate is $${state.totalMonthlyRunRate}. We detected one urgent alert: your Adobe Creative Cloud seven-day trial expires in 48 hours, risking a $54.99 rebill. We also flagged Netflix billing $2.50 above your Walrus baseline, draining $30 annually. An AWS charge of $142.50 was safely auto-reconciled based on your October seasonal override. One tap to file your Netflix refund pack now.`;
 
   res.json({
     durationEstimateSeconds: 20,
@@ -434,10 +468,13 @@ app.get('/api/copilot/config', (req, res) => {
   });
 });
 
-app.post('/api/copilot/config', (req, res) => {
-  const { apiKey } = req.body;
+app.post('/api/copilot/config', requireAdmin, (req, res) => {
+  const { apiKey, model } = req.body;
   if (apiKey !== undefined) {
     groq.setApiKey(apiKey);
+  }
+  if (model) {
+    groq.model = model;
   }
   res.json({
     success: true,
@@ -450,7 +487,7 @@ app.post('/api/copilot/config', (req, res) => {
  * Sovereign Data Purge - Delete Account and Ephemeral Server Caches
  * Eradicates any temporary in-memory sessions or audit caches.
  */
-app.delete('/api/account/delete', async (req, res) => {
+app.delete('/api/account/delete', requireAdmin, async (req, res) => {
   try {
     res.json({
       success: true,

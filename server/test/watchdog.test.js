@@ -23,6 +23,7 @@ import { fileURLToPath } from 'url';
 import { WalrusClient } from '../walrusClient.js';
 import { WatchdogEngine } from '../watchdogEngine.js';
 import { seedAllMemories } from '../seedMemories.js';
+import { TatumClient } from '../tatumClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,9 +49,15 @@ async function runTests() {
 
   // Test 1: Check Walrus Mainnet Memory Count == 24 (spanning 10 distinct types)
   const memories = await walrus.listMemories();
-  assert(memories.length === 24, `Walrus memory count is ${memories.length} (must be 24, >= 10)`);
+  assert(memories.length === 24, `Walrus memory count is ${memories.length} (must be 24, >= 10 Mainnet rule)`);
   const uniqueTypes = new Set(memories.map(m => m.type));
-  assert(uniqueTypes.size >= 8, `Memories span ${uniqueTypes.size} distinct Schema v2 types`);
+  assert(uniqueTypes.size >= 10, `Memories span ${uniqueTypes.size} distinct types (>= 10 required)`);
+
+  const expectedTypes = ['Baseline', 'Override', 'Income', 'Commitment', 'Goal', 'Policy', 'Envelope', 'Correction', 'Preference', 'Decision', 'Event'];
+  for (const t of expectedTypes) {
+    const hasType = memories.some(m => m.type === t);
+    assert(hasType, `Schema v2 type '${t}' is present among anchored memories`);
+  }
 
   // Test 2: Micro-Inflation Detection (Netflix $17.99 vs $15.49 baseline)
   const netflixResult = await watchdog.auditTransaction({
@@ -127,12 +134,23 @@ async function runTests() {
 
   // Test 9: Client-Side AES-256-GCM Encryption
   // Verify that raw JSON file for MEM_13 (Income) contains ciphertext and NO plaintext amount in the store
-  const storeRaw = JSON.parse(fs.readFileSync(path.join(__dirname, '../../data/walrus_memory_store.json'), 'utf8'));
+  const storeRaw = JSON.parse(fs.readFileSync(walrus.storageFile, 'utf8'));
   const incomeOnchain = storeRaw.memories['primary_pay_cycle'];
   assert(incomeOnchain.sensitivity === 'encrypted', 'MEM_13 is flagged sensitivity: encrypted');
   assert(incomeOnchain.metadata.encryptedPayload && incomeOnchain.metadata.encryptedPayload.ciphertext, 'Stores AES-256-GCM ciphertext');
   assert(incomeOnchain.metadata.encryptedPayload.authTag, 'Stores cryptographic authentication tag');
   assert(incomeOnchain.content.includes('[ENCRYPTED'), 'Redacts plaintext numbers from public onchain content');
+
+  // Verify all encrypted memories in store have valid ciphertext and authTag
+  const encryptedMemories = Object.values(storeRaw.memories).filter(m => m.sensitivity === 'encrypted');
+  assert(encryptedMemories.length >= 7, `Found ${encryptedMemories.length} encrypted records (expected >= 7)`);
+  for (const enc of encryptedMemories) {
+    const payload = enc.metadata?.encryptedPayload;
+    assert(
+      Boolean(payload?.ciphertext && payload?.authTag && payload?.iv),
+      `Encrypted memory [${enc.id} / ${enc.key}] contains valid ciphertext, authTag, and IV`
+    );
+  }
 
   // Test 10: Cognitive Envelope Health & Overspend Learning (MEM_18, MEM_19, MEM_21)
   const envelopeHealth = await watchdog.evaluateEnvelopeHealth();
@@ -140,6 +158,25 @@ async function runTests() {
   assert(envelopeHealth.consecutiveOverspendMonths === 3, 'Detects 3 consecutive months of overspending from MEM_18');
   assert(envelopeHealth.lastRebalance.amount === 45.00, 'Reads $45 roll-with-the-punches rebalance from MEM_19');
   assert(envelopeHealth.proposedNewBaseline === 495.00, 'Proposes raising baseline to $495/mo');
+
+  // Test 11: Tatum SDK & Onchain Agent Payments Integration
+  const tatum = new TatumClient();
+  const tatumBalance = await tatum.getSuiBalance();
+  assert(Boolean(tatumBalance.address && tatumBalance.network), 'Tatum queries Sui Mainnet balance');
+  
+  const gasEst = await tatum.estimateGasPrice();
+  assert(Boolean(gasEst.referenceGasPriceMist && gasEst.formattedGasPrice), 'Tatum estimates Sui reference gas price');
+
+  const webhookSub = await tatum.createAnomalySubscription('https://pocketsentinel.app/api/webhooks/tatum');
+  assert(webhookSub.status === 'ACTIVE' || webhookSub.status === 'ACTIVE_TELEMETRY', 'Tatum registers address webhook subscription');
+
+  const agentPay = await tatum.executeAgentPayment({
+    recipient: '0xagent_bounty_settler_009x',
+    amountSui: '0.05 SUI',
+    purpose: 'Automated dispute micro-bounty'
+  });
+  assert(agentPay.status === 'CONFIRMED_ONCHAIN', 'Executes x402 / MPP agent payment on Sui via Tatum');
+  assert(Boolean(agentPay.gasEstimate), 'Agent payment incorporates real-time gas estimate');
 
   console.log(`\n=============================================`);
   console.log(`Test Results: ${passed}/${total} Passed`);

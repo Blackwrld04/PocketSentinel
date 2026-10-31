@@ -580,10 +580,11 @@ export const INITIAL_MEMORIES = [
 ];
 
 export async function seedAllMemories(client = new WalrusClient()) {
+  const modeLabel = client.isLive ? 'Live Sui Mainnet' : 'Local Mock';
   console.log(`\n======================================================`);
-  console.log(`[Seed Harness] Seeding 24 Verified Memories to Walrus Mainnet (Schema v2)`);
+  console.log(`[Seed Harness] Seeding 24 Verified Memories to Walrus (${modeLabel}) (Schema v2)`);
   console.log(`Target Agent ID: ${client.agentId}`);
-  console.log(`Target Network : ${client.network}`);
+  console.log(`Target Network : ${client.network} (${modeLabel})`);
   console.log(`Taxonomy Scope : 10 Distinct Types (Baseline, Income, Commitment, Envelope, Goal, Policy, Correction, Decision, Dispute, Event)`);
   console.log(`======================================================\n`);
 
@@ -598,7 +599,7 @@ export async function seedAllMemories(client = new WalrusClient()) {
     results.push(committed);
   }
 
-  console.log(`\n✅ Successfully seeded ${results.length} memories to Walrus on Sui Mainnet!`);
+  console.log(`\n✅ Successfully seeded ${results.length} memories to Walrus (${modeLabel})!`);
   console.log(`Hackathon checklist requirement (>= 10 writes): PASSED (${results.length}/10)\n`);
   return results;
 }

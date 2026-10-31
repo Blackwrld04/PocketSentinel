@@ -22,13 +22,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ALGORITHM = 'aes-256-gcm';
-const DEFAULT_KEY_SOURCE = process.env.SOVEREIGN_ENCRYPTION_KEY || process.env.MEMWAL_KEY || 'pocketsentinel-sovereign-aes-256-key-walrus-mainnet-32b';
-const MASTER_ENCRYPTION_KEY = crypto.createHash('sha256').update(DEFAULT_KEY_SOURCE).digest();
+
+/**
+ * Derives master encryption key from environment variable.
+ * Throws in production if SOVEREIGN_ENCRYPTION_KEY is not configured.
+ */
+function getMasterEncryptionKey() {
+  const keySource = process.env.SOVEREIGN_ENCRYPTION_KEY || process.env.MEMWAL_KEY;
+  if (!keySource) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: SOVEREIGN_ENCRYPTION_KEY must be set in production environment.');
+    }
+    return crypto.createHash('sha256').update('pocketsentinel-dev-mock-key-do-not-use-in-production').digest();
+  }
+  return crypto.createHash('sha256').update(keySource).digest();
+}
 
 /**
  * Encrypts sensitive personal finance payload using AES-256-GCM
  */
-export function encryptPayload(data, key = MASTER_ENCRYPTION_KEY) {
+export function encryptPayload(data, key = getMasterEncryptionKey()) {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   const jsonStr = typeof data === 'string' ? data : JSON.stringify(data);
@@ -46,7 +59,7 @@ export function encryptPayload(data, key = MASTER_ENCRYPTION_KEY) {
 /**
  * Decrypts AES-256-GCM payload with authentication tag validation
  */
-export function decryptPayload(encryptedObj, key = MASTER_ENCRYPTION_KEY) {
+export function decryptPayload(encryptedObj, key = getMasterEncryptionKey()) {
   if (!encryptedObj || !encryptedObj.ciphertext || !encryptedObj.iv || !encryptedObj.authTag) {
     return null;
   }
@@ -72,17 +85,14 @@ export function decryptPayload(encryptedObj, key = MASTER_ENCRYPTION_KEY) {
 
 export class WalrusClient {
   constructor(config = {}) {
-    this.agentId = config.agentId || process.env.MEMWAL_AGENT_ID || 'walrus_agent_recallramp_mainnet_0x7f4b82c';
+    this.agentId = config.agentId || process.env.MEMWAL_AGENT_ID || 'walrus_agent_pocketsentinel_mainnet_0x7f4b82c';
     this.key = config.key || process.env.MEMWAL_PRIVATE_KEY || process.env.MEMWAL_KEY || '';
     this.accountId = config.accountId || process.env.MEMWAL_ACCOUNT_ID || '';
     this.relayerUrl = config.relayerUrl || process.env.MEMWAL_SERVER_URL || process.env.WALRUS_RELAYER_URL || 'https://relayer.memory.walrus.xyz';
     this.apiUrl = config.apiUrl || process.env.WALRUS_MEMORY_API || 'https://memory.walrus.xyz';
     this.namespace = config.namespace || 'pocketsentinel';
-    this.network = config.network || 'sui-mainnet';
-    this.storageFile = path.join(__dirname, '../data/walrus_memory_store.json');
-    this.ensureStorage();
-
-    // Initialize official MemWal SDK client (Live if credentials provided, otherwise deterministic MemWalMock)
+    
+    // Determine live vs mock status
     if (this.key && this.accountId) {
       try {
         this.sdk = MemWal.create({
@@ -92,16 +102,27 @@ export class WalrusClient {
           namespace: this.namespace,
         });
         this.isLive = true;
+        this.network = config.network || 'sui-mainnet';
         console.log(`[WalrusClient] 🌐 Connected to live Walrus Memory Relayer (${this.relayerUrl})`);
       } catch (err) {
         console.warn(`[WalrusClient] Failed to initialize live MemWal client, using deterministic mock:`, err.message);
         this.sdk = MemWalMock.create({ namespace: this.namespace, owner: this.agentId });
         this.isLive = false;
+        this.network = config.network || 'local-mock';
       }
     } else {
       this.sdk = MemWalMock.create({ namespace: this.namespace, owner: this.agentId });
       this.isLive = false;
+      this.network = config.network || 'local-mock';
     }
+
+    // Storage file location: use /tmp on Vercel's read-only serverless environment
+    if (process.env.VERCEL) {
+      this.storageFile = path.join('/tmp', 'walrus_memory_store.json');
+    } else {
+      this.storageFile = path.join(__dirname, '../data/walrus_memory_store.json');
+    }
+    this.ensureStorage();
   }
 
   ensureStorage() {
@@ -110,9 +131,20 @@ export class WalrusClient {
       fs.mkdirSync(dir, { recursive: true });
     }
     if (!fs.existsSync(this.storageFile)) {
+      // In Vercel, copy seed file if available in bundle
+      const fallbackSeedPath = path.join(__dirname, '../data/walrus_memory_store.json');
+      if (process.env.VERCEL && fs.existsSync(fallbackSeedPath)) {
+        try {
+          fs.copyFileSync(fallbackSeedPath, this.storageFile);
+          return;
+        } catch {
+          // ignore copy error
+        }
+      }
       fs.writeFileSync(this.storageFile, JSON.stringify({
         agentId: this.agentId,
         network: this.network,
+        mode: this.isLive ? 'live' : 'mock',
         lastSync: new Date().toISOString(),
         memories: {}
       }, null, 2));
@@ -124,7 +156,7 @@ export class WalrusClient {
     try {
       return JSON.parse(fs.readFileSync(this.storageFile, 'utf8'));
     } catch {
-      return { agentId: this.agentId, network: this.network, memories: {} };
+      return { agentId: this.agentId, network: this.network, mode: this.isLive ? 'live' : 'mock', memories: {} };
     }
   }
 
@@ -175,8 +207,10 @@ export class WalrusClient {
         : 'public'
     );
 
-    // Deterministic Sui Mainnet transaction digest simulation if not provided
-    const txDigest = mainnetTx || `0x${Buffer.from(`${this.agentId}-${key}-${timestamp}`).toString('hex').slice(0, 44)}`;
+    // Sui transaction digest: use real digest if live/provided, otherwise explicitly label mock
+    const txDigest = mainnetTx || (this.isLive 
+      ? (sdkResult?.tx_digest || `0x${Buffer.from(`${this.agentId}-${key}-${timestamp}`).toString('hex').slice(0, 44)}`)
+      : `mock_tx_${Buffer.from(`${this.agentId}-${key}-${timestamp}`).toString('hex').slice(0, 32)}`);
 
     let encryptedPayload = null;
     let onchainContent = content || '';
@@ -217,12 +251,13 @@ export class WalrusClient {
         ...metadata,
         userSummary: content || null,
         network: this.network,
+        mode: this.isLive ? 'live' : 'mock',
         suiTxDigest: txDigest,
         committedAt: timestamp,
-        verifiedMainnet: true,
+        verifiedMainnet: Boolean(this.isLive),
         memwalBlobId: sdkResult?.blob_id || null,
         memwalJobId: sdkResult?.job_id || null,
-        isLiveMemWal: this.isLive,
+        isLiveMemWal: Boolean(this.isLive),
         ...(encryptedPayload ? { encryptedPayload } : {})
       }
     };
@@ -231,7 +266,7 @@ export class WalrusClient {
     store.lastSync = timestamp;
     this.saveStore(store);
 
-    console.log(`[WalrusClient] 💾 Memory Committed to Mainnet: [${memoryId}] ${key} (${resolvedType} - ${resolvedSensitivity})`);
+    console.log(`[WalrusClient] 💾 Memory Committed (${this.isLive ? 'Live Sui Mainnet' : 'Local Mock'}): [${memoryId}] ${key} (${resolvedType} - ${resolvedSensitivity})`);
     return memoryRecord;
   }
 

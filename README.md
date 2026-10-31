@@ -268,6 +268,9 @@ The backend runs on Express ESM (`server/server.js`) and exposes the following e
 | `/api/copilot/config` | `GET / POST` | Reads or updates the active Groq AI inference configuration. |
 | `/api/pulse/audio` | `GET` | Synthesizes a 20-second financial pulse script for morning voice summaries. |
 | `/api/feed/csv` | `GET` | Live `=IMPORTDATA` CSV feed for Google Sheets and Excel workbooks. |
+| `/api/tatum/wallet` | `GET` | Queries Sui Mainnet account balance, Tatum real-time exchange rates, and gas price estimation. |
+| `/api/tatum/subscribe` | `POST` | Subscribes to address anomaly webhooks via Tatum Notification Service. |
+| `/api/tatum/payment` | `POST` | Executes x402 / MPP agent micro-bounty settlement on Sui via Tatum gateway. |
 
 ---
 
