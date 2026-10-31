@@ -74,7 +74,6 @@ Meanwhile:
 * **Consumer-Grade Foreground:** Intuitive, zero-jargon user interface with real-time daily cash velocity, zero-based envelope rebalancing ("Roll With The Punches"), automated price creep defense, and a Groq-powered cognitive behavioral coach.
 * **Invisible Decentralization:** All complex plumbing—**Walrus onchain episodic memory commits on Sui Mainnet**, **Tatum RPC telemetry**, **client-side WebCrypto AES-256-GCM encryption**, and **autonomous logic rules**—operates **100% silently in the background**. The user never manages gas tokens or hex hashes; their data is sovereign, encrypted, and private by default.
 
-
 ### What it does
 
 | Capability | How it works | Memory used |
