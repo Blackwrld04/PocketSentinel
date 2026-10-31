@@ -731,14 +731,17 @@ function handleHashNavigation(isInitialLoad = false) {
  * Zero-Knowledge Client-Side Encryption
  * Standard: AES-256-GCM + PBKDF2-SHA256 (100,000 rounds)
  */
-async function initWebCryptoVault(passphrase = 'pocketsentinel-sovereign-vault-2026') {
+async function initWebCryptoVault(passphrase = null) {
   try {
     const enc = new TextEncoder();
     state.vault.salt = window.crypto.getRandomValues(new Uint8Array(16));
 
+    // If no user passphrase supplied, generate a cryptographically secure random session passphrase
+    const effectivePassphrase = passphrase || Array.from(window.crypto.getRandomValues(new Uint8Array(24)), b => b.toString(16).padStart(2, '0')).join('');
+
     const keyMaterial = await window.crypto.subtle.importKey(
       'raw',
-      enc.encode(passphrase),
+      enc.encode(effectivePassphrase),
       { name: 'PBKDF2' },
       false,
       ['deriveKey']
@@ -1251,12 +1254,12 @@ function getCalendarEventsForMonth(year, month) {
   const eventsByDay = {};
 
   const baseCatalog = [
-    { id: 'MEM_09', merchant: 'GitHub Copilot', amount: 10.00, dayOfMonth: 1, status: 'NORMAL', category: 'Developer Productivity' },
-    { id: 'MEM_12', merchant: 'Apple iCloud+ 2TB', amount: 9.99, dayOfMonth: 5, status: 'NORMAL', category: 'Cloud Storage & Utility' },
+    { id: 'MEM_01', merchant: 'GitHub Copilot', amount: 10.00, dayOfMonth: 1, status: 'NORMAL', category: 'Developer Productivity' },
+    { id: 'MEM_01', merchant: 'Apple iCloud+ 2TB', amount: 9.99, dayOfMonth: 5, status: 'NORMAL', category: 'Cloud Storage & Utility' },
     { id: 'MEM_11', merchant: 'Spotify Family', amount: 16.99, dayOfMonth: 8, status: 'NORMAL', category: 'Streaming' },
-    { id: 'MEM_03', merchant: 'ChatGPT Plus', amount: 20.00, dayOfMonth: 12, status: 'NORMAL', category: 'AI & Cloud' },
+    { id: 'MEM_01', merchant: 'ChatGPT Plus', amount: 20.00, dayOfMonth: 12, status: 'NORMAL', category: 'AI & Cloud' },
     { id: 'MEM_07', merchant: 'Figma Professional', amount: 15.00, dayOfMonth: 14, status: 'NORMAL', category: 'Design Tools' },
-    { id: 'MEM_02', merchant: 'Spotify Premium', amount: 10.99, dayOfMonth: 15, status: 'NORMAL', category: 'Streaming' },
+    { id: 'MEM_01', merchant: 'Spotify Premium', amount: 10.99, dayOfMonth: 15, status: 'NORMAL', category: 'Streaming' },
     { id: 'MEM_06', merchant: 'Adobe CC 7-Day Trial', amount: 54.99, dayOfMonth: 18, status: 'TRIAL_URGENT', tag: 'Trial Alert', category: 'Software' },
     { id: 'MEM_10', merchant: 'DoorDash DashPass', amount: 9.99, dayOfMonth: 18, status: 'NORMAL', category: 'Food & Dining' },
     { id: 'MEM_04', merchant: 'Amazon Web Services (AWS)', amount: 142.50, dayOfMonth: 19, status: 'SUPPRESSED', tag: 'Overridden', category: 'Infrastructure' },
@@ -2674,9 +2677,14 @@ function renderAuditRecords(records) {
       `;
     } else if (r.status === 'MICRO_INFLATION_ALERT' || r.status === 'PRICE_CREEP') {
       actionBtnHtml = `
-        <button class="btn-card-action-red" onclick="openDisputeModalForRecord('${safeMerchantArg}', ${amount}, ${baseline || 0}, ${delta}, '${memoryRef || 'MEM_01'}')">
-          <i data-lucide="shield-alert"></i> Dispute
-        </button>
+        <div style="display:flex; gap:4px;">
+          <button class="btn-card-action-red" onclick="openDisputeModalForRecord('${safeMerchantArg}', ${amount}, ${baseline || 0}, ${delta}, '${memoryRef || 'MEM_01'}')">
+            <i data-lucide="shield-alert"></i> Dispute
+          </button>
+          <button class="btn-card-action-amber" onclick="openResolveChangeModal('${safeMerchantArg}', ${amount}, ${baseline || 0})" title="Resolve Plan Change vs Price Hike">
+            <i data-lucide="help-circle"></i> Resolve
+          </button>
+        </div>
       `;
     } else if (r.status === 'TRIAL_CONVERTING' || r.status === 'TRIAL_URGENT' || merchant.toLowerCase().includes('adobe')) {
       actionBtnHtml = `
@@ -3781,9 +3789,14 @@ function renderSubscriptionsLedger() {
     let actionBtn = '';
     if (sub.status === 'CREEP_FLAG') {
       actionBtn = `
-        <button class="btn-inspect-mini text-coral btn-dispute-trigger" data-merchant="${merchantEsc}" data-cost="${sub.cost}" data-baseline="${sub.baseline}" data-delta="${sub.delta}" data-memory="${memEsc}">
-          <i data-lucide="scale"></i> Dispute
-        </button>
+        <div style="display:inline-flex; gap:4px;">
+          <button class="btn-inspect-mini text-coral btn-dispute-trigger" data-merchant="${merchantEsc}" data-cost="${sub.cost}" data-baseline="${sub.baseline}" data-delta="${sub.delta}" data-memory="${memEsc}">
+            <i data-lucide="scale"></i> Dispute
+          </button>
+          <button class="btn-inspect-mini text-amber btn-resolve-change-trigger" data-merchant="${merchantEsc}" data-cost="${sub.cost}" data-baseline="${sub.baseline}" title="Plan Change vs Price Hike">
+            <i data-lucide="help-circle"></i> Resolve
+          </button>
+        </div>
       `;
     } else if (sub.status === 'TRIAL') {
       actionBtn = `
@@ -3797,11 +3810,22 @@ function renderSubscriptionsLedger() {
           <i data-lucide="arrow-right-left"></i> Consolidate
         </button>
       `;
+    } else if (sub.status === 'CANCELLED') {
+      actionBtn = `
+        <span class="status-badge alert" style="background:#FEE2E2;color:#991B1B;border-color:#FCA5A5;font-size:11px;padding:3px 8px;">
+          <i data-lucide="x-circle"></i> Inactive
+        </span>
+      `;
     } else {
       actionBtn = `
-        <button class="btn-inspect-mini btn-policy-trigger" data-memory="${memEsc}">
-          <i data-lucide="eye"></i> Policy
-        </button>
+        <div style="display:inline-flex; gap:4px;">
+          <button class="btn-inspect-mini btn-policy-trigger" data-memory="${memEsc}">
+            <i data-lucide="eye"></i> Policy
+          </button>
+          <button class="btn-inspect-mini text-coral btn-sub-cancel-trigger" data-merchant="${merchantEsc}" title="Cancel subscription">
+            <i data-lucide="x-circle"></i> Cancel
+          </button>
+        </div>
       `;
     }
 
@@ -3875,6 +3899,21 @@ function renderSubscriptionsLedger() {
       if (typeof inspectMemoryDetail === 'function') inspectMemoryDetail(btn.dataset.memory);
     };
   });
+  container.querySelectorAll('.btn-resolve-change-trigger').forEach(btn => {
+    btn.onclick = () => {
+      openResolveChangeModal(
+        btn.dataset.merchant,
+        parseFloat(btn.dataset.cost || 0),
+        parseFloat(btn.dataset.baseline || 0)
+      );
+    };
+  });
+  container.querySelectorAll('.btn-sub-cancel-trigger').forEach(btn => {
+    btn.onclick = async () => {
+      if (!confirm(`Mark ${btn.dataset.merchant} as cancelled in the sovereign ledger?`)) return;
+      await cancelSubscription(btn.dataset.merchant);
+    };
+  });
   container.querySelectorAll('.btn-confirm-proposal').forEach(btn => {
     btn.onclick = async () => {
       await confirmProposal(
@@ -3894,6 +3933,91 @@ function renderSubscriptionsLedger() {
   if (window.lucide) window.lucide.createIcons();
 }
 window.renderSubscriptionsLedger = renderSubscriptionsLedger;
+
+async function cancelSubscription(vendor) {
+  try {
+    const res = await fetch('/api/subscriptions/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vendor })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to cancel subscription');
+    showToast(`Cancelled ${vendor} in sovereign ledger MEM_01`, 'emerald');
+    await loadSubscriptions();
+  } catch (err) {
+    showToast('Failed to cancel subscription: ' + err.message, 'amber');
+  }
+}
+window.cancelSubscription = cancelSubscription;
+
+function openResolveChangeModal(vendor, amount, baseline) {
+  const modal = document.getElementById('resolveChangeModal');
+  if (!modal) {
+    showToast(`Discrepancy for ${vendor}: new charge $${amount.toFixed(2)} vs baseline $${baseline.toFixed(2)}`, 'blue');
+    return;
+  }
+  const titleEl = document.getElementById('resolveChangeVendorTitle');
+  if (titleEl) titleEl.textContent = `Resolve ${vendor}: Plan Change vs Price Hike`;
+
+  const detailsEl = document.getElementById('resolveChangeDetails');
+  if (detailsEl) {
+    const diff = (amount - baseline).toFixed(2);
+    detailsEl.innerHTML = `Charge of <strong>$${amount.toFixed(2)}</strong> differs from established baseline <strong>$${baseline.toFixed(2)}</strong> (+${diff >= 0 ? '$' : '-$'}${Math.abs(diff)}).`;
+  }
+
+  const btnPlan = document.getElementById('btnConfirmPlanChange');
+  if (btnPlan) {
+    btnPlan.onclick = () => resolveSubscriptionChange('plan_change');
+  }
+  const btnHike = document.getElementById('btnConfirmPriceHike');
+  if (btnHike) {
+    btnHike.onclick = () => resolveSubscriptionChange('price_hike');
+  }
+
+  modal.dataset.vendor = vendor;
+  modal.dataset.amount = amount;
+  modal.style.display = 'flex';
+  modal.classList.add('active');
+}
+window.openResolveChangeModal = openResolveChangeModal;
+
+function closeResolveChangeModal() {
+  const modal = document.getElementById('resolveChangeModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
+}
+window.closeResolveChangeModal = closeResolveChangeModal;
+
+async function resolveSubscriptionChange(choice) {
+  const modal = document.getElementById('resolveChangeModal');
+  if (!modal) return;
+  const vendor = modal.dataset.vendor;
+  const amount = parseFloat(modal.dataset.amount || 0);
+
+  try {
+    const res = await fetch('/api/subscriptions/resolve-change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vendor, amount, choice })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to resolve change');
+
+    closeResolveChangeModal();
+    if (choice === 'plan_change') {
+      showToast(`Updated baseline for ${vendor} to $${amount.toFixed(2)}!`, 'emerald');
+    } else {
+      showToast(`Flagged unannounced price hike for ${vendor}. Dispute pack ready.`, 'coral');
+    }
+    await loadSubscriptions();
+  } catch (err) {
+    showToast('Failed to resolve change: ' + err.message, 'amber');
+  }
+}
+window.resolveSubscriptionChange = resolveSubscriptionChange;
 
 async function confirmProposal(vendor, amount, cadence, raw_pattern) {
   try {
@@ -5267,10 +5391,18 @@ function formatMarkdown(text) {
     .replace(/\bRecall Sentinel\b/gi, 'PocketSentinel')
     .replace(/\bRecall\b/g, 'PocketSentinel')
     .replace(/[•▪▫◦✦★▲■◆➔→➤✓✔]/g, '-')
-    .replace(/[~^|\\`]/g, '')
+    .replace(/[~^|\\]/g, '')
     .replace(/,\s*,+/g, ', ');
 
-  return clean
+  // Escape raw HTML entities before generating markdown HTML tags
+  const escaped = String(clean)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  return escaped
     .replace(/^### (.*$)/gim, '<h5 style="margin: 8px 0 4px 0; font-size: 13px; font-weight: 700; color: var(--text-primary);">$1</h5>')
     .replace(/^## (.*$)/gim, '<h4 style="margin: 10px 0 6px 0; font-size: 14px; font-weight: 700; color: var(--text-primary);">$1</h4>')
     .replace(/^# (.*$)/gim, '<h3 style="margin: 12px 0 6px 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">$1</h3>')
