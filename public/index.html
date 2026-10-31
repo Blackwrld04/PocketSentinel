@@ -4107,6 +4107,38 @@
     </div>
   </div>
 
+  <!-- ================= PLAN CHANGE VS PRICE HIKE RESOLUTION MODAL ================= -->
+  <div class="modal-backdrop" id="resolveChangeModal" style="display:none; z-index: 10060;">
+    <div class="modal-card" style="max-width: 520px; width: 95%;">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon" style="background:#fee2e2; color:#ef4444;"><i data-lucide="help-circle"></i></span>
+          <div>
+            <h3 id="resolveChangeVendorTitle">Resolve Plan Change vs Price Hike</h3>
+            <p>Determine how PocketSentinel should treat this price discrepancy</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeResolveChangeModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div id="resolveChangeDetails" style="font-size: 14px; margin-bottom: 16px; line-height: 1.5;"></div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button type="button" class="btn-primary-action" id="btnConfirmPlanChange" style="padding: 12px; justify-content: flex-start; text-align: left; background: #f0fdf4; border: 1.5px solid #22c55e; color: #15803d; cursor: pointer;">
+            <div style="font-weight: 700;">Authorized Plan Change / Upgrade</div>
+            <div style="font-size: 12px; opacity: 0.85;">Update memory baseline to the new rate without flagging future alerts.</div>
+          </button>
+          <button type="button" class="btn-primary-action" id="btnConfirmPriceHike" style="padding: 12px; justify-content: flex-start; text-align: left; background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; cursor: pointer;">
+            <div style="font-weight: 700;">Unannounced Price Hike</div>
+            <div style="font-size: 12px; opacity: 0.85;">Maintain original baseline rate, log dispute, and generate cancellation/dispute pack.</div>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeResolveChangeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER FOR DYNAMIC NOTIFICATIONS -->
   <div class="toast-container" id="toastContainer"></div>
 

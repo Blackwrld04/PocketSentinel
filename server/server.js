@@ -12,6 +12,9 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import path from 'path';
 import multer from 'multer';
 import fs from 'fs';
@@ -31,7 +34,60 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.set('trust proxy', 1);
+
+// Helmet security headers (CSP disabled for now because UI uses inline onclick handlers)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+const allowedOrigin = process.env.ALLOWED_ORIGIN;
+app.use(cors({
+  origin: allowedOrigin ? allowedOrigin.split(',').map(o => o.trim()) : true,
+  credentials: true
+}));
+
+// Rate limiting tiers
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Too many requests, please slow down.', retryAfter: '1 minute' }
+});
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'AI inference rate limit exceeded. Please wait a moment.', retryAfter: '1 minute' }
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Statement upload rate limit exceeded. Max 10 uploads per minute.', retryAfter: '1 minute' }
+});
+
+const mutatingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Mutation rate limit exceeded. Max 60 operations per minute.', retryAfter: '1 minute' }
+});
+
+app.use(globalLimiter);
+app.use('/api/copilot/chat', aiLimiter);
+app.use('/api/ocr/scan', aiLimiter);
+app.use('/api/statement/upload', uploadLimiter);
+app.use(['/api/memories/commit', '/api/memories/override', '/api/subscriptions', '/api/account/delete'], mutatingLimiter);
+
+// Default express.json (100kb limit) globally
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public'), {
   setHeaders: (res) => {
@@ -43,21 +99,76 @@ app.use(express.static(path.join(__dirname, '../public'), {
 const upload = multer({ dest: path.join(__dirname, '../data/uploads') });
 
 /**
+ * Sanitizes values for CSV output to prevent spreadsheet formula injection
+ */
+export function csvCell(v) {
+  const str = String(v ?? '');
+  const neutralized = /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+  if (/[",\n\r]/.test(neutralized)) {
+    return `"${neutralized.replace(/"/g, '""')}"`;
+  }
+  return neutralized;
+}
+
+/**
+ * Production-safe error response helper: logs error with requestId and returns generic message in production
+ */
+export function sendInternalError(res, req, err) {
+  const reqId = req?.id || crypto.randomUUID();
+  console.error(`[Internal Error] [ReqID: ${reqId}] ${req?.method} ${req?.originalUrl}:`, err);
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(500).json({
+      ok: false,
+      error: 'An internal server error occurred.',
+      requestId: reqId
+    });
+  }
+  return res.status(500).json({
+    ok: false,
+    error: err?.message || 'Internal server error',
+    requestId: reqId
+  });
+}
+
+/**
  * Admin Authentication Middleware
- * Protects administrative routes (seed, config, purge) when in production or when ADMIN_TOKEN is set.
+ * Protects administrative routes (seed, config, purge).
+ * In production: fails closed with 503 if ADMIN_TOKEN is not configured.
+ * Uses timingSafeEqual with SHA-256 digests to prevent timing attacks.
  */
 const requireAdmin = (req, res, next) => {
   const adminToken = process.env.ADMIN_TOKEN;
-  if (process.env.NODE_ENV === 'production' || adminToken) {
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : req.headers['x-admin-token'];
-    if (!adminToken || token !== adminToken) {
-      return res.status(403).json({
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!adminToken) {
+    if (isProd) {
+      return res.status(503).json({
         ok: false,
-        error: 'Forbidden: Admin authorization required in production. Please supply ADMIN_TOKEN.'
+        error: 'Service Unavailable: Administrator authentication token is not configured on this server.'
       });
     }
+    return next();
   }
+
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : (req.headers['x-admin-token'] || req.query?.admin_token);
+  if (!token || typeof token !== 'string') {
+    return res.status(401).json({
+      ok: false,
+      error: 'Unauthorized: Admin token required'
+    });
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest();
+  const adminHash = crypto.createHash('sha256').update(adminToken).digest();
+
+  if (!crypto.timingSafeEqual(tokenHash, adminHash)) {
+    return res.status(403).json({
+      ok: false,
+      error: 'Forbidden: Invalid admin token'
+    });
+  }
+
   next();
 };
 
@@ -141,11 +252,17 @@ app.post('/api/memories/seed', requireAdmin, async (req, res) => {
  */
 app.post('/api/memories/commit', async (req, res) => {
   try {
-    const { key, category, type, content, value, source, sensitivity, tags, supersedes, metadata } = req.body;
-    if (!key) {
-      return res.status(400).json({ error: 'Key is required' });
+    const { key, id, category, type, content, value, source, sensitivity, tags, supersedes, metadata } = req.body;
+    const KEY_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+    const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+    if (!key || typeof key !== 'string' || !KEY_REGEX.test(key) || FORBIDDEN_KEYS.has(key.toLowerCase())) {
+      return res.status(400).json({ ok: false, error: 'Invalid memory key format. Must match ^[a-z0-9][a-z0-9_-]{0,63}$ and not be reserved.' });
+    }
+    if (id && (!KEY_REGEX.test(id) || FORBIDDEN_KEYS.has(String(id).toLowerCase()))) {
+      return res.status(400).json({ ok: false, error: 'Invalid memory id format. Must match ^[a-z0-9][a-z0-9_-]{0,63}$ and not be reserved.' });
     }
     const record = await walrus.commitMemory({
+      id,
       key,
       category: category || type || 'Custom',
       type: type || category || 'Baseline',
@@ -159,7 +276,10 @@ app.post('/api/memories/commit', async (req, res) => {
     });
     res.json({ success: true, record });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (err instanceof ValidationError || err.name === 'ValidationError') {
+      return res.status(400).json({ ok: false, error: err.message });
+    }
+    sendInternalError(res, req, err);
   }
 });
 
@@ -169,10 +289,15 @@ app.post('/api/memories/commit', async (req, res) => {
 app.post('/api/memories/override', async (req, res) => {
   try {
     const { key, reason, amount } = req.body;
+    const KEY_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+    const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+    if (!key || typeof key !== 'string' || !KEY_REGEX.test(key) || FORBIDDEN_KEYS.has(key.toLowerCase())) {
+      return res.status(400).json({ ok: false, error: 'Invalid memory key format' });
+    }
     const record = await walrus.recordOverride(key, { reason, amount });
     res.json({ success: true, message: 'Policy override permanently recorded to Walrus Memory', record });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendInternalError(res, req, err);
   }
 });
 
@@ -186,7 +311,7 @@ app.get('/api/memories/runway', async (req, res) => {
     const runway = await watchdog.calculateRunwayFromMemories(balance, null, currency);
     res.json(runway);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendInternalError(res, req, err);
   }
 });
 
@@ -198,7 +323,7 @@ app.get('/api/memories/envelope-health', async (req, res) => {
     const health = await watchdog.evaluateEnvelopeHealth();
     res.json(health);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendInternalError(res, req, err);
   }
 });
 
@@ -210,7 +335,7 @@ app.get('/api/subscriptions', async (req, res) => {
     const data = await watchdog.getActiveSubscriptionsState();
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendInternalError(res, req, err);
   }
 });
 
@@ -759,27 +884,38 @@ app.post('/api/ocr/scan', express.json({ limit: '10mb' }), async (req, res) => {
  */
 app.get('/api/feed/csv', async (req, res) => {
   try {
-    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="recall_normalized_transactions.csv"');
 
-    const headers = 'Date,Merchant,Category,Amount,Cadence,Status,Source,Walrus_Anchor,Rule_Audit\n';
+    const headers = [
+      csvCell('Date'),
+      csvCell('Merchant'),
+      csvCell('Category'),
+      csvCell('Amount'),
+      csvCell('Cadence'),
+      csvCell('Status'),
+      csvCell('Source'),
+      csvCell('Walrus_Anchor'),
+      csvCell('Rule_Audit')
+    ].join(',') + '\n';
+
     const data = await watchdog.getActiveSubscriptionsState();
     const rows = (data.subscriptions || []).map(s => {
-      const date = s.first_seen || '2026-10-01';
-      const merchant = `"${(s.merchant || '').replace(/"/g, '""')}"`;
-      const cat = `"${(s.category || 'Subscription').replace(/"/g, '""')}"`;
-      const amt = (Number(s.amount) || 0).toFixed(2);
-      const cadence = s.cadence || 'monthly';
-      const status = s.status || 'active';
-      const source = s.source || 'user_stated';
-      const anchor = s.id || 'MEM_01';
-      const rule = status === 'cancelled' ? 'CANCELLED_SERVICE' : 'SUBSCRIPTION_LEDGER_BASELINE';
+      const date = csvCell(s.first_seen || '2026-10-01');
+      const merchant = csvCell(s.merchant || '');
+      const cat = csvCell(s.category || 'Subscription');
+      const amt = csvCell((Number(s.amount) || 0).toFixed(2));
+      const cadence = csvCell(s.cadence || 'monthly');
+      const status = csvCell(s.status || 'active');
+      const source = csvCell(s.source || 'user_stated');
+      const anchor = csvCell(s.id || 'MEM_01');
+      const rule = csvCell(status === 'cancelled' ? 'CANCELLED_SERVICE' : 'SUBSCRIPTION_LEDGER_BASELINE');
       return `${date},${merchant},${cat},${amt},${cadence},${status},${source},${anchor},${rule}`;
     }).join('\n');
 
     res.send(headers + rows);
   } catch (err) {
-    res.status(500).send(`Error: ${err.message}`);
+    sendInternalError(res, req, err);
   }
 });
 

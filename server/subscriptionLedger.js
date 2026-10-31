@@ -86,14 +86,22 @@ export function validateService(service) {
   };
 }
 
+const SLUG_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+const FORBIDDEN_SLUGS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
  * Creates a vendor slug for object keying
  */
 export function toVendorSlug(name) {
-  return String(name || '')
+  const raw = String(name || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
+  const truncated = raw.slice(0, 64);
+  if (!truncated || !SLUG_REGEX.test(truncated) || FORBIDDEN_SLUGS.has(truncated.toLowerCase())) {
+    return 'custom_vendor';
+  }
+  return truncated;
 }
 
 /**
@@ -130,9 +138,12 @@ export async function updateLedger(walrusClient, mutatorFn, changeSummary = 'Upd
     // Apply mutation
     const mutatedServices = await mutatorFn(servicesCopy);
 
-    // Validate all services in the ledger
-    const validatedServices = {};
+    // Validate all services in the ledger with prototype guards
+    const validatedServices = Object.create(null);
     for (const [slug, item] of Object.entries(mutatedServices)) {
+      if (!slug || !SLUG_REGEX.test(slug) || FORBIDDEN_SLUGS.has(slug.toLowerCase())) {
+        throw new ValidationError(`Invalid service slug "${slug}". Must match ^[a-z0-9][a-z0-9_-]{0,63}$ and cannot equal reserved keywords.`);
+      }
       validatedServices[slug] = validateService(item);
     }
 

@@ -22,10 +22,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ALGORITHM = 'aes-256-gcm';
+const KEY_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
  * Derives master encryption key from environment variable.
  * Throws in production if SOVEREIGN_ENCRYPTION_KEY is not configured.
+ * In development and test, generates an ephemeral random key per process.
  */
 function getMasterEncryptionKey() {
   const keySource = process.env.SOVEREIGN_ENCRYPTION_KEY || process.env.MEMWAL_KEY;
@@ -33,7 +36,11 @@ function getMasterEncryptionKey() {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('FATAL: SOVEREIGN_ENCRYPTION_KEY must be set in production environment.');
     }
-    return crypto.createHash('sha256').update('pocketsentinel-dev-mock-key-do-not-use-in-production').digest();
+    if (!globalThis.__DEV_SOVEREIGN_KEY) {
+      globalThis.__DEV_SOVEREIGN_KEY = crypto.randomBytes(32);
+      console.warn('[WalrusClient] WARNING: SOVEREIGN_ENCRYPTION_KEY is unset in non-production. Generated random ephemeral key for this process.');
+    }
+    return globalThis.__DEV_SOVEREIGN_KEY;
   }
   return crypto.createHash('sha256').update(keySource).digest();
 }
@@ -153,11 +160,24 @@ export class WalrusClient {
 
   loadStore() {
     this.ensureStorage();
+    let raw = null;
     try {
-      return JSON.parse(fs.readFileSync(this.storageFile, 'utf8'));
+      raw = JSON.parse(fs.readFileSync(this.storageFile, 'utf8'));
     } catch {
-      return { agentId: this.agentId, network: this.network, mode: this.isLive ? 'live' : 'mock', memories: {} };
+      raw = { agentId: this.agentId, network: this.network, mode: this.isLive ? 'live' : 'mock', memories: {} };
     }
+    const cleanStore = {
+      ...raw,
+      memories: Object.create(null)
+    };
+    if (raw && raw.memories && typeof raw.memories === 'object') {
+      for (const [k, v] of Object.entries(raw.memories)) {
+        if (!FORBIDDEN_KEYS.has(k.toLowerCase()) && KEY_REGEX.test(k)) {
+          cleanStore.memories[k] = v;
+        }
+      }
+    }
+    return cleanStore;
   }
 
   saveStore(data) {
@@ -190,6 +210,13 @@ export class WalrusClient {
     metadata = {},
     mainnetTx = null
   }) {
+    if (!key || typeof key !== 'string' || !KEY_REGEX.test(key) || FORBIDDEN_KEYS.has(key.toLowerCase())) {
+      throw new Error(`Invalid memory key: "${key}". Must match ^[a-z0-9][a-z0-9_-]{0,63}$ and not be a reserved prototype property.`);
+    }
+    if (id && (!KEY_REGEX.test(id) || FORBIDDEN_KEYS.has(String(id).toLowerCase()))) {
+      throw new Error(`Invalid memory id: "${id}". Must match ^[a-z0-9][a-z0-9_-]{0,63}$ and not be a reserved prototype property.`);
+    }
+
     const store = this.loadStore();
     const timestamp = new Date().toISOString();
     const memoryId = id || `MEM_${String(Object.keys(store.memories).length + 1).padStart(2, '0')}`;
@@ -305,8 +332,9 @@ export class WalrusClient {
    * Retrieves a specific memory by key with local auto-decryption for authorized agent operations
    */
   async getMemory(keyOrId) {
+    if (!keyOrId || typeof keyOrId !== 'string') return null;
     const store = this.loadStore();
-    let mem = store.memories[keyOrId] || null;
+    let mem = Object.hasOwn(store.memories, keyOrId) ? store.memories[keyOrId] : null;
     if (!mem) {
       mem = Object.values(store.memories).find(m => m.id === keyOrId || m.key === keyOrId) || null;
     }
