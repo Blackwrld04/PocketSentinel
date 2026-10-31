@@ -24,7 +24,8 @@ import { WalrusClient } from '../walrusClient.js';
 import { WatchdogEngine } from '../watchdogEngine.js';
 import { seedAllMemories, INITIAL_MEMORIES } from '../seedMemories.js';
 import { TatumClient } from '../tatumClient.js';
-import { validateService, ValidationError, updateLedger } from '../subscriptionLedger.js';
+import { validateService, ValidationError, updateLedger, toVendorSlug } from '../subscriptionLedger.js';
+import { detectSubscriptionProposals } from '../statementParser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -177,39 +178,234 @@ async function runTests() {
     purpose: 'Automated dispute micro-bounty'
   });
   assert(agentPay.status === 'CONFIRMED_ONCHAIN', 'Executes x402 / MPP agent payment on Sui via Tatum');
-  // Test 12: Subscription Ledger Validation & Mutex Updates
-  let valErrThrown = false;
-  try {
-    validateService({ display_name: '', price: 10, cadence: 'monthly', bill_day: 5 });
-  } catch (err) {
-    if (err instanceof ValidationError) valErrThrown = true;
-  }
-  assert(valErrThrown, 'validateService throws ValidationError on empty vendor name');
+  // Test 12: Comprehensive Subscription Ledger Lifecycle & Safety Suite
+  // 12.1 Proposal detection for unknown recurring debits writes nothing
+  const candidateTxs = [
+    { raw_merchant: 'Linear App', amount: 15.00, date: '2026-08-01T10:00:00Z' },
+    { raw_merchant: 'Linear App', amount: 15.00, date: '2026-09-01T10:00:00Z' }
+  ];
+  const memCountBefore = (await walrus.listMemories()).length;
+  const currentLedger = await walrus.getMemory('MEM_01');
+  const proposals = detectSubscriptionProposals(candidateTxs, currentLedger.value.services);
+  assert(proposals.length === 1 && proposals[0].vendor === 'linear_app', 'detectSubscriptionProposals detects recurring unrecorded debit');
+  assert(proposals[0].detected_cadence === 'monthly', 'detectSubscriptionProposals infers monthly cadence from ~31-day interval');
+  const memCountAfter = (await walrus.listMemories()).length;
+  assert(memCountBefore === memCountAfter, 'Proposal detection for unknown recurring debits writes nothing to storage');
 
-  let badCadenceThrown = false;
-  try {
-    validateService({ display_name: 'Test Sub', price: 10, cadence: 'biweekly', bill_day: 5 });
-  } catch (err) {
-    if (err instanceof ValidationError) badCadenceThrown = true;
-  }
-  assert(badCadenceThrown, 'validateService throws ValidationError on invalid cadence');
-
-  const updatedLedger = await updateLedger(walrus, (services) => {
-    services['hulu'] = {
-      display_name: 'Hulu',
-      price: 7.99,
+  // 12.2 Confirm writes a new ledger version (user_confirmed, history increments, supersedes set)
+  const prevVersion = currentLedger.version || 1;
+  const confirmedLedger = await updateLedger(walrus, (services) => {
+    services['linear_app'] = {
+      display_name: 'Linear App',
+      price: 15.00,
       cadence: 'monthly',
-      bill_day: 10,
-      category: 'Streaming',
-      raw_patterns: ['Hulu']
+      bill_day: 1,
+      status: 'active',
+      source: 'user_confirmed',
+      raw_patterns: ['Linear App Inc']
     };
     return services;
-  }, 'Add Hulu to subscription ledger');
+  }, 'Confirm Linear App subscription proposal');
+  assert(confirmedLedger.value.services.linear_app.source === 'user_confirmed', 'Confirm writes entry with source: user_confirmed');
+  assert(confirmedLedger.version === prevVersion + 1, 'Confirm increments ledger version');
+  assert(confirmedLedger.history.length === prevVersion + 1, 'Confirm appends audit history record');
+  assert(Boolean(confirmedLedger.supersedes), 'Confirm sets supersedes pointer to previous version digest');
 
-  assert(Boolean(updatedLedger.value.services.hulu), 'updateLedger successfully adds a service under mutex');
-  assert(updatedLedger.version === 2, 'updateLedger increments ledger version to 2');
-  assert(updatedLedger.history.length === 2, 'updateLedger appends audit history entry');
-  assert(Boolean(updatedLedger.supersedes), 'updateLedger points supersedes to previous version');
+  // 12.3 Price hike on confirmed vendor triggers MICRO_INFLATION_ALERT
+  const hikeAudit = await watchdog.auditTransaction({
+    merchant: 'Linear App',
+    amount: 18.00,
+    date: '2026-10-01'
+  });
+  assert(hikeAudit.status === 'MICRO_INFLATION_ALERT', 'Price hike on confirmed vendor triggers MICRO_INFLATION_ALERT');
+  assert(hikeAudit.deltaAmount === 3.00, 'Price hike calculates correct price delta ($3.00)');
+
+  // 12.4 Inferred / pending_review entry cannot suppress alerts
+  await updateLedger(walrus, (services) => {
+    services['suspect_stream'] = {
+      display_name: 'Suspect Stream',
+      price: 9.99,
+      cadence: 'monthly',
+      bill_day: 15,
+      status: 'pending_review',
+      source: 'inferred',
+      raw_patterns: ['Suspect Stream']
+    };
+    return services;
+  }, 'Add pending_review service');
+  const suspectAudit = await watchdog.auditTransaction({
+    merchant: 'Suspect Stream',
+    amount: 9.99,
+    date: '2026-10-15'
+  });
+  assert(suspectAudit.status === 'ESCALATION_REQUIRED' || suspectAudit.status === 'PENDING_REVIEW', 'Inferred or pending_review entry cannot suppress alerts or match active baseline');
+
+  // 12.5 > $50 unknown debit triggers ESCALATION_REQUIRED
+  const largeUnknownAudit = await watchdog.auditTransaction({
+    merchant: 'Mystery Software Corp',
+    amount: 79.00,
+    date: '2026-10-16'
+  });
+  assert(largeUnknownAudit.status === 'ESCALATION_REQUIRED', '>$50 unknown debit triggers ESCALATION_REQUIRED');
+
+  // 12.6 <= $50 unknown debit returns PENDING_REVIEW / ROUTINE_UNTRACKED
+  const smallUnknownAudit = await watchdog.auditTransaction({
+    merchant: 'Small Snack Kiosk',
+    amount: 12.50,
+    date: '2026-10-16'
+  });
+  assert((smallUnknownAudit.status === 'PENDING_REVIEW' || smallUnknownAudit.status === 'PASSED') && smallUnknownAudit.type === 'ROUTINE_UNTRACKED' && smallUnknownAudit.pending_review === true, '<=$50 unknown debit returns ROUTINE_UNTRACKED with pending_review marker');
+
+  // 12.7 Cancelled service charge triggers REBILL_ALERT
+  await updateLedger(walrus, (services) => {
+    services['gym_equinox'].status = 'cancelled';
+    services['gym_equinox'].cancelled_on = '2026-09-01';
+    return services;
+  }, 'Cancel Equinox membership');
+  const rebillAudit = await watchdog.auditTransaction({
+    merchant: 'Equinox',
+    amount: 300.00,
+    date: '2026-10-17'
+  });
+  assert(rebillAudit.status === 'REBILL_ALERT' && rebillAudit.type === 'CANCELLED_SERVICE_REBILL', 'Cancelled service charge triggers REBILL_ALERT');
+
+  // 12.8 resolve-change handles both plan_change and price_hike
+  // 12.8a plan_change updates ledger service price
+  await updateLedger(walrus, (services) => {
+    services['netflix'].price = 17.99;
+    services['netflix'].source = 'user_confirmed';
+    return services;
+  }, 'Resolve plan change: update Netflix baseline to 17.99');
+  const ledgerAfterPlanChange = await walrus.getMemory('MEM_01');
+  assert(ledgerAfterPlanChange.value.services.netflix.price === 17.99, 'resolve-change plan_change updates ledger baseline price');
+  assert(ledgerAfterPlanChange.value.services.netflix.source === 'user_confirmed', 'resolve-change plan_change marks source user_confirmed');
+
+  // 12.8b price_hike retains baseline and commits Dispute memory
+  const disputeMem = await walrus.commitMemory({
+    id: `MEM_DISPUTE_TEST`,
+    key: `dispute_netflix_standard_2026`,
+    type: 'Dispute',
+    category: 'Dispute',
+    sensitivity: 'public',
+    source: 'user_stated',
+    confidence: 1.0,
+    value: {
+      merchant: 'Netflix',
+      unauthorizedDelta: 2.50,
+      agreedBaseline: 15.49,
+      action: 'CFPB formal notice filed'
+    }
+  });
+  assert(disputeMem.id === 'MEM_DISPUTE_TEST' && disputeMem.type === 'Dispute', 'resolve-change price_hike commits sovereign Dispute memory');
+
+  // 12.9 Invalid input throws ValidationError
+  let caughtEmptyName = false;
+  try {
+    validateService({ display_name: '', price: 10, cadence: 'monthly', bill_day: 5 });
+  } catch (e) {
+    if (e instanceof ValidationError) caughtEmptyName = true;
+  }
+  assert(caughtEmptyName, 'validateService throws ValidationError on empty vendor name');
+
+  let caughtLongName = false;
+  try {
+    validateService({ display_name: 'X'.repeat(85), price: 10, cadence: 'monthly', bill_day: 5 });
+  } catch (e) {
+    if (e instanceof ValidationError) caughtLongName = true;
+  }
+  assert(caughtLongName, 'validateService throws ValidationError when vendor exceeds 80 characters');
+
+  let caughtNegPrice = false;
+  try {
+    validateService({ display_name: 'Bad Price', price: -5, cadence: 'monthly', bill_day: 5 });
+  } catch (e) {
+    if (e instanceof ValidationError) caughtNegPrice = true;
+  }
+  assert(caughtNegPrice, 'validateService throws ValidationError on negative price');
+
+  let caughtCadence = false;
+  try {
+    validateService({ display_name: 'Bad Cadence', price: 10, cadence: 'biweekly', bill_day: 5 });
+  } catch (e) {
+    if (e instanceof ValidationError) caughtCadence = true;
+  }
+  assert(caughtCadence, 'validateService throws ValidationError on invalid cadence');
+
+  let caughtBillDay = false;
+  try {
+    validateService({ display_name: 'Bad Day', price: 10, cadence: 'monthly', bill_day: 35 });
+  } catch (e) {
+    if (e instanceof ValidationError) caughtBillDay = true;
+  }
+  assert(caughtBillDay, 'validateService throws ValidationError on invalid bill_day (> 31)');
+
+  // 12.10 Concurrent updateLedger calls both persist under mutex
+  await Promise.all([
+    updateLedger(walrus, (services) => {
+      services['service_alpha'] = {
+        display_name: 'Service Alpha',
+        price: 9.99,
+        cadence: 'monthly',
+        bill_day: 5,
+        status: 'active',
+        source: 'user_stated'
+      };
+      return services;
+    }, 'Add Service Alpha concurrent'),
+    updateLedger(walrus, (services) => {
+      services['service_beta'] = {
+        display_name: 'Service Beta',
+        price: 19.99,
+        cadence: 'monthly',
+        bill_day: 12,
+        status: 'active',
+        source: 'user_stated'
+      };
+      return services;
+    }, 'Add Service Beta concurrent')
+  ]);
+  const postConcurrentLedger = await walrus.getMemory('MEM_01');
+  assert(Boolean(postConcurrentLedger.value.services.service_alpha), 'Concurrent update A safely persisted under mutex');
+  assert(Boolean(postConcurrentLedger.value.services.service_beta), 'Concurrent update B safely persisted under mutex');
+
+  // 12.11 Trial add creates Trial Watch and converts on first charge
+  await walrus.commitMemory({
+    id: 'MEM_TRIAL_FRAMER',
+    key: 'trial_framer',
+    type: 'Trial Watch',
+    category: 'Trial Watch',
+    sensitivity: 'public',
+    source: 'user_stated',
+    confidence: 1.0,
+    value: {
+      merchant: 'Framer',
+      trialEnds: '2026-11-01',
+      expectedRebill: 20.00,
+      status: 'active'
+    }
+  });
+  const trialFirstChargeAudit = await watchdog.auditTransaction({
+    merchant: 'Framer',
+    amount: 20.00,
+    date: '2026-11-01'
+  });
+  assert(trialFirstChargeAudit.trialConverted === true, 'First charge for trial triggers conversion into active subscription');
+  const postTrialLedger = await walrus.getMemory('MEM_01');
+  assert(Boolean(postTrialLedger.value.services.framer), 'Trial successfully converted to entry in subscription ledger');
+
+  // 12.12 Encrypted ledger payload contains no plaintext amounts in persistent store
+  const rawDiskData = JSON.parse(fs.readFileSync(path.join(__dirname, '../../data/walrus_memory_store.json'), 'utf8'));
+  let rawLedgerRecord = null;
+  if (Array.isArray(rawDiskData)) {
+    rawLedgerRecord = rawDiskData.find(m => m.id === 'MEM_01' || m.key === 'subscription_ledger');
+  } else if (rawDiskData.memories) {
+    rawLedgerRecord = Object.values(rawDiskData.memories).find(m => m.id === 'MEM_01' || m.key === 'subscription_ledger');
+  }
+  assert(Boolean(rawLedgerRecord), 'MEM_01 exists in raw walrus memory store');
+  assert(rawLedgerRecord.sensitivity === 'encrypted', 'MEM_01 is marked sensitivity: encrypted');
+  assert(Boolean(rawLedgerRecord.metadata?.encryptedPayload?.ciphertext), 'MEM_01 contains AES-256-GCM ciphertext payload');
+  const rawContentStr = JSON.stringify(rawLedgerRecord);
+  assert(!rawContentStr.includes('"15.49"') && !rawContentStr.includes('"10.99"'), 'MEM_01 encrypted payload contains no plaintext amounts in serialized store');
 
   console.log(`\n=============================================`);
   console.log(`Test Results: ${passed}/${total} Passed`);

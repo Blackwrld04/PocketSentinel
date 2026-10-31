@@ -289,6 +289,7 @@ export class WatchdogEngine {
               category: trialMem.value?.category || 'Software',
               raw_patterns: [trialMem.value?.merchant || tx.merchant]
             };
+            return services;
           });
           trialMem.value = trialMem.value || {};
           trialMem.value.status = 'converted';

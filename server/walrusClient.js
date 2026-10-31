@@ -304,9 +304,12 @@ export class WalrusClient {
   /**
    * Retrieves a specific memory by key with local auto-decryption for authorized agent operations
    */
-  async getMemory(key) {
+  async getMemory(keyOrId) {
     const store = this.loadStore();
-    const mem = store.memories[key] || null;
+    let mem = store.memories[keyOrId] || null;
+    if (!mem) {
+      mem = Object.values(store.memories).find(m => m.id === keyOrId || m.key === keyOrId) || null;
+    }
     if (!mem) return null;
 
     // Auto-decrypt if encrypted and value is missing

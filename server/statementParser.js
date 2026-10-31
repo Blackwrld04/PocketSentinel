@@ -6,6 +6,7 @@
 
 import { execSync } from 'child_process';
 import fs from 'fs';
+import { toVendorSlug } from './subscriptionLedger.js';
 
 export function parseStatementFile(filePath, originalFilename = '', userCurrency = '') {
   const isPdf = originalFilename.toLowerCase().endsWith('.pdf') || filePath.toLowerCase().endsWith('.pdf');
@@ -424,19 +425,15 @@ export function detectSubscriptionProposals(transactions = [], existingLedgerSer
   const isVendorInLedger = (vendorName) => {
     if (!services || typeof services !== 'object') return false;
     const vLower = (vendorName || '').toLowerCase().trim();
-    const vSlug = vLower.replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const vSlug = toVendorSlug(vLower);
+    if (!vSlug) return false;
 
+    if (services[vSlug]) return true;
     for (const [slug, s] of Object.entries(services)) {
-      if (slug === vSlug || slug.includes(vSlug) || (vSlug && vSlug.includes(slug))) {
+      if (slug === vSlug) return true;
+      if (s.display_name && s.display_name.toLowerCase() === vLower) return true;
+      if (Array.isArray(s.raw_patterns) && s.raw_patterns.some(p => p.toLowerCase() === vLower || toVendorSlug(p) === vSlug)) {
         return true;
-      }
-      if (s.display_name && (s.display_name.toLowerCase().includes(vLower) || vLower.includes(s.display_name.toLowerCase()))) {
-        return true;
-      }
-      if (Array.isArray(s.raw_patterns)) {
-        if (s.raw_patterns.some(p => p.toLowerCase().includes(vLower) || vLower.includes(p.toLowerCase()))) {
-          return true;
-        }
       }
     }
     return false;
@@ -448,7 +445,7 @@ export function detectSubscriptionProposals(transactions = [], existingLedgerSer
     if (tx.type === 'credit') continue;
     const amount = Number(tx.amount);
     if (!amount || isNaN(amount) || amount <= 0) continue;
-    const rawVendor = tx.merchant || tx.vendor || '';
+    const rawVendor = tx.raw_merchant || tx.merchant || tx.vendor || tx.rawMerchant || '';
     if (!rawVendor) continue;
 
     const normVendor = rawVendor.toLowerCase().replace(/[*\\_]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -510,7 +507,8 @@ export function detectSubscriptionProposals(transactions = [], existingLedgerSer
       const firstSeen = firstTx.date || firstTx.timestamp || new Date().toISOString().split('T')[0];
       proposals.push({
         type: 'NEW_SUBSCRIPTION_PROPOSAL',
-        vendor: group.rawVendor,
+        vendor: toVendorSlug(group.rawVendor),
+        display_name: group.rawVendor,
         raw_pattern: group.rawVendor,
         amount: group.amount,
         detected_cadence: detectedCadence,
