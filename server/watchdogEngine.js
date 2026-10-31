@@ -15,6 +15,7 @@
 
 import { WalrusClient } from './walrusClient.js';
 import { toVendorSlug, updateLedger } from './subscriptionLedger.js';
+import { detectSubscriptionProposals } from './statementParser.js';
 
 export class WatchdogEngine {
   constructor(walrusClient = new WalrusClient()) {
@@ -437,12 +438,17 @@ export class WatchdogEngine {
       }
     }
 
+    const ledgerMem = memories['subscription_ledger'] || Object.values(memories).find(m => m.key === 'subscription_ledger');
+    const existingLedgerServices = ledgerMem?.value?.services || {};
+    const proposals = detectSubscriptionProposals(transactions, existingLedgerServices);
+
     return {
       auditedCount: transactions.length,
       alertsCount,
       suppressedCount,
       annualSavingsPreserved: totalSavingsFlagged.toFixed(2),
-      items: results
+      items: results,
+      proposals
     };
   }
 
@@ -673,3 +679,6 @@ export function evaluateOcrMatch(receiptData, existingTransactions = []) {
       : `RULE_OCR_MATCH: New receipt verified. Ready to log to envelope.`
   };
 }
+
+export { detectSubscriptionProposals };
+
