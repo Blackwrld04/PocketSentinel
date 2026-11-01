@@ -350,9 +350,12 @@ app.post('/api/memories/override', async (req, res) => {
  */
 app.get('/api/memories/runway', async (req, res) => {
   try {
-    const balance = req.query.balance ? Number(req.query.balance) : 2450.00;
+    const balance = req.query.balance !== undefined ? Number(req.query.balance) : 2450.00;
     const currency = req.query.currency || '$';
-    const runway = await watchdog.calculateRunwayFromMemories(balance, null, currency);
+    const inflow = req.query.inflow !== undefined ? Number(req.query.inflow) : null;
+    const reserve = req.query.reserve !== undefined ? Number(req.query.reserve) : null;
+    const cycleDays = req.query.cycleDays !== undefined ? Number(req.query.cycleDays) : null;
+    const runway = await watchdog.calculateRunwayFromMemories(balance, null, currency, { inflow, reserve, cycleDays });
     res.json(runway);
   } catch (err) {
     sendInternalError(res, req, err);

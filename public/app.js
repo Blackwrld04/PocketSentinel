@@ -145,14 +145,26 @@ const state = {
       const saved = localStorage.getItem('recall_user_profile');
       if (saved) p = JSON.parse(saved);
     } catch (e) {}
+    const isSignedIn = localStorage.getItem('recall_user_signed_in') === 'true';
+    const storedInflow = localStorage.getItem('recall_inflow');
+    const storedReserve = localStorage.getItem('recall_user_reserve');
+    const storedChecking = localStorage.getItem('recall_user_checking');
+    const storedWage = localStorage.getItem('recall_hourly_wage');
+    const storedDays = localStorage.getItem('recall_cycle_days');
+    const storedSafe = localStorage.getItem('recall_safe_spend');
+    const storedVel = localStorage.getItem('recall_daily_velocity');
+
     return {
-      name: localStorage.getItem('recall_user_name') || p.name || 'Alex Rivera',
-      currency: localStorage.getItem('recall_currency') || p.currency || '$',
-      inflow: parseFloat(localStorage.getItem('recall_inflow') || p.inflow) || 4850.00,
-      hourlyWage: parseFloat(localStorage.getItem('recall_hourly_wage') || p.hourlyWage) || 25.00,
-      cycleDays: parseInt(localStorage.getItem('recall_cycle_days') || p.cycleDays, 10) || 10,
-      safeSpend: p.safeSpend || 482.35,
-      dailyVelocity: p.dailyVelocity || 48.23
+      name: localStorage.getItem('recall_user_name') || p.name || (isSignedIn ? 'User' : 'Alex Rivera'),
+      currency: localStorage.getItem('recall_currency') || p.currency || (isSignedIn ? '£' : '$'),
+      inflow: storedInflow !== null ? parseFloat(storedInflow) : (p.inflow !== undefined ? parseFloat(p.inflow) : (isSignedIn ? 0.00 : 4850.00)),
+      hourlyWage: storedWage !== null ? parseFloat(storedWage) : (p.hourlyWage !== undefined ? parseFloat(p.hourlyWage) : 25.00),
+      cycleDays: storedDays !== null ? parseInt(storedDays, 10) : (p.cycleDays !== undefined ? parseInt(p.cycleDays, 10) : 10),
+      reserve: storedReserve !== null ? parseFloat(storedReserve) : (p.reserve !== undefined ? parseFloat(p.reserve) : (isSignedIn ? 0.00 : 500.00)),
+      checking: storedChecking !== null ? parseFloat(storedChecking) : (p.checking !== undefined ? parseFloat(p.checking) : (isSignedIn ? 0.00 : 2430.00)),
+      safeSpend: storedSafe !== null ? parseFloat(storedSafe) : (p.safeSpend !== undefined ? p.safeSpend : (isSignedIn ? 0.00 : 482.35)),
+      dailyVelocity: storedVel !== null ? parseFloat(storedVel) : (p.dailyVelocity !== undefined ? p.dailyVelocity : (isSignedIn ? 0.00 : 48.23)),
+      signedIn: isSignedIn
     };
   })(),
   wallets: [
@@ -312,6 +324,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initReceiptOcrScanner();
   renderUserProfileUI();
   renderWalletsUI();
+  if (typeof recalculateAllFinancialMetrics === 'function') {
+    recalculateAllFinancialMetrics();
+  }
   renderAuditRecords(state.auditResults);
   renderHomeTxMiniPreview();
   updateTxPageMetrics();
@@ -382,7 +397,9 @@ function switchView(viewId) {
 
   if (viewId === 'app') {
     // Auto-render core components in app view
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
     if (typeof renderUserProfileUI === 'function') renderUserProfileUI();
+    if (typeof renderWalletsUI === 'function') renderWalletsUI();
     if (typeof renderAuditRecords === 'function') renderAuditRecords(state.auditResults);
     if (typeof renderSpendCalendar === 'function') renderSpendCalendar();
     if (typeof renderPlanSubscriptionsLedger === 'function') renderPlanSubscriptionsLedger();
@@ -858,6 +875,13 @@ function importKeyBundleFile(event) {
 }
 
 async function loadRunwayFromMemory() {
+  const isSignedIn = localStorage.getItem('recall_user_signed_in') === 'true' || state.userProfile?.signedIn;
+  if (isSignedIn) {
+    if (typeof recalculateAllFinancialMetrics === 'function') {
+      recalculateAllFinancialMetrics();
+    }
+    return;
+  }
   try {
     const res = await fetch(API_BASE + '/api/memories/runway');
     if (res.ok) {
@@ -1151,6 +1175,29 @@ if (typeof masterSubscriptionsList === 'undefined') {
 
 async function loadSubscriptions() {
   try {
+    const isSignedIn = localStorage.getItem('recall_user_signed_in') === 'true' || state.userProfile?.signedIn;
+    const savedSubs = localStorage.getItem('recall_user_subscriptions');
+
+    // If user is signed in, strictly use user subscriptions (or empty array) - never load demo data
+    if (isSignedIn) {
+      if (savedSubs !== null) {
+        try {
+          state.subscriptions = JSON.parse(savedSubs);
+          masterSubscriptionsList.length = 0;
+          state.subscriptions.forEach(s => masterSubscriptionsList.push(s));
+        } catch (e) {
+          state.subscriptions = [];
+        }
+      } else {
+        state.subscriptions = [];
+      }
+      if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
+      if (typeof renderSpendCalendar === 'function') renderSpendCalendar();
+      if (typeof renderSubscriptionsLedger === 'function') renderSubscriptionsLedger();
+      if (typeof renderPlanSubscriptionsLedger === 'function') renderPlanSubscriptionsLedger();
+      return;
+    }
+
     let loadedFromApi = false;
     try {
       const res = await fetch(API_BASE + '/api/subscriptions');
@@ -1159,9 +1206,8 @@ async function loadSubscriptions() {
         const apiSubs = data.subscriptions || data.activeSubscriptions || [];
         state.subscriptions = apiSubs;
         state.trials = data.trials || [];
-        masterSubscriptionsList.length = 0;
         apiSubs.forEach(s => masterSubscriptionsList.push(s));
-        localStorage.setItem('recall_user_subscriptions', JSON.stringify(state.subscriptions));
+        // Do not pollute user localStorage with demo API subscriptions
         loadedFromApi = true;
       }
     } catch (e) {
@@ -2933,7 +2979,8 @@ function getMerchantLogo(merchant) {
   if (m.includes('sui')) return '/assets/logos/sui.svg';
   if (m.includes('walrus')) return '/assets/logos/walrus.svg';
   if (m.includes('tatum')) return '/assets/logos/tatum.svg';
-  return null;
+  if (m.includes('equinox') || m.includes('gym') || m.includes('fitness')) return '/assets/logos/equinox.svg';
+  return '/assets/logos/generic.svg';
 }
 window.getMerchantLogo = getMerchantLogo;
 
@@ -3094,6 +3141,7 @@ function filterAppView(filterType) {
 
   // View specific loaders
   if (filterType === 'all') {
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
     renderHomeTxMiniPreview();
     renderUserProfileUI();
   } else if (filterType === 'transactions') {
@@ -3101,15 +3149,19 @@ function filterAppView(filterType) {
     renderAuditRecords(state.auditResults);
     updateTxPageMetrics();
   } else if (filterType === 'wallets') {
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
     renderWalletsUI();
   } else if (filterType === 'plan' || filterType === 'envelopes') {
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
     renderEnvelopesPlan();
     renderPlanSubscriptionsLedger();
   } else if (filterType === 'safespend') {
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
     if (typeof calculateAffordability === 'function') calculateAffordability();
     const chatContainer = document.getElementById('copilotChatMessages');
     if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
   } else if (filterType === 'subscriptions' || filterType === 'trials' || filterType === 'calendar') {
+    if (typeof recalculateAllFinancialMetrics === 'function') recalculateAllFinancialMetrics();
     if (state.activeSubsSubTab === 'calendar') {
       renderSpendCalendar();
     } else if (state.activeSubsSubTab === 'trial') {
@@ -3840,7 +3892,7 @@ function renderSubscriptionsLedger() {
       <tr>
         <td>
           <div class="sub-merchant-cell">
-            <img src="${sub.logo}" class="merchant-mini-logo" alt="${merchantEsc}">
+            <img src="${sub.logo || getMerchantLogo(sub.merchant) || '/assets/logos/generic.svg'}" class="merchant-mini-logo" alt="${merchantEsc}" onerror="this.onerror=null; this.src='/assets/logos/generic.svg';">
             <div class="sub-merchant-meta">
               <strong>${merchantEsc}</strong>
               <span>${planEsc}</span>
@@ -8096,9 +8148,9 @@ window.switchLegalModalTab = switchLegalModalTab;
 // ================= AUTHENTICATION & MULTI-STEP ONBOARDING CONTROLLER =================
 // ================= AUTHENTICATION, ONBOARDING & SUBSCRIPTIONS CONFIG =================
 const defaultSubscriptionsCatalog = [
-  { id: 'sub_netflix', merchant: 'Netflix Standard', amount: 15.49, dayOfMonth: 20, category: 'Streaming', defaultChecked: true },
-  { id: 'sub_spotify', merchant: 'Spotify Premium', amount: 10.99, dayOfMonth: 15, category: 'Streaming', defaultChecked: true },
-  { id: 'sub_chatgpt', merchant: 'OpenAI ChatGPT Plus', amount: 20.00, dayOfMonth: 14, category: 'AI & Cloud', defaultChecked: true },
+  { id: 'sub_netflix', merchant: 'Netflix Standard', amount: 15.49, dayOfMonth: 20, category: 'Streaming', defaultChecked: false },
+  { id: 'sub_spotify', merchant: 'Spotify Premium', amount: 10.99, dayOfMonth: 15, category: 'Streaming', defaultChecked: false },
+  { id: 'sub_chatgpt', merchant: 'OpenAI ChatGPT Plus', amount: 20.00, dayOfMonth: 14, category: 'AI & Cloud', defaultChecked: false },
   { id: 'sub_icloud', merchant: 'Apple iCloud+ 2TB', amount: 9.99, dayOfMonth: 5, category: 'General', defaultChecked: false },
   { id: 'sub_prime', merchant: 'Amazon Prime', amount: 14.99, dayOfMonth: 18, category: 'General', defaultChecked: false },
   { id: 'sub_youtube', merchant: 'YouTube Premium', amount: 13.99, dayOfMonth: 22, category: 'Streaming', defaultChecked: false },
@@ -8110,12 +8162,12 @@ const defaultSubscriptionsCatalog = [
 const onboardDraft = {
   step: 1,
   email: '',
-  name: 'Alex Rivera',
-  currency: '$',
+  name: '',
+  currency: '£',
   hourlyWage: 25.00,
-  inflow: 4850.00,
-  checking: 2430.00,
-  reserve: 500.00,
+  inflow: 0.00,
+  checking: 0.00,
+  reserve: 0.00,
   cycleDays: 10,
   focus: 'subscriptions',
   subscriptions: []
@@ -8138,7 +8190,7 @@ function openOnboardingModal(step = 1) {
 
   const storedEmail = localStorage.getItem('recall_user_email');
   const storedName = localStorage.getItem('recall_user_name');
-  const storedCurrency = localStorage.getItem('recall_currency') || state.userProfile?.currency || '$';
+  const storedCurrency = localStorage.getItem('recall_currency') || state.userProfile?.currency || '£';
   const storedInflow = localStorage.getItem('recall_inflow');
   const storedWage = localStorage.getItem('recall_hourly_wage');
   const storedDays = localStorage.getItem('recall_cycle_days');
@@ -8154,10 +8206,32 @@ function openOnboardingModal(step = 1) {
   onboardDraft.checking = storedChecking !== null ? parseFloat(storedChecking) : undefined;
   onboardDraft.reserve = storedReserve !== null ? parseFloat(storedReserve) : undefined;
 
-  if (!onboardDraft.subscriptions || onboardDraft.subscriptions.length === 0) {
+  const isSignedIn = localStorage.getItem('recall_user_signed_in') === 'true';
+  const storedSubsJson = localStorage.getItem('recall_user_subscriptions');
+  if (isSignedIn && storedSubsJson) {
+    try {
+      const parsed = JSON.parse(storedSubsJson);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        onboardDraft.subscriptions = defaultSubscriptionsCatalog.map(s => {
+          const match = parsed.find(p => p.id === s.id || (p.merchant && p.merchant.toLowerCase() === s.merchant.toLowerCase()));
+          return {
+            ...s,
+            active: Boolean(match)
+          };
+        });
+      } else {
+        onboardDraft.subscriptions = defaultSubscriptionsCatalog.map(s => ({
+          ...s,
+          active: false
+        }));
+      }
+    } catch (e) {
+      onboardDraft.subscriptions = defaultSubscriptionsCatalog.map(s => ({ ...s, active: false }));
+    }
+  } else {
     onboardDraft.subscriptions = defaultSubscriptionsCatalog.map(s => ({
       ...s,
-      active: Boolean(s.defaultChecked)
+      active: false
     }));
   }
 
@@ -8308,6 +8382,15 @@ function goToOnboardStep(step) {
   }
 
   if (step === 4) {
+    const hasAnyActive = (onboardDraft.subscriptions || []).some(s => s.active);
+    const chipNone = document.getElementById('chipPresetNone');
+    const chipEss = document.getElementById('chipPresetEssentials');
+    const chipAll = document.getElementById('chipPresetAll');
+    if (!hasAnyActive) {
+      if (chipNone) chipNone.classList.add('active');
+      if (chipEss) chipEss.classList.remove('active');
+      if (chipAll) chipAll.classList.remove('active');
+    }
     renderOnboardSubsList();
   }
 
@@ -8610,12 +8693,13 @@ window.startVaultProvisioningAnimation = startVaultProvisioningAnimation;
 
 // Central Reactive Financial Calculator
 function recalculateAllFinancialMetrics() {
-  const cur = state.userProfile?.currency || '$';
-  const cycleDays = Number(state.userProfile?.cycleDays || 10);
-  const reserve = Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : 500.00);
+  const cur = state.userProfile?.currency || '£';
+  const cycleDays = Math.max(1, Number(state.userProfile?.cycleDays || 10));
+  const userInflow = Number(state.userProfile?.inflow || 0);
+  const isSignedIn = localStorage.getItem('recall_user_signed_in') === 'true' || state.userProfile?.signedIn;
 
-  const activeSubs = state.subscriptions || [];
-  const fixedBillsSum = activeSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+  const activeSubs = (state.subscriptions || []).filter(s => s.status !== 'cancelled' && s.status !== 'CANCELLED');
+  const fixedBillsSum = activeSubs.reduce((sum, s) => sum + Number(s.amount !== undefined ? s.amount : (s.cost || s.monthlyAmount || 0)), 0);
   const fixedBillsCount = activeSubs.length;
 
   const records = state.auditResults || [];
@@ -8625,27 +8709,39 @@ function recalculateAllFinancialMetrics() {
   let statementOutflow = 0;
   let debitCount = 0;
   let creditCount = 0;
+  let variableSpent = 0;
+
+  const activeSubNames = new Set(activeSubs.map(s => (s.merchant || s.name || s.display_name || '').toLowerCase().trim()));
 
   for (const r of records) {
-    const mKey = getTxMonthKey(r);
+    const mKey = typeof getTxMonthKey === 'function' ? getTxMonthKey(r) : 'all';
     if (activeMonth !== 'all' && mKey !== activeMonth) continue;
-    const isCredit = isCreditRecord(r);
-    const amt = getTxAmount(r);
+    const isCredit = typeof isCreditRecord === 'function' ? isCreditRecord(r) : false;
+    const amt = typeof getTxAmount === 'function' ? getTxAmount(r) : Math.abs(Number(r.amount) || 0);
     if (isCredit) {
       statementInflow += amt;
       creditCount++;
     } else {
       statementOutflow += amt;
       debitCount++;
+      // Exclude subscription items already counted in fixedBillsSum
+      const rMerchant = (r.merchant || '').toLowerCase().trim();
+      const isSubPlaceholder = r.id?.startsWith('tx_user_sub_') || (activeSubNames.has(rMerchant) && (r.category === 'Subscription' || r.categoryLabel === 'Subscription'));
+      if (!isSubPlaceholder) {
+        variableSpent += amt;
+      }
     }
   }
 
-  const hasStatement = records.length > 0;
-  const inflow = (hasStatement && statementInflow > 0)
-    ? statementInflow 
-    : Number(state.userProfile?.inflow || 4850.00);
+  // Determine effective monthly inflow:
+  // If user has set an inflow (e.g. £6,000), prioritize user's stated monthly inflow!
+  // If statement deposits exist and user has no stated inflow, use statement inflow.
+  // Only fall back to demo 4850 if visitor is unauthenticated.
+  const inflow = (userInflow > 0)
+    ? userInflow
+    : (statementInflow > 0 ? statementInflow : (isSignedIn ? 0.00 : 4850.00));
 
-  const variableSpent = hasStatement ? statementOutflow : 0;
+  const reserve = Number(state.userProfile?.reserve !== undefined ? state.userProfile.reserve : (inflow * 0.10));
   const safeSpendRemaining = Math.max(0, inflow - fixedBillsSum - reserve - variableSpent);
   const dailyVelocity = cycleDays > 0 ? (safeSpendRemaining / cycleDays) : safeSpendRemaining;
 
@@ -8658,6 +8754,8 @@ function recalculateAllFinancialMetrics() {
 
   state.userProfile.safeSpend = Number(safeSpendRemaining.toFixed(2));
   state.userProfile.dailyVelocity = Number(dailyVelocity.toFixed(2));
+  localStorage.setItem('recall_safe_spend', String(state.userProfile.safeSpend));
+  localStorage.setItem('recall_daily_velocity', String(state.userProfile.dailyVelocity));
 
   // 1. Header elements
   const elHeaderNet = document.getElementById('headerNetLiquidity');
@@ -8669,6 +8767,11 @@ function recalculateAllFinancialMetrics() {
   // 2. Wallets page
   const elTotalNet = document.getElementById('totalNetLiquidityDisplay');
   if (elTotalNet) elTotalNet.textContent = `${cur}${totalLiquidity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+  const checkHint = document.getElementById('walletCheckingHint');
+  if (checkHint) {
+    checkHint.textContent = `Covers ${cur}${safeSpendRemaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Safe Runway`;
+  }
 
   // 3. Overview Monthly Cash Flow & Runway Distribution
   const elCashflowSubhead = document.getElementById('overviewCashflowSubhead');
@@ -8684,7 +8787,7 @@ function recalculateAllFinancialMetrics() {
   if (elFixedVal) elFixedVal.textContent = `${cur}${fixedBillsSum.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
   const elFixedSub = document.getElementById('overviewFixedBillsSub');
-  if (elFixedSub) elFixedSub.textContent = `${fixedBillsCount} recurring bills`;
+  if (elFixedSub) elFixedSub.textContent = `${fixedBillsCount} recurring bill${fixedBillsCount === 1 ? '' : 's'}`;
 
   const elFixedPct = document.getElementById('overviewFixedBillsPct');
   if (elFixedPct) elFixedPct.textContent = `${fixedPct.toFixed(1)}%`;
@@ -8700,7 +8803,7 @@ function recalculateAllFinancialMetrics() {
 
   const elVarSub = document.getElementById('overviewVariableSub');
   if (elVarSub) {
-    elVarSub.textContent = hasStatement ? `${debitCount} statement debits` : 'Living expenses';
+    elVarSub.textContent = variableSpent > 0 ? `${debitCount} statement debit${debitCount === 1 ? '' : 's'}` : 'Living expenses';
   }
 
   const elVarPct = document.getElementById('overviewVariablePct');

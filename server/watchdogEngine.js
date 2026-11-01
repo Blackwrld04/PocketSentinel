@@ -552,18 +552,22 @@ export class WatchdogEngine {
    * - MEM_16: emergency_buffer (reserve target excluded from Safe-to-Spend)
    * - Active recurring subscriptions
    */
-  async calculateRunwayFromMemories(currentCheckingBalance = 2450.00, todayDate = null, defaultCurrency = '$') {
+  async calculateRunwayFromMemories(currentCheckingBalance = 2450.00, todayDate = null, defaultCurrency = '$', userOverrides = {}) {
     const memories = await this.walrus.loadStore().memories;
     const now = todayDate ? new Date(todayDate) : new Date();
     const currentDay = now.getDate();
 
-    // 1. Inflow schedule from MEM_13
+    // 1. Inflow schedule from userOverrides or MEM_13
     const incomeMem = memories['primary_pay_cycle'] || Object.values(memories).find(m => m.type === 'Income' && m.key === 'primary_pay_cycle');
     const payDay = (incomeMem && incomeMem.value && incomeMem.value.day_of_month) || 25;
-    const payAmount = (incomeMem && incomeMem.value && incomeMem.value.amount) || 4850.00;
+    const payAmount = (userOverrides && userOverrides.inflow !== null && !isNaN(userOverrides.inflow))
+      ? Number(userOverrides.inflow)
+      : ((incomeMem && incomeMem.value && incomeMem.value.amount) || 4850.00);
 
     // Days until next paycheck
-    let daysUntilPayday = payDay - currentDay;
+    let daysUntilPayday = (userOverrides && userOverrides.cycleDays !== null && !isNaN(userOverrides.cycleDays))
+      ? Number(userOverrides.cycleDays)
+      : (payDay - currentDay);
     if (daysUntilPayday <= 0) {
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, payDay);
       const diffTime = nextMonth.getTime() - now.getTime();
@@ -580,16 +584,18 @@ export class WatchdogEngine {
       pendingCommitments += rentAmount;
     }
 
-    // 3. Emergency Buffer Goal from MEM_16
+    // 3. Emergency Buffer Goal from userOverrides or MEM_16
     const bufferMem = memories['emergency_buffer'] || Object.values(memories).find(m => m.type === 'Goal' && m.key === 'emergency_buffer');
-    const emergencyBuffer = (bufferMem && bufferMem.value && bufferMem.value.target) || 500.00;
+    const emergencyBuffer = (userOverrides && userOverrides.reserve !== null && !isNaN(userOverrides.reserve))
+      ? Number(userOverrides.reserve)
+      : ((bufferMem && bufferMem.value && bufferMem.value.target) || 500.00);
 
     // 4. Active Subscriptions due before payday
     const subsState = await this.getActiveSubscriptionsState();
     const recurringMonthly = Number(subsState.totalMonthlyRunRate) || 301.46;
     const proRatedSubsBeforePay = Number(((recurringMonthly / 30) * daysUntilPayday).toFixed(2));
 
-    // Calculate Safe-to-Spend Runway derived purely from Memory Anchors
+    // Calculate Safe-to-Spend Runway derived from Memory Anchors / user profile
     const unreservedFunds = Math.max(0, currentCheckingBalance - emergencyBuffer - pendingCommitments);
     const safeToSpendTotal = Math.max(0, unreservedFunds - proRatedSubsBeforePay);
     const safeToSpendDaily = daysUntilPayday > 0 ? (safeToSpendTotal / daysUntilPayday) : 0;
@@ -609,7 +615,7 @@ export class WatchdogEngine {
         bufferMemory: bufferMem ? bufferMem.id : 'MEM_16',
         isCalculatedFromMemory: true
       },
-      summary: `Safe-to-Spend runway is ${defaultCurrency}${safeToSpendDaily.toFixed(2)}/day for the next ${daysUntilPayday} days until payday (25th). ${defaultCurrency}${emergencyBuffer.toFixed(2)} emergency buffer is strictly protected based on Walrus Memory [${bufferMem?.id || 'MEM_16'}].`
+      summary: `Safe-to-Spend runway is ${defaultCurrency}${safeToSpendDaily.toFixed(2)}/day for the next ${daysUntilPayday} days until payday (${payDay}th). ${defaultCurrency}${emergencyBuffer.toFixed(2)} emergency buffer is strictly protected based on Walrus Memory [${bufferMem?.id || 'MEM_16'}].`
     };
   }
 

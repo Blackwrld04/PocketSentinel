@@ -1175,7 +1175,7 @@
               <div class="cashflow-header-actions" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <div class="overview-month-pills-wrap" id="overviewMonthPillsTrack"></div>
                 <div class="cashflow-inflow-badge">
-                  <i data-lucide="wallet"></i> Inflow: <strong id="overviewInflowBadgeVal">$4,850.00</strong>
+                  <i data-lucide="wallet"></i> Inflow: <strong id="overviewInflowBadgeVal">$0.00</strong>
                 </div>
               </div>
             </div>
@@ -1183,10 +1183,10 @@
             <!-- Single Proportional Progress Bar -->
             <div class="cashflow-bar-container">
               <div class="cashflow-bar" id="overviewCashflowBar" title="Fixed Bills, Reserve, Variable Spent, and Safe-to-Spend">
-                <div class="cf-seg subs" id="cfSegSubs" style="width: 6.2%;" title="Fixed Subscriptions"></div>
-                <div class="cf-seg savings" id="cfSegSavings" style="width: 10.3%;" title="Locked Reserve"></div>
-                <div class="cf-seg spent" id="cfSegSpent" style="width: 73.5%;" title="Variable Expenses"></div>
-                <div class="cf-seg safespend" id="cfSegSafespend" style="width: 10.0%;" title="Safe-to-Spend Runway"></div>
+                <div class="cf-seg subs" id="cfSegSubs" style="width: 0%;" title="Fixed Subscriptions"></div>
+                <div class="cf-seg savings" id="cfSegSavings" style="width: 0%;" title="Locked Reserve"></div>
+                <div class="cf-seg spent" id="cfSegSpent" style="width: 0%;" title="Variable Expenses"></div>
+                <div class="cf-seg safespend" id="cfSegSafespend" style="width: 100%;" title="Safe-to-Spend Runway"></div>
               </div>
             </div>
 
@@ -1195,37 +1195,37 @@
               <div class="cf-metric-card" onclick="filterAppView('plan')" style="cursor:pointer;" title="View all recurring subscriptions">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="repeat" class="text-coral"></i> Fixed Bills</span>
-                  <span class="cf-metric-pct" id="overviewFixedBillsPct">6.2%</span>
+                  <span class="cf-metric-pct" id="overviewFixedBillsPct">0.0%</span>
                 </div>
-                <div class="cf-metric-val" id="overviewFixedBillsVal">$301.46</div>
-                <div class="cf-metric-sub" id="overviewFixedBillsSub">9 recurring bills</div>
+                <div class="cf-metric-val" id="overviewFixedBillsVal">$0.00</div>
+                <div class="cf-metric-sub" id="overviewFixedBillsSub">0 recurring bills</div>
               </div>
 
               <div class="cf-metric-card" onclick="filterAppView('wallets')" style="cursor:pointer;" title="View emergency buffer vault">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="piggy-bank" class="text-blue"></i> Reserve</span>
-                  <span class="cf-metric-pct" id="overviewReservePct">10.3%</span>
+                  <span class="cf-metric-pct" id="overviewReservePct">0.0%</span>
                 </div>
-                <div class="cf-metric-val" id="overviewReserveVal">$500.00</div>
+                <div class="cf-metric-val" id="overviewReserveVal">$0.00</div>
                 <div class="cf-metric-sub" id="overviewReserveSub">Locked savings</div>
               </div>
 
               <div class="cf-metric-card" title="Statement debits processed this month">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="shopping-bag" class="text-neutral"></i> Variable Spent</span>
-                  <span class="cf-metric-pct" id="overviewVariablePct">73.5%</span>
+                  <span class="cf-metric-pct" id="overviewVariablePct">0.0%</span>
                 </div>
-                <div class="cf-metric-val" id="overviewVariableVal">$3,566.19</div>
+                <div class="cf-metric-val" id="overviewVariableVal">$0.00</div>
                 <div class="cf-metric-sub" id="overviewVariableSub">Living expenses</div>
               </div>
 
               <div class="cf-metric-card safespend-card" onclick="filterAppView('safespend')" style="cursor:pointer;" title="Click to test a purchase against your safe cash">
                 <div class="cf-metric-top">
                   <span class="cf-metric-label"><i data-lucide="shield-check" class="text-green"></i> Safe-to-Spend</span>
-                  <span class="cf-metric-pct text-green font-bold" id="overviewSafeSpendPct">10.0%</span>
+                  <span class="cf-metric-pct text-green font-bold" id="overviewSafeSpendPct">0.0%</span>
                 </div>
-                <div class="cf-metric-val text-green" id="overviewSafeSpendVal">$1,847.84</div>
-                <div class="cf-metric-sub"><strong id="overviewDailyAllowance">$184.78 / day</strong> · <span id="overviewCycleDaysLeft">10</span> days left</div>
+                <div class="cf-metric-val text-green" id="overviewSafeSpendVal">$0.00</div>
+                <div class="cf-metric-sub"><strong id="overviewDailyAllowance">$0.00 / day</strong> · <span id="overviewCycleDaysLeft">10</span> days left</div>
               </div>
             </div>
           </div>
@@ -2049,15 +2049,15 @@
           <div class="subview-stats-strip subscription-metrics-strip">
             <div class="strip-stat-box">
               <span class="strip-label">Active Subscriptions</span>
-              <strong class="strip-val" id="subsActiveCountVal">9 Services</strong>
+              <strong class="strip-val" id="subsActiveCountVal">0 Services</strong>
             </div>
             <div class="strip-stat-box">
               <span class="strip-label">Monthly Fixed Run Rate</span>
-              <strong class="strip-val text-coral" id="settingsMonthlyRunRate">$301.46<small>/mo</small></strong>
+              <strong class="strip-val text-coral" id="settingsMonthlyRunRate">$0.00<small>/mo</small></strong>
             </div>
             <div class="strip-stat-box">
               <span class="strip-label">Trial Conversion Risk</span>
-              <strong class="strip-val text-amber" id="settingsTrialRisk">$54.99<small>/mo</small></strong>
+              <strong class="strip-val text-amber" id="settingsTrialRisk">$0.00<small>/mo</small></strong>
             </div>
             <div class="strip-stat-box">
               <span class="strip-label">Mainnet Anchors</span>
@@ -2069,7 +2069,7 @@
           <div class="subtabs-segmented-bar" id="subsSubTabsBar">
             <button class="subtab-segmented-btn active" id="subTabBtnLedger" onclick="switchSubsSubTab('ledger')">
               <i data-lucide="list"></i>
-              <span id="subsActiveTabLabel">Active Subscriptions (9)</span>
+              <span id="subsActiveTabLabel">Active Subscriptions (0)</span>
             </button>
             <button class="subtab-segmented-btn" id="subTabBtnCalendar" onclick="switchSubsSubTab('calendar')">
               <i data-lucide="calendar"></i>
@@ -3985,9 +3985,9 @@
 
           <div class="auth-form-wrap">
             <div class="onboard-subs-quick-row">
-              <button type="button" class="btn-sub-quick-chip active" id="chipPresetEssentials" onclick="onboardQuickSelectSubs('essentials')">Top 3 Essentials</button>
+              <button type="button" class="btn-sub-quick-chip active" id="chipPresetNone" onclick="onboardQuickSelectSubs('none')">Start Clean (0 Apps)</button>
+              <button type="button" class="btn-sub-quick-chip" id="chipPresetEssentials" onclick="onboardQuickSelectSubs('essentials')">Top 3 Essentials</button>
               <button type="button" class="btn-sub-quick-chip" id="chipPresetAll" onclick="onboardQuickSelectSubs('all')">Select All</button>
-              <button type="button" class="btn-sub-quick-chip" id="chipPresetNone" onclick="onboardQuickSelectSubs('none')">Start Clean (0 Apps)</button>
             </div>
 
             <div class="onboard-subs-list" id="onboardSubsList">
