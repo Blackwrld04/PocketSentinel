@@ -13,6 +13,13 @@
  * - 20s Lazy Audio Financial Pulse synthesis via Web Speech API
  */
 
+/**
+ * API_BASE — Set via window.__API_BASE (injected in index.html) for split
+ * deployments (Vercel frontend → Render backend). Falls back to '' so that
+ * local dev and monolith deployments keep using same-origin relative URLs.
+ */
+const API_BASE = (typeof window !== 'undefined' && window.__API_BASE) || '';
+
 // Global State
 const state = {
   currentView: 'landing',
@@ -852,7 +859,7 @@ function importKeyBundleFile(event) {
 
 async function loadRunwayFromMemory() {
   try {
-    const res = await fetch('/api/memories/runway');
+    const res = await fetch(API_BASE + '/api/memories/runway');
     if (res.ok) {
       const data = await res.json();
       if (data && data.safeToSpendDaily) {
@@ -870,7 +877,7 @@ async function loadRunwayFromMemory() {
 // ================= BACKEND STATUS & WALLET TELEMETRY =================
 async function loadSystemStatus() {
   try {
-    const res = await fetch('/api/status');
+    const res = await fetch(API_BASE + '/api/status');
     const data = await res.json();
     console.log('[PocketSentinel] System status:', data);
     
@@ -889,7 +896,7 @@ async function loadSystemStatus() {
 
 async function loadWalletTelemetry() {
   try {
-    const res = await fetch('/api/tatum/wallet');
+    const res = await fetch(API_BASE + '/api/tatum/wallet');
     const data = await res.json();
     if (data.balance) {
       state.wallet.suiBalance = data.balance.formattedSui || '4.580 SUI';
@@ -911,7 +918,7 @@ async function loadWalletTelemetry() {
 // ================= WALRUS MEMORY ONCHAIN LEDGER =================
 async function loadWalrusMemories() {
   try {
-    const res = await fetch('/api/memories');
+    const res = await fetch(API_BASE + '/api/memories');
     const data = await res.json();
     state.memories = data.memories || [];
 
@@ -1116,7 +1123,7 @@ async function reseedMemories() {
   if (btn) btn.innerHTML = `<i data-lucide="loader"></i> Seeding Sui Mainnet...`;
   
   try {
-    const res = await fetch('/api/memories/seed', { method: 'POST' });
+    const res = await fetch(API_BASE + '/api/memories/seed', { method: 'POST' });
     const data = await res.json();
     showToast(`Successfully committed ${data.count} memories to encrypted storage!`, 'green');
     await loadWalrusMemories();
@@ -1146,7 +1153,7 @@ async function loadSubscriptions() {
   try {
     let loadedFromApi = false;
     try {
-      const res = await fetch('/api/subscriptions');
+      const res = await fetch(API_BASE + '/api/subscriptions');
       if (res.ok) {
         const data = await res.json();
         const apiSubs = data.subscriptions || data.activeSubscriptions || [];
@@ -1837,7 +1844,7 @@ async function loadSampleDemoStatement() {
   if (btn) btn.innerHTML = `<i data-lucide="loader"></i> Auditing Statement...`;
 
   try {
-    const res = await fetch('/fixtures/sample_chase_statement.csv');
+    const res = await fetch(API_BASE + '/fixtures/sample_chase_statement.csv');
     const csvText = await res.text();
     const transactions = parseCSVStatement(csvText);
 
@@ -1928,7 +1935,7 @@ async function handleStatementFileUpload(event) {
     formData.append('statement', file);
     formData.append('currency', activeCur);
 
-    const res = await fetch('/api/statement/upload', {
+    const res = await fetch(API_BASE + '/api/statement/upload', {
       method: 'POST',
       headers: {
         'x-user-currency': encodeURIComponent(activeCur)
@@ -2093,7 +2100,7 @@ async function auditStatementData() {
 
 async function executeBatchAudit(transactions) {
   try {
-    const res = await fetch('/api/audit/batch', {
+    const res = await fetch(API_BASE + '/api/audit/batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ transactions })
@@ -3936,7 +3943,7 @@ window.renderSubscriptionsLedger = renderSubscriptionsLedger;
 
 async function cancelSubscription(vendor) {
   try {
-    const res = await fetch('/api/subscriptions/cancel', {
+    const res = await fetch(API_BASE + '/api/subscriptions/cancel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vendor })
@@ -3998,7 +4005,7 @@ async function resolveSubscriptionChange(choice) {
   const amount = parseFloat(modal.dataset.amount || 0);
 
   try {
-    const res = await fetch('/api/subscriptions/resolve-change', {
+    const res = await fetch(API_BASE + '/api/subscriptions/resolve-change', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vendor, amount, choice })
@@ -4021,7 +4028,7 @@ window.resolveSubscriptionChange = resolveSubscriptionChange;
 
 async function confirmProposal(vendor, amount, cadence, raw_pattern) {
   try {
-    const res = await fetch('/api/subscriptions/confirm', {
+    const res = await fetch(API_BASE + '/api/subscriptions/confirm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vendor, amount, cadence, raw_pattern })
@@ -4110,7 +4117,7 @@ function loadUserSettingsToForm() {
   }
 
   // Check Groq Copilot status
-  fetch('/api/copilot/config')
+  fetch(API_BASE + '/api/copilot/config')
     .then(r => r.json())
     .then(data => {
       const badge = document.getElementById('groqStatusBadge');
@@ -4169,7 +4176,7 @@ async function pingTatumRpc() {
 
   try {
     const start = performance.now();
-    const res = await fetch('/api/status');
+    const res = await fetch(API_BASE + '/api/status');
     const data = await res.json();
     const latency = Math.round(performance.now() - start);
 
@@ -4727,7 +4734,7 @@ async function confirmAddSubscription() {
   const cur = state.userProfile?.currency || '$';
 
   try {
-    const res = await fetch('/api/subscriptions', {
+    const res = await fetch(API_BASE + '/api/subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -4783,7 +4790,7 @@ async function confirmAddTrial() {
   const trialEndsIso = new Date(Date.now() + days * 86400000).toISOString();
 
   try {
-    const res = await fetch('/api/subscriptions', {
+    const res = await fetch(API_BASE + '/api/subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -4967,7 +4974,7 @@ async function confirmDisputeAction() {
   try {
     // 1. Log action to Walrus memory
     const disputeItem = state.activeDispute || { merchant: 'Netflix', delta: 2.50 };
-    await fetch('/api/memories/commit', {
+    await fetch(API_BASE + '/api/memories/commit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -4984,7 +4991,7 @@ async function confirmDisputeAction() {
     });
 
     // 2. Disburse micro-bounty via Tatum Sui gateway
-    const payRes = await fetch('/api/tatum/payment', {
+    const payRes = await fetch(API_BASE + '/api/tatum/payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5012,7 +5019,7 @@ async function resolveChangeChoice(choice) {
   const { merchant, amount, delta } = state.activeDispute;
   const cur = state.userProfile?.currency || '$';
   try {
-    const res = await fetch('/api/subscriptions/resolve-change', {
+    const res = await fetch(API_BASE + '/api/subscriptions/resolve-change', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5048,7 +5055,7 @@ async function executeTestAgentPayment() {
   if (btn) btn.innerHTML = `<i data-lucide="loader"></i> Settling on Sui Mainnet...`;
 
   try {
-    const res = await fetch('/api/tatum/payment', {
+    const res = await fetch(API_BASE + '/api/tatum/payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5417,7 +5424,7 @@ async function updateGroqApiKey() {
   const input = document.getElementById('groqApiKeyInput');
   const key = input ? input.value.trim() : '';
   try {
-    const res = await fetch('/api/copilot/config', {
+    const res = await fetch(API_BASE + '/api/copilot/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey: key })
@@ -5446,7 +5453,7 @@ window.updateGroqApiKey = updateGroqApiKey;
 async function testGroqCopilotConnection() {
   if (typeof showToast === 'function') showToast('Testing AI Copilot inference latency...');
   try {
-    const res = await fetch('/api/copilot/chat', {
+    const res = await fetch(API_BASE + '/api/copilot/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5533,7 +5540,7 @@ async function handleCopilotChatSubmit(event) {
       envelopes: state.envelopeAllocations || null
     };
 
-    const res = await fetch('/api/copilot/chat', {
+    const res = await fetch(API_BASE + '/api/copilot/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5671,7 +5678,7 @@ async function processReceiptFile(file) {
   reader.onload = async () => {
     try {
       const base64 = reader.result;
-      const res = await fetch('/api/ocr/scan', {
+      const res = await fetch(API_BASE + '/api/ocr/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -5713,7 +5720,7 @@ async function scanSampleReceiptDemo() {
   showToast('SmartScan OCR: Scanning sample receipt with Google Gemini Vision...', 'blue');
 
   try {
-    const res = await fetch('/api/ocr/scan', {
+    const res = await fetch(API_BASE + '/api/ocr/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6015,7 +6022,7 @@ async function runLandingPlayground() {
   }
 
   try {
-    const res = await fetch('/api/copilot/chat', {
+    const res = await fetch(API_BASE + '/api/copilot/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6697,7 +6704,7 @@ async function runReceiptScan(payload) {
       { id: 'TX_AWS_01', merchant: 'AWS Cloud Hosting', amount: 142.50, timestamp: new Date().toISOString() }
     ];
 
-    const res = await fetch('/api/ocr/scan', {
+    const res = await fetch(API_BASE + '/api/ocr/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -7999,7 +8006,7 @@ async function confirmDeleteAccount() {
 
   try {
     // 1. Notify backend to clear ephemeral session state
-    await fetch('/api/account/delete', { method: 'DELETE' });
+    await fetch(API_BASE + '/api/account/delete', { method: 'DELETE' });
   } catch (err) {
     console.warn('[PURGE] Backend cache purge request finished:', err);
   }

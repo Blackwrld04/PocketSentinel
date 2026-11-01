@@ -15,6 +15,18 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <link rel="stylesheet" href="/styles.css?v=2.9">
+
+  <!-- Split Deployment: Render backend URL for Vercel frontend -->
+  <meta name="api-base" content="https://pocketsentinel.onrender.com">
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const metaBase = document.querySelector('meta[name="api-base"]')?.content?.trim();
+      const defaultRemote = 'https://pocketsentinel.onrender.com';
+      window.__API_BASE = isLocal ? '' : (metaBase || defaultRemote).replace(/\/+$/, '');
+      console.log('🛡️ [PocketSentinel] Gateway:', window.__API_BASE || '(same-origin local)');
+    })();
+  </script>
 </head>
 <body class="saas-theme in-landing-view">
 
