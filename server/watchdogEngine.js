@@ -103,7 +103,7 @@ export class WatchdogEngine {
           amount: tx.amount,
           currency,
           walrusMemoryRef: memory.id,
-          title: `⚠️ Unconfirmed Inferred Policy [${memory.id}]`,
+          title: `Unconfirmed Inferred Policy [${memory.id}]`,
           message: `An inferred policy exists for "${tx.merchant}", but sovereign safety rules prohibit inferred memories from suppressing alerts without explicit user confirmation.`,
           actionRequired: 'HUMAN_APPROVAL'
         };
@@ -119,7 +119,7 @@ export class WatchdogEngine {
           amount: tx.amount,
           currency,
           walrusMemoryRef: memory.id,
-          title: `🛡️ Alert Suppressed by Walrus Memory [${memory.id}]`,
+          title: `Alert Suppressed by Walrus Memory [${memory.id}]`,
           message: `Spend of ${currency}${tx.amount.toFixed(2)} matches historical seasonal override: "${memory.content}" (Authorized ceiling: ${currency}${ceiling.toFixed(2)}). Zero alert fatigue.`,
           savedFromAlertFatigue: true,
           ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
@@ -188,7 +188,7 @@ export class WatchdogEngine {
           currency,
           walrusMemoryRef: ledgerMem ? ledgerMem.id : 'MEM_01',
           serviceSlug: matchedSlug,
-          title: `⚠️ Unexpected Charge for Cancelled Service: ${tx.merchant}`,
+          title: `Unexpected Charge for Cancelled Service: ${tx.merchant}`,
           message: `${tx.merchant} billed ${currency}${tx.amount.toFixed(2)}, but this subscription was cancelled on ${matchedService.cancelled_on || 'record'}.`,
           cancelled_on: matchedService.cancelled_on,
           disputePack: this.generateDisputePack(tx, 0, tx.amount, ledgerMem || { id: 'MEM_01', content: 'Subscription Ledger' }, currency),
@@ -206,7 +206,7 @@ export class WatchdogEngine {
           amount: tx.amount,
           currency,
           walrusMemoryRef: ledgerMem ? ledgerMem.id : 'MEM_01',
-          title: `⚠️ Unconfirmed Inferred Policy [${ledgerMem ? ledgerMem.id : 'MEM_01'}]`,
+          title: `Unconfirmed Inferred Policy [${ledgerMem ? ledgerMem.id : 'MEM_01'}]`,
           message: `An inferred subscription exists for "${tx.merchant}", but sovereign safety rules prohibit inferred memories from suppressing alerts without explicit user confirmation.`,
           actionRequired: 'HUMAN_APPROVAL',
           ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
@@ -233,7 +233,7 @@ export class WatchdogEngine {
             percentageIncrease: `${percentHike}%`,
             annualDrainFormatted: `${currency}${annualDrain}`,
             walrusMemoryRef: ledgerMem ? ledgerMem.id : 'MEM_01',
-            title: `🚨 Stealth Price Creep: ${tx.merchant} (+${percentHike}%)`,
+            title: `Stealth Price Creep: ${tx.merchant} (+${percentHike}%)`,
             message: `${tx.merchant} billed ${currency}${tx.amount.toFixed(2)}, which is +${currency}${delta.toFixed(2)} above your stored Walrus baseline (${currency}${baseline.toFixed(2)}). Silently drains ${currency}${annualDrain}/year.`,
             disputePack: this.generateDisputePack(tx, baseline, delta, ledgerMem || { id: 'MEM_01', content: 'Subscription Ledger' }, currency),
             ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
@@ -340,7 +340,7 @@ export class WatchdogEngine {
           amount: tx.amount,
           currency,
           walrusMemoryRef: memory.id,
-          title: `⚠️ Re-bill Alert on Prior Disputed Vendor: ${tx.merchant}`,
+          title: `Re-bill Alert on Prior Disputed Vendor: ${tx.merchant}`,
           message: `Walrus Memory [${memory.id}] notes this merchant had a contested duplicate charge previously. Please inspect closely.`,
           disputePack: this.generateDisputePack(tx, tx.amount, tx.amount, memory, currency),
           ...(appliedCorrection ? { correctionApplied: true, originalMerchant: tx.originalMerchant, correctionMemoryRef: appliedCorrection.id } : {})
@@ -362,7 +362,7 @@ export class WatchdogEngine {
         currency,
         date: tx.date,
         walrusMemoryRef: policyMemory ? policyMemory.id : 'MEM_07',
-        title: `⚠️ Unknown Merchant High-Debit: ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        title: `Unknown Merchant High-Debit: ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         message: `Charge of ${currency}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from "${tx.merchant}" has no baseline in Walrus Memory and exceeds the ${currency}${threshold.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} autonomous safety threshold.`,
         actionRequired: 'HUMAN_APPROVAL',
         recommendedAction: 'Verify transaction legitimacy or approve new recurring baseline.',

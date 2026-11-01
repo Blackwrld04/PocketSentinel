@@ -24,7 +24,7 @@
       const metaBase = document.querySelector('meta[name="api-base"]')?.content?.trim();
       const defaultRemote = 'https://pocketsentinel.onrender.com';
       window.__API_BASE = isLocal ? '' : (metaBase || defaultRemote).replace(/\/+$/, '');
-      console.log('🛡️ [PocketSentinel] Gateway:', window.__API_BASE || '(same-origin local)');
+      console.log('[PocketSentinel] Gateway:', window.__API_BASE || '(same-origin local)');
     })();
   </script>
 </head>
@@ -174,7 +174,7 @@
               <div class="hlw-pool-card">
                 <div class="hlw-pool-top">
                   <span class="hlw-pool-title"><i data-lucide="mail"></i> Digital Envelopes · $4,850.00 assigned</span>
-                  <span class="hlw-status-tag green">✓ Balanced</span>
+                  <span class="hlw-status-tag green"><i data-lucide="check" style="width:12px;height:12px;vertical-align:-1px;"></i> Balanced</span>
                 </div>
                 <div class="hlw-flow-row">
                   <div class="hlw-flow-step"><span>Inflow:</span> <strong>$4,850.00</strong></div>
@@ -219,7 +219,7 @@
                     <span>Allocated: $350.00</span>
                   </div>
                   <div class="hlw-card-warning">
-                    <span>⚠️ Overspent by $45.00</span>
+                    <span><i data-lucide="alert-triangle" style="width:13px;height:13px;vertical-align:-2px;"></i> Overspent by $45.00</span>
                     <span class="hlw-btn-mini">Rebalance from Fun</span>
                   </div>
                 </div>
@@ -862,37 +862,37 @@
           <a class="eco-tile" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API" target="_blank" rel="noopener" title="W3C WebCrypto API Standard">
             <div class="eco-logo-box"><span class="eco-logo-mark">WC</span></div>
             <span class="eco-name">WebCrypto</span>
-            <span class="eco-tag">PRIVATE VAULT ↗</span>
+            <span class="eco-tag">PRIVATE VAULT <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></span>
           </a>
 
           <a class="eco-tile" href="https://docs.walrus.site" target="_blank" rel="noopener" title="Mysten Labs Walrus Decentralized Protocol">
             <div class="eco-logo-box"><span class="eco-logo-mark">WL</span></div>
             <span class="eco-name">Walrus</span>
-            <span class="eco-tag">SECURE STORAGE ↗</span>
+            <span class="eco-tag">SECURE STORAGE <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></span>
           </a>
 
           <a class="eco-tile" href="https://groq.com" target="_blank" rel="noopener" title="Groq Ultra-Fast LPU Inference Engine">
             <div class="eco-logo-box"><span class="eco-logo-mark">GQ</span></div>
             <span class="eco-name">Groq LPU</span>
-            <span class="eco-tag">FAST COPILOT ↗</span>
+            <span class="eco-tag">FAST COPILOT <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></span>
           </a>
 
           <a class="eco-tile" href="https://tatum.io" target="_blank" rel="noopener" title="Tatum Web3 & Card Ledger Gateway">
             <div class="eco-logo-box"><span class="eco-logo-mark">TT</span></div>
             <span class="eco-name">Tatum</span>
-            <span class="eco-tag">BANK &amp; CARD SYNC ↗</span>
+            <span class="eco-tag">BANK &amp; CARD SYNC <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></span>
           </a>
 
           <a class="eco-tile" href="https://ai.google.dev" target="_blank" rel="noopener" title="Google Gemini Vision Receipt Extraction">
             <div class="eco-logo-box"><span class="eco-logo-mark">GM</span></div>
             <span class="eco-name">Gemini</span>
-            <span class="eco-tag">RECEIPT SCANNER ↗</span>
+            <span class="eco-tag">RECEIPT SCANNER <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></span>
           </a>
 
           <a class="eco-tile" href="https://stripe.com" target="_blank" rel="noopener" title="Stripe Secure Card Infrastructure">
             <div class="eco-logo-box"><span class="eco-logo-mark">ST</span></div>
             <span class="eco-name">Stripe</span>
-            <span class="eco-tag">SECURE CARDS ↗</span>
+            <span class="eco-tag">SECURE CARDS <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></span>
           </a>
 
           <a class="eco-tile" href="#realitySection" onclick="scrollToLandingSection('realitySection', event)" title="Sovereign Savings Buffer & Emergency Reserve">
@@ -904,7 +904,7 @@
           <a class="eco-tile" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" title="MIT Open Source License">
             <div class="eco-logo-box"><span class="eco-logo-mark">MIT</span></div>
             <span class="eco-name">Open Source</span>
-            <span class="eco-tag">100% AUDITABLE ↗</span>
+            <span class="eco-tag">100% AUDITABLE <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></span>
           </a>
 
         </div>
@@ -1008,10 +1008,10 @@
             <span class="col-heading-mono">SOVEREIGNTY</span>
             <ul class="col-links">
               <li><a href="javascript:void(0)" onclick="openKeyVaultModal()">Export WebCrypto Keys</a></li>
-              <li><a href="https://www.w3.org/TR/WebCryptoAPI/" target="_blank" rel="noopener">W3C WebCrypto Standard ↗</a></li>
-              <li><a href="https://docs.walrus.site" target="_blank" rel="noopener">Walrus Protocol Docs ↗</a></li>
-              <li><a href="https://suiscan.xyz/mainnet" target="_blank" rel="noopener">Sui Mainnet Explorer ↗</a></li>
-              <li><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT Open Source License ↗</a></li>
+              <li><a href="https://www.w3.org/TR/WebCryptoAPI/" target="_blank" rel="noopener">W3C WebCrypto Standard <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></a></li>
+              <li><a href="https://docs.walrus.site" target="_blank" rel="noopener">Walrus Protocol Docs <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></a></li>
+              <li><a href="https://suiscan.xyz/mainnet" target="_blank" rel="noopener">Sui Mainnet Explorer <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></a></li>
+              <li><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT Open Source License <i data-lucide="arrow-up-right" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;"></i></a></li>
             </ul>
           </div>
 
@@ -2254,7 +2254,7 @@
 
                   <!-- Preview row when collapsed -->
                   <div class="trial-rules-preview" id="trialRulesPreview" onclick="toggleTrialRules()" style="cursor:pointer; margin-top:4px;">
-                    <p class="setting-hint" style="margin:0;">🔔 48h advance alarm · Web Push &amp; Telegram active</p>
+                    <p class="setting-hint" style="margin:0;"><i data-lucide="bell" style="width:13px;height:13px;vertical-align:-2px;"></i> 48h advance alarm · Web Push &amp; Telegram active</p>
                   </div>
 
                   <!-- Collapsible body -->
@@ -2812,7 +2812,7 @@
             <div class="spinner-amber" style="width: 36px; height: 36px; border: 3px solid rgba(16,185,129,0.2); border-top-color: #10b981; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
             <div id="cameraStatusText" style="font-size: 0.88rem; font-weight: 600; color: #e2e8f0;">Starting camera...</div>
             <button type="button" class="btn-ghost-outline" id="btnFallbackUpload" onclick="triggerFileInputFallback()" style="margin-top: 8px; font-size: 0.78rem; padding: 6px 14px; background: #1e293b; color: #fff; border-radius: 8px; border: 1px solid #475569; cursor: pointer;">
-              📁 Choose photo from device
+              <i data-lucide="upload" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Choose photo from device
             </button>
           </div>
 
@@ -2883,7 +2883,7 @@
               style="display: none;"
             />
             <button type="button" class="btn-camera-scan" id="btn-trigger-camera" onclick="openCameraScannerModal()">
-              📷 Open Camera Scanner
+              <i data-lucide="camera" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i> Open Camera Scanner
             </button>
           </div>
 
@@ -2920,15 +2920,15 @@
         <div class="form-group">
           <label>Category Envelope</label>
           <select id="tx-category" class="settings-select">
-            <option value="Groceries" selected>🛒 Groceries &amp; Household</option>
-            <option value="Food & Dining">🍽️ Food &amp; Dining Out</option>
-            <option value="Transport & Fuel">⛽ Transportation &amp; Fuel</option>
-            <option value="Rent & Utilities">💡 Utilities &amp; Rent</option>
-            <option value="Shopping">🛍️ Discretionary Shopping</option>
-            <option value="Entertainment">🎟️ Entertainment &amp; Fun</option>
-            <option value="Subscriptions">📅 Recurring Subscriptions</option>
-            <option value="Health & Medical">💊 Health &amp; Medical</option>
-            <option value="Miscellaneous">📦 Miscellaneous</option>
+            <option value="Groceries" selected>Groceries &amp; Household</option>
+            <option value="Food & Dining">Food &amp; Dining Out</option>
+            <option value="Transport & Fuel">Transportation &amp; Fuel</option>
+            <option value="Rent & Utilities">Utilities &amp; Rent</option>
+            <option value="Shopping">Discretionary Shopping</option>
+            <option value="Entertainment">Entertainment &amp; Fun</option>
+            <option value="Subscriptions">Recurring Subscriptions</option>
+            <option value="Health & Medical">Health &amp; Medical</option>
+            <option value="Miscellaneous">Miscellaneous</option>
           </select>
         </div>
 
@@ -3790,7 +3790,7 @@
       <!-- Modal Header -->
       <div class="onboard-header">
         <div class="onboard-brand">
-          <div class="onboard-logo-icon">🛡️</div>
+          <div class="onboard-logo-icon"><i data-lucide="shield" style="width:20px;height:20px;color:#10B981;"></i></div>
           <div>
             <span class="onboard-brand-name">PocketSentinel</span>
             <span class="onboard-step-pill" id="onboardStepBadge">Step 1 of 5 · Sign In</span>
@@ -3945,28 +3945,28 @@
             <label class="onboard-label">PRIMARY SENTINEL FOCUS</label>
             <div class="focus-cards-stack" id="onboardFocusStack">
               <div class="focus-card active" data-focus="subscriptions" onclick="selectOnboardFocus('subscriptions')">
-                <div class="focus-card-icon">🛡️</div>
+                <div class="focus-card-icon"><i data-lucide="shield-alert" style="width:20px;height:20px;color:#10B981;"></i></div>
                 <div class="focus-card-text">
                   <strong>Subscription &amp; Free Trial Watch</strong>
                   <p>Catch stealth $2-$5 monthly price hikes and alert before trials bill.</p>
                 </div>
-                <div class="focus-card-check">✓</div>
+                <div class="focus-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
               </div>
               <div class="focus-card" data-focus="velocity" onclick="selectOnboardFocus('velocity')">
-                <div class="focus-card-icon">⚡</div>
+                <div class="focus-card-icon"><i data-lucide="zap" style="width:20px;height:20px;color:#F59E0B;"></i></div>
                 <div class="focus-card-text">
                   <strong>Daily Safe-to-Spend Velocity</strong>
                   <p>Live burn-rate calculation so you know exactly what is safe to spend today.</p>
                 </div>
-                <div class="focus-card-check">✓</div>
+                <div class="focus-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
               </div>
               <div class="focus-card" data-focus="envelopes" onclick="selectOnboardFocus('envelopes')">
-                <div class="focus-card-icon">✉️</div>
+                <div class="focus-card-icon"><i data-lucide="mail" style="width:20px;height:20px;color:#6366F1;"></i></div>
                 <div class="focus-card-text">
                   <strong>Zero-Based Envelope Balancing</strong>
                   <p>Auto-rebalance groceries, dining out, and flex categories dynamically.</p>
                 </div>
-                <div class="focus-card-check">✓</div>
+                <div class="focus-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
               </div>
             </div>
 
@@ -4032,7 +4032,7 @@
 
           <div class="vault-provisioning-box">
             <div class="vault-animation-ring">
-              <div class="vault-pulse-icon">🔐</div>
+              <div class="vault-pulse-icon"><i data-lucide="lock" style="width:26px;height:26px;color:#10B981;"></i></div>
             </div>
 
             <!-- Terminal Provisioning Log -->

@@ -605,7 +605,7 @@ function demoRebalanceHero() {
     if (funSurplus) {
       funSurplus.textContent = '+$85.00 Discretionary';
     }
-    if (btnTxt) btnTxt.textContent = 'Balanced ✓';
+    if (btnTxt) btnTxt.textContent = 'Balanced';
     if (btn) {
       btn.style.background = '#10b981';
       btn.style.color = '#141413';
@@ -669,7 +669,7 @@ function demoRebalanceGroceries() {
       subtext.textContent = 'Equilibrium restored from Dining Out';
     }
     if (btn) {
-      btn.innerHTML = '<i data-lucide="check"></i><span>Balanced ✓</span>';
+      btn.innerHTML = '<i data-lucide="check"></i><span>Balanced</span>';
       btn.style.background = '#10b981';
       btn.style.color = '#141413';
     }
@@ -1092,7 +1092,7 @@ function openMemoryNodeModal(m) {
 
   if (idEl) idEl.textContent = m.id;
   if (titleEl) titleEl.textContent = `Memory Node [${m.id}]`;
-  if (categoryEl) categoryEl.textContent = `${m.type || m.category || 'Baseline'} (${m.sensitivity === 'encrypted' ? '🔒 AES-256-GCM Encrypted' : '🌐 Public Policy'})`;
+  if (categoryEl) categoryEl.textContent = `${m.type || m.category || 'Baseline'} (${m.sensitivity === 'encrypted' ? 'AES-256-GCM Encrypted' : 'Public Policy'})`;
   if (keyEl) keyEl.textContent = m.key || 'memory_node';
   if (agentEl) agentEl.textContent = m.agentId || 'walrus_agent_pocketsentinel_mainnet_0x7f4b82c';
   const suiDigest = m.suiTxDigest || m.metadata?.suiTxDigest || '0x77616c7275735f6167656e745f726563616c6c72616d';
@@ -1131,14 +1131,14 @@ function copyMemoryPayloadText() {
   const payloadEl = document.getElementById('memoryModalPayload');
   if (payloadEl && payloadEl.value) {
     navigator.clipboard.writeText(payloadEl.value);
-    showToast('📋 Memory payload copied to clipboard!', 'green');
+    showToast('Memory payload copied to clipboard!', 'green');
   }
 }
 window.copyMemoryPayloadText = copyMemoryPayloadText;
 
 function verifyMemoryAnchorProof() {
   if (!currentInspectedMemory) return;
-  showToast(`🔒 Verified cryptographic anchor for [${currentInspectedMemory.id}] on Sui Mainnet!`, 'green');
+  showToast(`Verified cryptographic anchor for [${currentInspectedMemory.id}] on Sui Mainnet!`, 'green');
 }
 window.verifyMemoryAnchorProof = verifyMemoryAnchorProof;
 
@@ -1480,7 +1480,7 @@ function inspectCalendarDay(day, merchant, amount, status) {
         <div class="cal-inspector-body">
           <div>Scheduled Debit: <strong>$${Number(evt.amount).toFixed(2)}</strong></div>
           <div style="font-size:12px; color:var(--text-secondary); margin-top:3px;">
-            ${isCreep ? '🚨 Uncontractual price hike flagged (+2.50 vs baseline memory).' : isTrial ? '⚠️ 7-Day Free Trial converting in 48 hours.' : isSuppressed ? 'ℹ️ Auto-reconciled via memory baseline policy.' : '✅ Verified episodic baseline match.'}
+            ${isCreep ? '<i data-lucide="alert-triangle" style="width:13px;height:13px;color:#EF4444;vertical-align:-2px;margin-right:4px;"></i> Uncontractual price hike flagged (+2.50 vs baseline memory).' : isTrial ? '<i data-lucide="clock" style="width:13px;height:13px;color:#F59E0B;vertical-align:-2px;margin-right:4px;"></i> 7-Day Free Trial converting in 48 hours.' : isSuppressed ? '<i data-lucide="info" style="width:13px;height:13px;color:#6366F1;vertical-align:-2px;margin-right:4px;"></i> Auto-reconciled via memory baseline policy.' : '<i data-lucide="check-circle-2" style="width:13px;height:13px;color:#10B981;vertical-align:-2px;margin-right:4px;"></i> Verified episodic baseline match.'}
           </div>
         </div>
         <div class="cal-inspector-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -3639,7 +3639,7 @@ function renderTrialSentinelPanel() {
               </div>
             </div>
             <div class="trial-rules-preview" style="margin-top:8px;">
-              <p class="setting-hint" style="margin:0;">🔔 48h advance alarm · Web Push & Telegram active</p>
+              <p class="setting-hint" style="margin:0;"><i data-lucide="bell" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> 48h advance alarm · Web Push & Telegram active</p>
             </div>
           </div>
         </div>
@@ -6228,7 +6228,7 @@ function cancelTrialSubscription(merchant = 'Adobe Creative Cloud') {
   renderSubscriptionsLedger();
   renderSpendCalendar();
 
-  showToast(`🛑 ${merchant} 7-Day Trial cancelled! $54.99 recurring charge blocked.`);
+  showToast(`${merchant} 7-Day Trial cancelled! $54.99 recurring charge blocked.`);
   if (window.lucide) window.lucide.createIcons();
 }
 window.cancelTrialSubscription = cancelTrialSubscription;
@@ -6263,7 +6263,7 @@ function keepTrialSubscription(merchant = 'Adobe Creative Cloud') {
   renderSubscriptionsLedger();
   renderSpendCalendar();
 
-  showToast(`✅ ${merchant} approved as verified subscription ($54.99/mo).`);
+  showToast(`${merchant} approved as verified subscription ($54.99/mo).`);
   if (window.lucide) window.lucide.createIcons();
 }
 window.keepTrialSubscription = keepTrialSubscription;
@@ -6290,7 +6290,7 @@ function triggerTrialExpirationNotification() {
   // 2. Browser Web Push notification if allowed
   if ('Notification' in window) {
     if (Notification.permission === 'granted') {
-      new Notification('⚠️ PocketSentinel: Trial Conversion Warning', {
+      new Notification('PocketSentinel: Trial Conversion Warning', {
         body: `Adobe Creative Cloud 7-Day Trial expires in ${hoursText}! $54.99/mo will be debited on Oct 27. Tap to manage or cancel.`,
         icon: '/assets/logos/adobe.svg'
       });
@@ -6300,7 +6300,7 @@ function triggerTrialExpirationNotification() {
   }
 
   // 3. Rich High-Priority In-App Toast
-  showToast(`🚨 TRIAL WARNING: Adobe Creative Cloud 7-day trial expires in ${hoursText}. $54.99 debit scheduled for Oct 27.`);
+  showToast(`TRIAL WARNING: Adobe Creative Cloud 7-day trial expires in ${hoursText}. $54.99 debit scheduled for Oct 27.`);
 
   // 4. Custom In-App Modal prompt matching the dispute pack aesthetic
   openTrialExpirationModal('Adobe Creative Cloud All Apps', hoursText, 54.99, 'Chase Sapphire Checking');
@@ -6350,7 +6350,7 @@ function saveTrialNotificationPreferences() {
 
   const prefs = { leadTime, push, telegram, autoFreeze };
   localStorage.setItem('recall_trial_notification_prefs', JSON.stringify(prefs));
-  showToast(`✅ Trial notification rules updated: Alert ${leadTime}h before conversion.`);
+  showToast(`Trial notification rules updated: Alert ${leadTime}h before conversion.`);
 }
 window.saveTrialNotificationPreferences = saveTrialNotificationPreferences;
 
@@ -6390,7 +6390,7 @@ function resetTrialStateDemo() {
 
   renderSubscriptionsLedger();
   renderSpendCalendar();
-  showToast('🔄 Demo trial state reset: Adobe 48h conversion armed.');
+  showToast('Demo trial state reset: Adobe 48h conversion armed.');
   if (window.lucide) window.lucide.createIcons();
 }
 window.resetTrialStateDemo = resetTrialStateDemo;
@@ -6435,7 +6435,7 @@ function handleAddNewSubscription(e) {
   closeNewSubscriptionModal();
   renderSubscriptionsLedger();
   renderSpendCalendar();
-  showToast(`✅ Added ${merchant} (${cur}${cost.toFixed(2)}/mo) to Sentinel Subscriptions!`);
+  showToast(`Added ${merchant} (${cur}${cost.toFixed(2)}/mo) to Sentinel Subscriptions!`);
 }
 window.handleAddNewSubscription = handleAddNewSubscription;
 function setTxType(type) {
@@ -6455,15 +6455,15 @@ function renderTxWalletPickerUI() {
   const selectedName = hiddenInput?.value || state.wallets[0]?.name || 'Primary Checking';
 
   const icons = {
-    bank: '🏦',
-    vault: '🛡️',
-    cash: '💵',
-    card: '💳'
+    bank: '<i data-lucide="landmark" style="width:16px;height:16px;color:#10B981;"></i>',
+    vault: '<i data-lucide="shield" style="width:16px;height:16px;color:#F59E0B;"></i>',
+    cash: '<i data-lucide="banknote" style="width:16px;height:16px;color:#6366F1;"></i>',
+    card: '<i data-lucide="credit-card" style="width:16px;height:16px;color:#EF4444;"></i>'
   };
 
   container.innerHTML = state.wallets.map(w => {
     const isSelected = (w.name === selectedName);
-    const icon = icons[w.type] || '💰';
+    const icon = icons[w.type] || '<i data-lucide="wallet" style="width:16px;height:16px;"></i>';
     const badge = w.locked ? '<span class="wallet-picker-badge">Locked</span>' : (w.liability ? '<span class="wallet-picker-badge">Liability</span>' : '');
     return `
       <div class="wallet-picker-card ${isSelected ? 'active' : ''}" onclick="selectTxWallet('${w.name}')" id="txWalletCard_${w.id}">
@@ -6474,10 +6474,11 @@ function renderTxWalletPickerUI() {
             <span class="wallet-picker-bal">${cur}${Number(w.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
         </div>
-        <span class="wallet-picker-check">✓</span>
+        <span class="wallet-picker-check"><i data-lucide="check" style="width:14px;height:14px;"></i></span>
       </div>
     `;
   }).join('');
+  if (window.lucide) window.lucide.createIcons();
 }
 window.renderTxWalletPickerUI = renderTxWalletPickerUI;
 
@@ -6565,7 +6566,7 @@ function confirmSaveQuickAddTransaction() {
 
   const amount = parseFloat(amountInput?.value);
   if (!amount || isNaN(amount) || amount <= 0) {
-    if (typeof showToast === 'function') showToast('⚠️ Please enter a valid transaction amount.');
+    if (typeof showToast === 'function') showToast('Please enter a valid transaction amount.');
     return;
   }
 
@@ -6592,7 +6593,7 @@ function confirmSaveQuickAddTransaction() {
     status = 'ESCALATION_REQUIRED';
     walrusAnchor = 'MEM_07';
     if (typeof showToast === 'function') {
-      showToast(`🛡️ Sentinel Wall [MEM_07]: Debit of ${currency}${amount.toFixed(2)} from "${merchant}" requires escalation approval.`);
+      showToast(`Sentinel Wall [MEM_07]: Debit of ${currency}${amount.toFixed(2)} from "${merchant}" requires escalation approval.`);
     }
   }
 
@@ -6631,7 +6632,7 @@ function confirmSaveQuickAddTransaction() {
   if (merchantInput) merchantInput.value = '';
 
   if (typeof showToast === 'function') {
-    showToast(`✅ Saved ${currency}${amount.toFixed(2)} (${lifeEnergyHours} hrs energy). Safe velocity is now ${currency}${state.userProfile.dailyVelocity}/day.`);
+    showToast(`Saved ${currency}${amount.toFixed(2)} (${lifeEnergyHours} hrs energy). Safe velocity is now ${currency}${state.userProfile.dailyVelocity}/day.`);
   }
 }
 window.confirmSaveQuickAddTransaction = confirmSaveQuickAddTransaction;
@@ -6661,7 +6662,7 @@ function deleteUserLoggedTx(merchant, amount) {
     renderEnvelopesPlan();
 
     if (typeof showToast === 'function') {
-      showToast(`🗑️ Removed ${merchant}. Safe velocity restored.`);
+      showToast(`Removed ${merchant}. Safe velocity restored.`);
     }
   }
 }
@@ -6734,7 +6735,8 @@ async function startCameraStream(facingMode = 'environment') {
   } catch (err) {
     console.warn('[Camera] Could not open camera stream:', err);
     if (statusText) {
-      statusText.innerHTML = `⚠️ Camera access unavailable (${err.name || 'Device busy'})<br><span style="font-size:0.75rem; color:#94a3b8;">Click below to pick a photo from your device.</span>`;
+      statusText.innerHTML = `<i data-lucide="alert-circle" style="width:16px;height:16px;color:#F59E0B;vertical-align:-2px;margin-right:4px;"></i> Camera access unavailable (${err.name || 'Device busy'})<br><span style="font-size:0.75rem; color:#94a3b8;">Click below to pick a photo from your device.</span>`;
+      if (window.lucide) window.lucide.createIcons();
     }
     showToast('Camera unavailable. You can upload a receipt photo instead.', 'amber');
   }
@@ -6891,10 +6893,14 @@ async function runReceiptScan(payload) {
   const resultBox = document.getElementById('ocr-audit-result');
   const cur = state.userProfile?.currency || '£';
 
-  if (cameraBtn) cameraBtn.textContent = '⏳ Gemini Vision Analyzing...';
+  if (cameraBtn) {
+    cameraBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i> Analyzing...';
+    if (window.lucide) window.lucide.createIcons();
+  }
   if (resultBox) {
     resultBox.classList.remove('hidden', 'matched-duplicate');
-    resultBox.innerHTML = '🔍 Google Gemini Vision decoding receipt & checking ±48h statement window...';
+    resultBox.innerHTML = '<i data-lucide="scan" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Google Gemini Vision decoding receipt & checking ±48h statement window...';
+    if (window.lucide) window.lucide.createIcons();
   }
 
   try {
@@ -6926,7 +6932,10 @@ async function runReceiptScan(payload) {
       data = clientSideReceiptExtractor(payload, currentTxs);
     }
 
-    if (cameraBtn) cameraBtn.textContent = '📷 Open Camera Scanner';
+    if (cameraBtn) {
+      cameraBtn.innerHTML = '<i data-lucide="camera" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i> Open Camera Scanner';
+      if (window.lucide) window.lucide.createIcons();
+    }
 
     const { extracted, ruleAudit } = data;
 
@@ -6951,22 +6960,27 @@ async function runReceiptScan(payload) {
       }
 
       resultBox.innerHTML = `
-        <div style="margin-bottom:4px;"><strong>⚡ Gemini Vision Decoded:</strong> <strong>${extracted.merchant}</strong> (${cur}${extracted.amount.toFixed(2)})</div>
+        <div style="margin-bottom:4px;"><i data-lucide="zap" style="width:14px;height:14px;color:#F59E0B;vertical-align:-2px;margin-right:4px;"></i><strong>Gemini Vision Decoded:</strong> <strong>${extracted.merchant}</strong> (${cur}${extracted.amount.toFixed(2)})</div>
         <div style="font-size:0.75rem; color:#64748b; margin-bottom:4px;"><code>${extracted.rawString}</code> · Model: <em>${extracted.provider || 'Gemini 3.8 Flash'}</em></div>
-        <div>🛡️ <strong>${ruleAudit.summary}</strong></div>
+        <div><i data-lucide="shield-check" style="width:14px;height:14px;color:#10B981;vertical-align:-2px;margin-right:4px;"></i><strong>${ruleAudit.summary}</strong></div>
         ${
           ruleAudit.taxDeductible
-            ? `<div style="margin-top:4px;">🧾 <strong>Tax Deduction Flagged:</strong> Est. savings <strong>+${cur}${ruleAudit.estimatedTaxSavings.toFixed(2)}</strong> (22% bracket) · Anchor: <code>${ruleAudit.walrusReceiptAnchor}</code></div>`
-            : `<div style="margin-top:4px;">🔗 <strong>Walrus Anchor Proof:</strong> <code>${ruleAudit.walrusReceiptAnchor}</code></div>`
+            ? `<div style="margin-top:4px;"><i data-lucide="receipt" style="width:14px;height:14px;color:#10B981;vertical-align:-2px;margin-right:4px;"></i><strong>Tax Deduction Flagged:</strong> Est. savings <strong>+${cur}${ruleAudit.estimatedTaxSavings.toFixed(2)}</strong> (22% bracket) · Anchor: <code>${ruleAudit.walrusReceiptAnchor}</code></div>`
+            : `<div style="margin-top:4px;"><i data-lucide="link-2" style="width:14px;height:14px;color:#6366F1;vertical-align:-2px;margin-right:4px;"></i><strong>Walrus Anchor Proof:</strong> <code>${ruleAudit.walrusReceiptAnchor}</code></div>`
         }
       `;
+      if (window.lucide) window.lucide.createIcons();
     }
 
-    showToast(`📸 Receipt Captured: ${extracted.merchant} (${cur}${extracted.amount.toFixed(2)})`, 'green');
+    showToast(`Receipt Captured: ${extracted.merchant} (${cur}${extracted.amount.toFixed(2)})`, 'green');
   } catch (err) {
-    if (cameraBtn) cameraBtn.textContent = '📷 Open Camera Scanner';
+    if (cameraBtn) {
+      cameraBtn.innerHTML = '<i data-lucide="camera" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i> Open Camera Scanner';
+      if (window.lucide) window.lucide.createIcons();
+    }
     if (resultBox) {
-      resultBox.innerHTML = `⚠️ Scan notice: ${err.message}`;
+      resultBox.innerHTML = `<i data-lucide="alert-circle" style="width:14px;height:14px;color:#F59E0B;vertical-align:-2px;margin-right:4px;"></i> Scan notice: ${err.message}`;
+      if (window.lucide) window.lucide.createIcons();
     }
     showToast(`OCR Notice: ${err.message}`, 'amber');
   }
@@ -7113,7 +7127,7 @@ function saveUserProfileSettings() {
   renderSpendCalendar();
 
   if (typeof showToast === 'function') {
-    showToast(`✅ Profile saved: ${newName} · Real wage ${newCur}${newWage}/hr · Metrics updated!`);
+    showToast(`Profile saved: ${newName} · Real wage ${newCur}${newWage}/hr · Metrics updated!`);
   }
 }
 window.saveUserProfileSettings = saveUserProfileSettings;
@@ -7141,7 +7155,7 @@ function resetToHackathonDefaults() {
   renderAuditRecords(state.auditResults);
 
   if (typeof showToast === 'function') {
-    showToast('🔄 Reset to Hackathon Demo Defaults (Alex Rivera, $4,850 inflow, $25/hr wage).');
+    showToast('Reset to Hackathon Demo Defaults (Alex Rivera, $4,850 inflow, $25/hr wage).');
   }
 }
 window.resetToHackathonDefaults = resetToHackathonDefaults;
@@ -7280,7 +7294,7 @@ function confirmAddNewWallet() {
   const balance = parseFloat(document.getElementById('newWalletBalance')?.value) || 0;
 
   if (!name) {
-    if (typeof showToast === 'function') showToast('⚠️ Please enter a wallet name.');
+    if (typeof showToast === 'function') showToast('Please enter a wallet name.');
     return;
   }
 
@@ -7296,7 +7310,7 @@ function confirmAddNewWallet() {
   const cur = state.userProfile?.currency || '$';
   renderWalletsUI();
   closeAddWalletModal();
-  if (typeof showToast === 'function') showToast(`✅ Added wallet "${name}" with ${cur}${balance.toFixed(2)}.`);
+  if (typeof showToast === 'function') showToast(`Added wallet "${name}" with ${cur}${balance.toFixed(2)}.`);
 }
 window.confirmAddNewWallet = confirmAddNewWallet;
 
@@ -7324,11 +7338,11 @@ function confirmWalletTransfer() {
   const amount = parseFloat(document.getElementById('transferAmount')?.value);
 
   if (!amount || amount <= 0) {
-    if (typeof showToast === 'function') showToast('⚠️ Please enter a valid transfer amount.');
+    if (typeof showToast === 'function') showToast('Please enter a valid transfer amount.');
     return;
   }
   if (fromName === toName) {
-    if (typeof showToast === 'function') showToast('⚠️ Source and destination wallets must be different.');
+    if (typeof showToast === 'function') showToast('Source and destination wallets must be different.');
     return;
   }
 
@@ -7343,7 +7357,7 @@ function confirmWalletTransfer() {
     closeTransferModal();
     const cur = state.userProfile?.currency || '$';
     if (typeof showToast === 'function') {
-      showToast(`🔄 Transferred ${cur}${amount.toFixed(2)} from ${fromName} to ${toName}.`);
+      showToast(`Transferred ${cur}${amount.toFixed(2)} from ${fromName} to ${toName}.`);
     }
   }
 }
@@ -7379,7 +7393,7 @@ function confirmEmergencyUnlock() {
   }
   if (window.lucide) window.lucide.createIcons();
   if (typeof showToast === 'function') {
-    showToast('🛡️ 10% Emergency Reserve unlocked for crisis allocation.', 'amber');
+    showToast('10% Emergency Reserve unlocked for crisis allocation.', 'amber');
   }
 }
 window.confirmEmergencyUnlock = confirmEmergencyUnlock;
@@ -7466,7 +7480,7 @@ function handleCreateCategorySubmit(event) {
 
   const cur = state.userProfile?.currency || '$';
   if (typeof showToast === 'function') {
-    showToast(`📁 Created new envelope "${name}" with ${cur}${budget.toFixed(2)} monthly allocation!`, 'green');
+    showToast(`Created new envelope "${name}" with ${cur}${budget.toFixed(2)} monthly allocation!`, 'green');
   }
 }
 window.handleCreateCategorySubmit = handleCreateCategorySubmit;
@@ -7480,7 +7494,7 @@ function deleteCustomEnvelope(envId) {
   syncCategoryDropdowns();
 
   if (typeof showToast === 'function') {
-    showToast(`🗑️ Removed category envelope "${target?.name || ''}".`, 'amber');
+    showToast(`Removed category envelope "${target?.name || ''}".`, 'amber');
   }
 }
 window.deleteCustomEnvelope = deleteCustomEnvelope;
@@ -7690,7 +7704,7 @@ function renderEnvelopesPlan() {
       barColor = 'red';
       calloutHtml = `
         <div class="env-rebalance-callout">
-          <span>⚠️ Overspent by ${cur}${Math.abs(remaining).toFixed(2)}</span>
+          <span><i data-lucide="alert-triangle" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i>Overspent by ${cur}${Math.abs(remaining).toFixed(2)}</span>
           <button class="btn-mini-rebalance" onclick="rebalanceEnvelopesWithPunch()">Rebalance from Fun</button>
         </div>
       `;
@@ -7949,7 +7963,8 @@ function updateModalAllocLive() {
         noticeEl.style.background = '#DCFCE7';
         noticeEl.style.color = '#166534';
         noticeEl.style.border = '1px solid #86EFAC';
-        noticeEl.textContent = `✅ Perfect Zero-Based allocation! Every ${cur}1 of your ${cur}${inflow.toFixed(2)} income has a designated purpose.`;
+        noticeEl.innerHTML = `<i data-lucide="check-circle-2" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Perfect Zero-Based allocation! Every ${cur}1 of your ${cur}${inflow.toFixed(2)} income has a designated purpose.`;
+        if (window.lucide) window.lucide.createIcons();
       }
     } else if (diff > 0) {
       labelEl.textContent = 'Unassigned Available:';
@@ -7960,7 +7975,8 @@ function updateModalAllocLive() {
         noticeEl.style.background = '#EFF6FF';
         noticeEl.style.color = '#1E40AF';
         noticeEl.style.border = '1px solid #BFDBFE';
-        noticeEl.textContent = `ℹ️ You have ${cur}${diff.toFixed(2)} available. Click "Auto-Balance Remainder" to assign it completely.`;
+        noticeEl.innerHTML = `<i data-lucide="info" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> You have ${cur}${diff.toFixed(2)} available. Click "Auto-Balance Remainder" to assign it completely.`;
+        if (window.lucide) window.lucide.createIcons();
       }
     } else {
       labelEl.textContent = 'Over-Allocated Deficit:';
@@ -7971,7 +7987,8 @@ function updateModalAllocLive() {
         noticeEl.style.background = '#FEE2E2';
         noticeEl.style.color = '#991B1B';
         noticeEl.style.border = '1px solid #FCA5A5';
-        noticeEl.textContent = `⚠️ You have allocated ${cur}${Math.abs(diff).toFixed(2)} more than your monthly inflow. Reduce category targets to balance.`;
+        noticeEl.innerHTML = `<i data-lucide="alert-triangle" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> You have allocated ${cur}${Math.abs(diff).toFixed(2)} more than your monthly inflow. Reduce category targets to balance.`;
+        if (window.lucide) window.lucide.createIcons();
       }
     }
   }
@@ -8000,7 +8017,7 @@ function autoBalanceEnvelopesInModal() {
     funInp.value = newFun.toFixed(2);
     updateModalAllocLive();
     if (typeof showToast === 'function') {
-      showToast(`✨ Assigned ${diff > 0 ? '+' : ''}${cur}${diff.toFixed(2)} to Discretionary Fun to balance budget!`, 'green');
+      showToast(`Assigned ${diff > 0 ? '+' : ''}${cur}${diff.toFixed(2)} to Discretionary Fun to balance budget!`, 'green');
     }
   }
 }
@@ -8033,7 +8050,7 @@ function resetToSuggestedEnvelopeSplit() {
   setVal('allocInput_fun', fun);
 
   updateModalAllocLive();
-  if (typeof showToast === 'function') showToast('🔄 Reset allocations to suggested 10% reserve / 35% groceries formula.');
+  if (typeof showToast === 'function') showToast('Reset allocations to suggested 10% reserve / 35% groceries formula.');
 }
 window.resetToSuggestedEnvelopeSplit = resetToSuggestedEnvelopeSplit;
 
@@ -8083,7 +8100,7 @@ function saveUserEnvelopeAllocations() {
 
   const cur = state.userProfile?.currency || '$';
   if (typeof showToast === 'function') {
-    showToast(`✅ Envelope allocations saved! New spending targets are live in ${cur}.`, 'green');
+    showToast(`Envelope allocations saved! New spending targets are live in ${cur}.`, 'green');
   }
 }
 window.saveUserEnvelopeAllocations = saveUserEnvelopeAllocations;
@@ -8438,7 +8455,8 @@ window.fillQuickEmail = fillQuickEmail;
 function handleGoogleSignIn() {
   const btn = document.getElementById('btnGoogleAuth');
   if (btn) {
-    btn.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> <span>Connecting to Google...</span>`;
+    btn.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;"><i data-lucide="loader-2" style="width:16px;height:16px;vertical-align:-2px;"></i></span> <span>Connecting to Google...</span>`;
+    if (window.lucide) window.lucide.createIcons();
   }
   setTimeout(() => {
     onboardDraft.email = 'alex.rivera.finance@gmail.com';
@@ -8821,14 +8839,20 @@ function startVaultProvisioningAnimation() {
   if (status) status.textContent = 'Generating 256-bit AES-GCM vault key (20%)...';
 
   setTimeout(() => {
-    if (line1) line1.innerHTML = `<span class="term-status success">✓</span> W3C WebCrypto 256-bit AES-GCM Master Key generated.`;
+    if (line1) {
+      line1.innerHTML = `<span class="term-status success"><i data-lucide="check" style="width:11px;height:11px;"></i></span> W3C WebCrypto 256-bit AES-GCM Master Key generated.`;
+      if (window.lucide) window.lucide.createIcons();
+    }
     if (line2) line2.style.display = 'flex';
     if (bar) bar.style.width = '45%';
     if (status) status.textContent = `Allocating zero-knowledge container for ${onboardDraft.email} (45%)...`;
   }, 300);
 
   setTimeout(() => {
-    if (line2) line2.innerHTML = `<span class="term-status success">✓</span> Local zero-knowledge encrypted vault allocated.`;
+    if (line2) {
+      line2.innerHTML = `<span class="term-status success"><i data-lucide="check" style="width:11px;height:11px;"></i></span> Local zero-knowledge encrypted vault allocated.`;
+      if (window.lucide) window.lucide.createIcons();
+    }
     if (line3) line3.style.display = 'flex';
     if (line3) line3.innerHTML = `<span class="term-status pending">●</span> Configuring spend calendar with ${activeCount} active subscriptions...`;
     if (bar) bar.style.width = '70%';
@@ -8836,14 +8860,20 @@ function startVaultProvisioningAnimation() {
   }, 650);
 
   setTimeout(() => {
-    if (line3) line3.innerHTML = `<span class="term-status success">✓</span> Spend calendar synchronized with ${activeCount} subscriptions.`;
+    if (line3) {
+      line3.innerHTML = `<span class="term-status success"><i data-lucide="check" style="width:11px;height:11px;"></i></span> Spend calendar synchronized with ${activeCount} subscriptions.`;
+      if (window.lucide) window.lucide.createIcons();
+    }
     if (line4) line4.style.display = 'flex';
     if (bar) bar.style.width = '90%';
     if (status) status.textContent = `Calibrating AI Spending Copilot for ${onboardDraft.name} (90%)...`;
   }, 1050);
 
   setTimeout(() => {
-    if (line4) line4.innerHTML = `<span class="term-status success">✓</span> AI Spending Copilot calibrated and armed.`;
+    if (line4) {
+      line4.innerHTML = `<span class="term-status success"><i data-lucide="check" style="width:11px;height:11px;"></i></span> AI Spending Copilot calibrated and armed.`;
+      if (window.lucide) window.lucide.createIcons();
+    }
     if (bar) bar.style.width = '100%';
     if (status) status.textContent = 'Vault Encrypted & Active (100%) · Ready for Launch!';
     if (btn) btn.style.display = 'flex';
@@ -9289,7 +9319,7 @@ function renderConfigureSubscriptionsModalUI() {
     return `
       <div class="config-sub-item-row" id="configRow_${s.id}">
         <div class="config-sub-item-left">
-          <span style="font-size:18px;">📱</span>
+          <span style="width:28px;height:28px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="smartphone" style="width:16px;height:16px;color:var(--text-muted);"></i></span>
           <div>
             <div class="config-sub-item-name">${s.merchant}</div>
             <div class="config-sub-item-meta">${s.category || 'General'}</div>
