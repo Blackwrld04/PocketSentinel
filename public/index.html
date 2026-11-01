@@ -2910,9 +2910,10 @@
         <!-- Wallet Selector -->
         <div class="form-group">
           <label>Paying Wallet / Account</label>
-          <select id="tx-wallet" class="settings-select">
-            <!-- Dynamically populated from state.wallets in openQuickAddModal -->
-          </select>
+          <div class="wallet-picker-grid" id="txWalletPickerGrid">
+            <!-- Populated dynamically via renderTxWalletPickerUI -->
+          </div>
+          <input type="hidden" id="tx-wallet" value="Primary Checking">
         </div>
 
         <!-- Category & Envelope Grid -->

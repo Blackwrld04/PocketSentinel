@@ -15947,22 +15947,28 @@ body.dark-theme .btn-landing-back:hover {
 /* ================= ONBOARDING STEP 4: SUBSCRIPTIONS CATALOG ================= */
 .onboard-subs-quick-row {
   display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
 
 .btn-sub-quick-chip {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
-  padding: 5px 10px;
+  padding: 8px 6px;
   border: 1.5px solid #D1D5DB;
-  border-radius: 6px;
-  background: #F9FAFB;
+  border-radius: 8px;
+  background: #FFFFFF;
   color: #374151;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
+  text-align: center;
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-sub-quick-chip:hover,
@@ -15973,7 +15979,7 @@ body.dark-theme .btn-landing-back:hover {
 }
 
 body.dark-theme .btn-sub-quick-chip {
-  background: #1F2937;
+  background: #181d24;
   border-color: #374151;
   color: #D1D5DB;
 }
@@ -15988,21 +15994,20 @@ body.dark-theme .btn-sub-quick-chip.active {
 .onboard-subs-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 220px;
+  gap: 10px;
+  max-height: 250px;
   overflow-y: auto;
   padding-right: 4px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .onboard-sub-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 12px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
   border: 1.5px solid #E5E7EB;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #FAFAFA;
   transition: all 0.15s ease;
 }
@@ -16010,6 +16015,7 @@ body.dark-theme .btn-sub-quick-chip.active {
 .onboard-sub-row.active {
   border-color: #D97706;
   background: #FFFDF7;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.08);
 }
 
 body.dark-theme .onboard-sub-row {
@@ -16022,7 +16028,15 @@ body.dark-theme .onboard-sub-row.active {
   border-color: #F59E0B;
 }
 
-.onboard-sub-left {
+.onboard-sub-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.onboard-sub-title-wrap {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -16033,14 +16047,14 @@ body.dark-theme .onboard-sub-row.active {
 .onboard-sub-check {
   cursor: pointer;
   accent-color: #D97706;
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
 }
 
 .onboard-sub-avatar {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 6px;
   background: #141413;
   color: #FFFFFF;
@@ -16058,75 +16072,126 @@ body.dark-theme .onboard-sub-avatar {
   color: #F9FAFB;
 }
 
-.onboard-sub-info {
+.onboard-sub-name-group {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
 .onboard-sub-name {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 body.dark-theme .onboard-sub-name {
   color: #F9FAFB;
 }
 
-.onboard-sub-cat {
-  font-size: 10.5px;
-  color: #6B7280;
+.onboard-sub-cat-pill {
+  font-size: 10px;
   font-family: var(--font-mono);
+  color: #6B7280;
+  background: #E5E7EB;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
-body.dark-theme .onboard-sub-cat {
-  color: #9CA3AF;
+body.dark-theme .onboard-sub-cat-pill {
+  color: #D1D5DB;
+  background: #374151;
 }
 
-.onboard-sub-controls {
+.onboard-sub-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px dashed #E5E7EB;
+  width: 100%;
+}
+
+body.dark-theme .onboard-sub-bottom {
+  border-top-color: #374151;
+}
+
+.onboard-sub-amt-group,
+.onboard-sub-day-group {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
 }
 
-.onboard-sub-amt-input,
-.onboard-sub-day-input {
-  padding: 5px 6px;
+.onboard-field-label {
+  font-size: 10px;
+  color: #9CA3AF;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.onboard-sub-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #FFFFFF;
   border: 1px solid #D1D5DB;
   border-radius: 6px;
+  padding: 3px 6px;
+}
+
+body.dark-theme .onboard-sub-input-wrap {
+  background: #181d24;
+  border-color: #374151;
+}
+
+.onboard-sub-cur {
   font-family: var(--font-mono);
-  font-size: 12px;
-  background: #FFFFFF;
-  color: #111827;
-  text-align: right;
-  box-sizing: border-box;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6B7280;
 }
 
 .onboard-sub-amt-input {
-  width: 86px;
+  width: 65px;
+  border: none;
+  background: transparent;
+  padding: 2px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  text-align: right;
+  outline: none;
+}
+
+body.dark-theme .onboard-sub-amt-input {
+  color: #F9FAFB;
 }
 
 .onboard-sub-day-input {
-  width: 52px;
+  width: 44px;
+  padding: 4px 6px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  background: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
   text-align: center;
+  box-sizing: border-box;
 }
 
-body.dark-theme .onboard-sub-amt-input,
 body.dark-theme .onboard-sub-day-input {
   background: #181d24;
   border-color: #374151;
   color: #F9FAFB;
-}
-
-.onboard-sub-day-label {
-  font-size: 10.5px;
-  color: #9CA3AF;
-  font-family: var(--font-mono);
 }
 
 .onboard-custom-sub-section {
@@ -16903,5 +16968,136 @@ body.dark-theme .category-spend-chip {
 
 body.dark-theme .category-spend-chip .chip-amt {
   color: #F8FAFC;
+}
+
+/* ================= CUSTOM WALLET PICKER IN LOG SPEND MODAL ================= */
+.wallet-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 480px) {
+  .wallet-picker-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+.wallet-picker-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  background: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.wallet-picker-card:hover {
+  border-color: #D1D5DB;
+  background: #F9FAFB;
+}
+
+.wallet-picker-card.active {
+  border-color: #10B981;
+  background: #ECFDF5;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.12);
+}
+
+body.dark-theme .wallet-picker-card {
+  background: #181d24;
+  border-color: #374151;
+}
+
+body.dark-theme .wallet-picker-card:hover {
+  background: #1f2530;
+  border-color: #4b5563;
+}
+
+body.dark-theme .wallet-picker-card.active {
+  background: #064E3B;
+  border-color: #10B981;
+}
+
+.wallet-picker-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wallet-picker-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.wallet-picker-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wallet-picker-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+}
+
+body.dark-theme .wallet-picker-name {
+  color: #F9FAFB;
+}
+
+.wallet-picker-bal {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #6B7280;
+  font-weight: 600;
+}
+
+.wallet-picker-card.active .wallet-picker-bal {
+  color: #047857;
+}
+
+body.dark-theme .wallet-picker-card.active .wallet-picker-bal {
+  color: #6EE7B7;
+}
+
+.wallet-picker-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  background: #FEF3C7;
+  color: #92400E;
+  margin-left: 4px;
+}
+
+body.dark-theme .wallet-picker-badge {
+  background: #3B2D14;
+  color: #FDE68A;
+}
+
+.wallet-picker-check {
+  font-size: 13px;
+  font-weight: 800;
+  color: #10B981;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.wallet-picker-card.active .wallet-picker-check {
+  opacity: 1;
 }
 

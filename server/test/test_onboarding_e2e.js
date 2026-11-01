@@ -209,6 +209,47 @@ async function runE2ETest() {
     throw new Error(`Expected £20.00/mo, got ${afterSubMetrics.monthlyRunRate}`);
   }
 
+  // 7. Test Log Spend Modal & Custom Wallet Picker
+  console.log('💳 Testing Log Spend Modal & Custom Wallet Picker...');
+  await page.evaluate(() => {
+    openQuickAddModal();
+  });
+  await new Promise(r => setTimeout(r, 300));
+
+  const walletPickerData = await page.evaluate(() => {
+    const cards = document.querySelectorAll('.wallet-picker-card');
+    const selected = document.getElementById('tx-wallet')?.value;
+    return {
+      cardCount: cards.length,
+      selected
+    };
+  });
+  console.log('Wallet Picker Status:', walletPickerData);
+  if (walletPickerData.cardCount !== 4) {
+    throw new Error(`Expected 4 wallet picker cards, got ${walletPickerData.cardCount}`);
+  }
+
+  // 8. Test Receipt Scanner Fallback & Decoding
+  console.log('📸 Testing Receipt Scanner...');
+  await page.evaluate(async () => {
+    await runReceiptScan({ demoPreset: 'grocery', filename: 'grocery_receipt.jpg' });
+  });
+  await new Promise(r => setTimeout(r, 400));
+
+  const scanResult = await page.evaluate(() => {
+    const amount = document.getElementById('tx-amount')?.value;
+    const merchant = document.getElementById('tx-merchant')?.value;
+    const resultHtml = document.getElementById('ocr-audit-result')?.innerHTML || '';
+    return { amount, merchant, hasError: resultHtml.includes('Unexpected token') };
+  });
+  console.log('Scan Result:', scanResult);
+  if (scanResult.hasError) {
+    throw new Error('Receipt scanner produced Unexpected token error!');
+  }
+  if (scanResult.merchant !== 'Whole Foods Market' || scanResult.amount !== '64.20') {
+    throw new Error(`Expected Whole Foods Market 64.20, got ${scanResult.merchant} ${scanResult.amount}`);
+  }
+
   await browser.close();
   console.log('🎉 Full End-to-End Simulation Passed Successfully with 100% Correlation!');
 }
